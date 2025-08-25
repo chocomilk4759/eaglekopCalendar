@@ -1,6 +1,6 @@
--- Tables
-create table if not exists notes (
-  id bigint generated always as identity primary key,
+-- notes
+create table if not exists public.notes (
+  id bigserial primary key,
   y int not null,
   m int not null,  -- 0~11
   d int not null,  -- 1~31
@@ -8,10 +8,11 @@ create table if not exists notes (
   updated_at timestamptz not null default now(),
   updated_by uuid
 );
-create unique index if not exists notes_unique_date on notes(y, m, d);
+create unique index if not exists notes_unique_date on public.notes(y, m, d);
 
-create table if not exists presets (
-  id bigint generated always as identity primary key,
+-- presets
+create table if not exists public.presets (
+  id bigserial primary key,
   emoji text not null,
   label text not null,
   sort_order int not null default 0,
@@ -19,8 +20,9 @@ create table if not exists presets (
   updated_by uuid
 );
 
-create table if not exists user_roles (
-  id bigint generated always as identity primary key,
+-- user_roles
+create table if not exists public.user_roles (
+  id bigserial primary key,
   user_id uuid,
   email text,
   role text not null check (role in ('editor','admin','superadmin')),
@@ -28,73 +30,77 @@ create table if not exists user_roles (
 );
 
 -- Enable RLS
-alter table notes enable row level security;
-alter table presets enable row level security;
-alter table user_roles enable row level security;
+alter table public.notes enable row level security;
+alter table public.presets enable row level security;
+alter table public.user_roles enable row level security;
 
--- Read policies (public readable)
-drop policy if exists "notes_read_all" on notes;
-create policy "notes_read_all" on notes for select using (true);
+-- Read policies
+drop policy if exists notes_read_all on public.notes;
+create policy notes_read_all on public.notes for select using (true);
 
-drop policy if exists "presets_read_all" on presets;
-create policy "presets_read_all" on presets for select using (true);
+drop policy if exists presets_read_all on public.presets;
+create policy presets_read_all on public.presets for select using (true);
 
-drop policy if exists "user_roles_read_self" on user_roles;
-create policy "user_roles_read_self" on user_roles for select using (true);
+drop policy if exists user_roles_read_all on public.user_roles;
+create policy user_roles_read_all on public.user_roles for select using (true);
 
 -- Write policies for roles: editor/admin/superadmin
-drop policy if exists "notes_write_roles" on notes;
-create policy "notes_write_roles" on notes for insert with check (
+drop policy if exists notes_write_roles on public.notes;
+create policy notes_write_roles on public.notes for insert with check (
   exists (
-    select 1 from user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
-drop policy if exists "notes_update_roles" on notes;
-create policy "notes_update_roles" on notes for update using (
-  exists (
-    select 1 from user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
-drop policy if exists "notes_delete_roles" on notes;
-create policy "notes_delete_roles" on notes for delete using (
-  exists (
-    select 1 from user_roles ur
+    select 1 from public.user_roles ur
     where ur.role in ('editor','admin','superadmin')
       and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
   )
 );
 
-drop policy if exists "presets_write_roles" on presets;
-create policy "presets_write_roles" on presets for insert with check (
+drop policy if exists notes_update_roles on public.notes;
+create policy notes_update_roles on public.notes for update using (
   exists (
-    select 1 from user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
-drop policy if exists "presets_update_roles" on presets;
-create policy "presets_update_roles" on presets for update using (
-  exists (
-    select 1 from user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
-drop policy if exists "presets_delete_roles" on presets;
-create policy "presets_delete_roles" on presets for delete using (
-  exists (
-    select 1 from user_roles ur
+    select 1 from public.user_roles ur
     where ur.role in ('editor','admin','superadmin')
       and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
   )
 );
 
--- Seed default presets
-insert into presets (emoji, label, sort_order) values
+drop policy if exists notes_delete_roles on public.notes;
+create policy notes_delete_roles on public.notes for delete using (
+  exists (
+    select 1 from public.user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+
+drop policy if exists presets_write_roles on public.presets;
+create policy presets_write_roles on public.presets for insert with check (
+  exists (
+    select 1 from public.user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+
+drop policy if exists presets_update_roles on public.presets;
+create policy presets_update_roles on public.presets for update using (
+  exists (
+    select 1 from public.user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+
+drop policy if exists presets_delete_roles on public.presets;
+create policy presets_delete_roles on public.presets for delete using (
+  exists (
+    select 1 from public.user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+
+-- Seed presets
+insert into public.presets (emoji, label, sort_order) values
 ('📢', '공지사항·중대발표', 10),
 ('🔔', '알림', 20),
 ('⚽', '축구 입중계 일정', 30),
