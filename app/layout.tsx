@@ -1,4 +1,4 @@
-import '../styles/globals.css';
+import './globals.css';
 
 export const metadata = { title: '연간 계획표', description: '공유 달력' };
 
