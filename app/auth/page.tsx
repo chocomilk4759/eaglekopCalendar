@@ -3,12 +3,11 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 
+// ⬇︎ 예약 TLD 기본값(.invalid). Vercel에 NEXT_PUBLIC_INTERNAL_EMAIL_DOMAIN 있으면 그걸 사용
 const INTERNAL_DOMAIN =
   process.env.NEXT_PUBLIC_INTERNAL_EMAIL_DOMAIN || 'eaglekop.invalid';
 
-function idToEmail(id: string) {
-  return `${id}@${INTERNAL_DOMAIN}`;
-}
+function idToEmail(id: string){ return `${id}@${INTERNAL_DOMAIN}`; }
 
 export default function AuthPage(){
   const supabase = createClient();
@@ -75,26 +74,22 @@ export default function AuthPage(){
   return (
     <main className="container">
       <h2>인증</h2>
-
       {!userEmail && (
         <section style={{display:'grid', gap:8, maxWidth:420}}>
           <h3>로그인 (ID / 비밀번호)</h3>
           <input placeholder="ID (예: superadmin)" value={id} onChange={e=> setId(e.target.value)} />
           <input type="password" placeholder="비밀번호" value={password} onChange={e=> setPassword(e.target.value)} />
           <button onClick={login}>로그인</button>
-          <small style={{opacity:.7}}>※ ID는 내부적으로 <code>id@local</code> 이메일에 매핑됩니다.</small>
+          <small style={{opacity:.7}}>※ ID는 내부적으로 <code>id@{INTERNAL_DOMAIN}</code> 으로 매핑됩니다.</small>
         </section>
       )}
-
       {userEmail && (
         <section style={{display:'grid', gap:8, maxWidth:520, marginTop:16}}>
           <div>로그인됨: {userEmail} <button onClick={logout}>로그아웃</button></div>
-
           <h3>내 비밀번호 변경</h3>
           <input type="password" placeholder="새 비밀번호" value={newPass1} onChange={e=> setNewPass1(e.target.value)} />
           <input type="password" placeholder="새 비밀번호 확인" value={newPass2} onChange={e=> setNewPass2(e.target.value)} />
           <button onClick={changePassword}>변경</button>
-
           {(myRoles.includes('admin') || myRoles.includes('superadmin')) && (
             <>
               <h3>사용자 생성 (관리자)</h3>
@@ -109,7 +104,6 @@ export default function AuthPage(){
               <button onClick={createUser}>생성</button>
             </>
           )}
-
           {myRoles.includes('superadmin') && (
             <>
               <h3>비밀번호 초기화 (최고관리자)</h3>
