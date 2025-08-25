@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { createClient } from '../lib/supabaseClient';
 
 type Note = { y:number; m:number; d:number; content:string };
 type Preset = { id:number; emoji:string; label:string; sort_order:number };
@@ -28,13 +28,11 @@ export default function Page(){
   function showToast(msg:string){ setToast(msg); setTimeout(()=> setToast(''), 1500); }
 
   async function fetchNotes(){
-    const from = { y, m };
-    const to = { y: m===11? y+1 : y, m: (m+1)%12 };
     const { data, error } = await supabase
       .from('notes')
       .select('y,m,d,content')
-      .gte('y', y).lte('y', y)  // narrow by year
-      .gte('m', m).lte('m', m); // narrow by month
+      .gte('y', y).lte('y', y)
+      .gte('m', m).lte('m', m);
     if(!error && data){
       const map: Record<string,string> = {};
       data.forEach((n:Note)=>{ map[key(n.y,n.m,n.d)] = n.content; });
@@ -80,7 +78,6 @@ export default function Page(){
     else showToast('삭제 실패');
   }
 
-  // calendar render helpers
   const first = firstWeekday(y,m);
   const daysIn = dim(y,m);
   const prevMonth = (m+11)%12;
@@ -120,7 +117,7 @@ export default function Page(){
       <section className="layout">
         <section className="calendar" role="grid" aria-label="달력">
           <div className="grid header" role="row">
-            {days.map(d=> <div className="cell head" role="columnheader" key={d}>{d}</div>)}
+            {['일','월','화','수','목','금','토'].map(d=> <div className="cell head" role="columnheader" key={d}>{d}</div>)}
           </div>
           <div className="grid body" role="rowgroup">
             {cells.map((c,idx)=>(
@@ -131,65 +128,6 @@ export default function Page(){
             ))}
           </div>
         </section>
-
-        <aside className="sidebar" aria-label="프리셋 아이콘">
-          <div className="sidebar-inner">
-            <h2>프리셋 아이콘</h2>
-            <ul className="preset-list">
-              {presets.map(p=> (
-                <li key={p.id} className="preset-item">
-                  <button onClick={async ()=>{
-                    if(dialogRef.current?.open && noteRef.current){
-                      const cur = noteRef.current.value;
-                      noteRef.current.value = (cur? cur + '\n' : '') + `${p.emoji} `;
-                      showToast('메모에 삽입되었습니다.');
-                    } else {
-                      await navigator.clipboard.writeText(p.emoji);
-                      showToast('클립보드에 복사됨');
-                    }
-                  }}><span>{p.emoji}</span> <span>{p.label}</span></button>
-                  {isEditor && (
-                    <span className="preset-actions">
-                      <button onClick={async ()=>{
-                        const emoji = prompt('이모지 수정', p.emoji) ?? p.emoji;
-                        const label = prompt('라벨 수정', p.label) ?? p.label;
-                        const sort = Number(prompt('정렬(숫자, 오름차순)', String(p.sort_order)) ?? p.sort_order);
-                        const { error } = await supabase.from('presets').update({ emoji, label, sort_order: sort }).eq('id', p.id);
-                        if(!error){ showToast('수정됨'); fetchPresets(); }
-                      }}>수정</button>
-                      <button onClick={async ()=>{
-                        if(!confirm('삭제하시겠습니까?')) return;
-                        const { error } = await supabase.from('presets').delete().eq('id', p.id);
-                        if(!error){ showToast('삭제됨'); fetchPresets(); }
-                      }}>삭제</button>
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-
-            {isEditor && (
-              <div className="preset-form">
-                <div className="row">
-                  <input id="newEmoji" placeholder="이모지 (예: 📢)" />
-                  <input id="newLabel" placeholder="라벨 (예: 공지사항)" />
-                  <input id="newSort" type="number" placeholder="정렬(숫자)" />
-                </div>
-                <button onClick={async ()=>{
-                  // @ts-ignore
-                  const emoji = (document.getElementById('newEmoji') as HTMLInputElement).value.trim();
-                  // @ts-ignore
-                  const label = (document.getElementById('newLabel') as HTMLInputElement).value.trim();
-                  // @ts-ignore
-                  const sort = Number((document.getElementById('newSort') as HTMLInputElement).value || 0);
-                  if(!emoji || !label){ showToast('이모지와 라벨을 입력하세요'); return; }
-                  const { error } = await supabase.from('presets').insert({ emoji, label, sort_order: sort });
-                  if(!error){ showToast('추가됨'); fetchPresets(); }
-                }}>프리셋 추가</button>
-              </div>
-            )}
-          </div>
-        </aside>
       </section>
 
       <dialog id="noteDialog" ref={dialogRef}>
