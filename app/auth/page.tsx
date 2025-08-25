@@ -3,7 +3,12 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 
-function idToEmail(id: string){ return `${id}@local`; }
+const INTERNAL_DOMAIN =
+  process.env.NEXT_PUBLIC_INTERNAL_EMAIL_DOMAIN || 'eaglekop.invalid';
+
+function idToEmail(id: string) {
+  return `${id}@${INTERNAL_DOMAIN}`;
+}
 
 export default function AuthPage(){
   const supabase = createClient();

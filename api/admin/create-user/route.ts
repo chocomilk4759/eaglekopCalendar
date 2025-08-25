@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabase } from '@/lib/supabaseServer';
 import { getAdminClient } from '@/lib/supabaseAdminServer';
 
-function idToEmail(id: string){ return `${id}@local`; }
+const INTERNAL_DOMAIN =
+  process.env.NEXT_PUBLIC_INTERNAL_EMAIL_DOMAIN || 'eaglekop.invalid';
+
+function idToEmail(id: string) {
+  return `${id}@${INTERNAL_DOMAIN}`;
+}
+
 
 export async function POST(req: NextRequest) {
   try {
