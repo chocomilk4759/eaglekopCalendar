@@ -16,6 +16,13 @@
   const noteDateLabel = $('#noteDateLabel');
   const deleteNoteBtn = $('#deleteNoteBtn');
   const saveBtn = $('#saveBtn');
+  const toast = $('#toast');
+
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(()=> toast.classList.remove('show'), 1500);
+  }
 
   function pad(n){ return String(n).padStart(2,'0'); }
   function keyFor(y,m,d){ return `planner:${y}-${pad(m+1)}-${pad(d)}`; }
@@ -33,8 +40,8 @@
     const m = Number(monthSelect.value);
     const first = firstWeekday(y,m);
     const dim = daysInMonth(y,m);
-    const prevDim = daysInMonth(y, (m+11)%12 === 11 ? y-1 : (m===0? y-1: y), (m+11)%12); // not used but keep
-    // compute previous month days to show
+
+    // calc previous month info
     const prevMonth = (m+11) % 12;
     const prevYear = m===0 ? y-1 : y;
     const prevDays = daysInMonth(prevYear, prevMonth);
@@ -156,9 +163,9 @@
           }
         });
         render();
-        alert('복원이 완료되었습니다.');
+        showToast('복원이 완료되었습니다.');
       }catch(err){
-        alert('가져오기 실패: 올바른 JSON이 아닙니다.');
+        showToast('가져오기 실패: 올바른 JSON이 아닙니다.');
       }
     };
     reader.readAsText(file);
@@ -170,6 +177,30 @@
     yearInput.value = String(t.getFullYear());
     render();
   }
+
+  // Preset emoji insert/copy
+  $$('.preset-list button').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const emoji = btn.dataset.emoji;
+      if(typeof dialog.returnValue !== 'undefined' && dialog.open){
+        const start = noteText.selectionStart ?? noteText.value.length;
+        const end = noteText.selectionEnd ?? noteText.value.length;
+        const before = noteText.value.slice(0,start);
+        const after = noteText.value.slice(end);
+        noteText.value = `${before}${emoji} ${after}`;
+        noteText.focus();
+        noteText.selectionStart = noteText.selectionEnd = start + emoji.length + 1;
+        showToast('메모에 삽입되었습니다.');
+      } else {
+        try{
+          await navigator.clipboard.writeText(emoji);
+          showToast('클립보드에 복사되었습니다.');
+        }catch{
+          showToast('복사 실패. 메모창을 열어 클릭해 삽입하세요.');
+        }
+      }
+    });
+  });
 
   // Events
   monthSelect.addEventListener('change', render);

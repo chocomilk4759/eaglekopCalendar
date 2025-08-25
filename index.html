@@ -40,7 +40,7 @@
       </div>
     </header>
 
-    <main class="container">
+    <main class="container layout">
       <section class="calendar" role="grid" aria-label="달력">
         <div class="grid header" role="row">
           <div class="cell head" role="columnheader">일</div>
@@ -52,17 +52,36 @@
           <div class="cell head" role="columnheader">토</div>
         </div>
         <div id="calendarBody" class="grid body" role="rowgroup"></div>
+        <aside class="help">
+          <details>
+            <summary>사용 설명</summary>
+            <ul>
+              <li>월/년도 선택 시 달력이 자동 갱신됩니다.</li>
+              <li>날짜 칸을 클릭하면 메모를 입력할 수 있습니다. 입력 내용은 자동 저장(LocalStorage).</li>
+              <li>백업/복원으로 JSON 파일로 내보내거나 가져올 수 있습니다.</li>
+              <li>Vercel에 정적 사이트로 배포하면 어디서든 접근 가능합니다.</li>
+            </ul>
+          </details>
+        </aside>
       </section>
-      <aside class="help">
-        <details>
-          <summary>사용 설명</summary>
-          <ul>
-            <li>월/년도 선택 시 달력이 자동 갱신됩니다.</li>
-            <li>날짜 칸을 클릭하면 메모를 입력할 수 있습니다. 입력 내용은 자동 저장(LocalStorage).</li>
-            <li>백업/복원으로 JSON 파일로 내보내거나 가져올 수 있습니다.</li>
-            <li>Vercel에 정적 사이트로 배포하면 어디서든 접근 가능합니다.</li>
+
+      <aside class="presets" aria-label="프리셋 아이콘">
+        <div class="presets-inner">
+          <h2>프리셋 아이콘</h2>
+          <p class="hint">클릭 시 메모에 삽입(다이얼로그 열림 상태), 아니면 클립보드 복사</p>
+          <ul class="preset-list">
+            <li><button data-emoji="📢">📢 공지사항·중대발표</button></li>
+            <li><button data-emoji="🔔">🔔 알림</button></li>
+            <li><button data-emoji="⚽">⚽ 축구 입중계 일정</button></li>
+            <li><button data-emoji="⚾">⚾ 야구 입중계 일정</button></li>
+            <li><button data-emoji="🏁">🏁 F1 입중계 일정</button></li>
+            <li><button data-emoji="🥎">🥎 촌지</button></li>
+            <li><button data-emoji="🏆">🏆 이글콥 대회 출전당일</button></li>
+            <li><button data-emoji="🎮">🎮 특정 게임 할 때</button></li>
+            <li><button data-emoji="📺">📺 같이보기</button></li>
+            <li><button data-emoji="🤼‍♂️">🤼‍♂️ 합방</button></li>
           </ul>
-        </details>
+        </div>
       </aside>
     </main>
 
@@ -79,6 +98,8 @@
         <textarea id="noteText" placeholder="메모를 입력하세요" rows="10"></textarea>
       </form>
     </dialog>
+
+    <div id="toast" role="status" aria-live="polite"></div>
 
     <footer class="container foot">
       <small>로컬 저장소(LocalStorage)에만 저장됩니다. 브라우저/디바이스별로 데이터가 다릅니다.</small>
