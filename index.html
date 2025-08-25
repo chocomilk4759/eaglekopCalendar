@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>연간 계획표 - Vercel</title>
+    <meta name="description" content="월/년 선택 시 자동으로 날짜가 갱신되는 연간 계획표" />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <header class="container">
+      <h1>연간 계획표</h1>
+      <div class="controls">
+        <label>
+          월
+          <select id="monthSelect" aria-label="월 선택">
+            <option value="0">1월</option>
+            <option value="1">2월</option>
+            <option value="2">3월</option>
+            <option value="3">4월</option>
+            <option value="4">5월</option>
+            <option value="5">6월</option>
+            <option value="6">7월</option>
+            <option value="7">8월</option>
+            <option value="8">9월</option>
+            <option value="9">10월</option>
+            <option value="10">11월</option>
+            <option value="11">12월</option>
+          </select>
+        </label>
+        <label>
+          년도
+          <input id="yearInput" type="number" min="1900" max="2100" step="1" />
+        </label>
+        <button id="todayBtn" type="button">오늘로 이동</button>
+        <button id="clearBtn" type="button" title="현재 월의 메모만 삭제">현재 월 메모 비우기</button>
+        <button id="exportBtn" type="button">백업(내보내기)</button>
+        <input id="importFile" type="file" accept="application/json" hidden />
+        <button id="importBtn" type="button">복원(가져오기)</button>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="calendar" role="grid" aria-label="달력">
+        <div class="grid header" role="row">
+          <div class="cell head" role="columnheader">일</div>
+          <div class="cell head" role="columnheader">월</div>
+          <div class="cell head" role="columnheader">화</div>
+          <div class="cell head" role="columnheader">수</div>
+          <div class="cell head" role="columnheader">목</div>
+          <div class="cell head" role="columnheader">금</div>
+          <div class="cell head" role="columnheader">토</div>
+        </div>
+        <div id="calendarBody" class="grid body" role="rowgroup"></div>
+      </section>
+      <aside class="help">
+        <details>
+          <summary>사용 설명</summary>
+          <ul>
+            <li>월/년도 선택 시 달력이 자동 갱신됩니다.</li>
+            <li>날짜 칸을 클릭하면 메모를 입력할 수 있습니다. 입력 내용은 자동 저장(LocalStorage).</li>
+            <li>백업/복원으로 JSON 파일로 내보내거나 가져올 수 있습니다.</li>
+            <li>Vercel에 정적 사이트로 배포하면 어디서든 접근 가능합니다.</li>
+          </ul>
+        </details>
+      </aside>
+    </main>
+
+    <dialog id="noteDialog">
+      <form method="dialog" class="note-form">
+        <header class="note-header">
+          <div id="noteDateLabel"></div>
+          <menu>
+            <button value="cancel">닫기</button>
+            <button id="deleteNoteBtn" type="button">삭제</button>
+            <button id="saveBtn" value="default">저장</button>
+          </menu>
+        </header>
+        <textarea id="noteText" placeholder="메모를 입력하세요" rows="10"></textarea>
+      </form>
+    </dialog>
+
+    <footer class="container foot">
+      <small>로컬 저장소(LocalStorage)에만 저장됩니다. 브라우저/디바이스별로 데이터가 다릅니다.</small>
+    </footer>
+
+    <script src="/script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,25 @@
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,Apple SD Gothic Neo,Noto Sans KR,sans-serif;background:#0b1020;color:#e8ebf4}h1{margin:0;font-size:1.5rem}
+.container{max-width:1100px;margin:0 auto;padding:16px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:12px}
+.controls label{display:flex;flex-direction:column;gap:6px;font-size:.9rem}
+.controls input,.controls select,.controls button{padding:8px 10px;border-radius:10px;border:1px solid #2a355a;background:#121a36;color:#e8ebf4}
+.controls button{cursor:pointer}
+.controls button:hover{background:#18224a}
+.calendar .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.calendar .header{margin-top:16px}
+.cell{padding:10px;border:1px solid #263156;border-radius:14px;min-height:94px;background:#0f1733;display:flex;flex-direction:column}
+.cell.head{min-height:auto;background:#0a1129;font-weight:600;text-align:center;justify-content:center}
+.cell .date{font-weight:700;opacity:.9}
+.cell.out{opacity:.45}
+.cell.today{outline:2px solid #6aa0ff}
+.cell .notes{margin-top:6px;white-space:pre-wrap;line-height:1.3;font-size:.9rem}
+.help{margin-top:18px}
+dialog{border:none;border-radius:16px;padding:0;max-width:720px;width:95vw;background:#0f1733;color:#e8ebf4}
+.note-form{padding:12px}
+.note-header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.note-header #noteDateLabel{font-weight:700}
+.note-header menu{display:flex;gap:8px;margin:0}
+.note-header button{padding:6px 10px;border-radius:10px;border:1px solid #2a355a;background:#121a36;color:#e8ebf4;cursor:pointer}
+.note-header button:hover{background:#18224a}
+#noteText{width:100%;border-radius:12px;border:1px solid #2a355a;background:#0b1020;color:#e8ebf4;padding:10px}
+footer.foot{opacity:.7;margin-bottom:24px}
