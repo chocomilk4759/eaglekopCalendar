@@ -17,7 +17,6 @@ export default function Page(){
   const [isEditor, setIsEditor] = useState(false);
   const [toast, setToast] = useState<string>('');
   const noteRef = useRef<HTMLTextAreaElement>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogDate, setDialogDate] = useState<{y:number,m:number,d:number}|null>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -49,7 +48,10 @@ export default function Page(){
     const { data: { user } } = await supabase.auth.getUser();
     if(!user){ setIsEditor(false); return; }
     const { data } = await supabase.from('user_roles').select('*').eq('role','editor').or(`user_id.eq.${user.id},email.eq.${user.email}`);
-    setIsEditor(!!(data && data.length>0));
+    const hasEditor = !!(data && data.length>0);
+    // admin / superadmin도 편집 가능
+    const { data: data2 } = await supabase.from('user_roles').select('*').in('role',['admin','superadmin']).or(`user_id.eq.${user.id},email.eq.${user.email}`);
+    setIsEditor(hasEditor || !!(data2 && data2.length>0));
   }
 
   useEffect(()=>{ fetchNotes(); }, [y,m]);
@@ -57,10 +59,9 @@ export default function Page(){
 
   function openNote(y:number,m:number,d:number){
     setDialogDate({y,m,d});
-    setDialogOpen(true);
     setTimeout(()=> dialogRef.current?.showModal(), 0);
   }
-  function closeNote(){ setDialogOpen(false); dialogRef.current?.close(); }
+  function closeNote(){ dialogRef.current?.close(); setDialogDate(null); }
 
   async function saveNote(){
     if(!dialogDate) return;
@@ -117,7 +118,7 @@ export default function Page(){
       <section className="layout">
         <section className="calendar" role="grid" aria-label="달력">
           <div className="grid header" role="row">
-            {['일','월','화','수','목','금','토'].map(d=> <div className="cell head" role="columnheader" key={d}>{d}</div>)}
+            {days.map(d=> <div className="cell head" role="columnheader" key={d}>{d}</div>)}
           </div>
           <div className="grid body" role="rowgroup">
             {cells.map((c,idx)=>(
@@ -128,6 +129,29 @@ export default function Page(){
             ))}
           </div>
         </section>
+
+        <aside className="sidebar" aria-label="프리셋 아이콘">
+          <div className="sidebar-inner">
+            <h2>프리셋 아이콘</h2>
+            <ul className="preset-list">
+              {presets.map(p=> (
+                <li key={p.id} className="preset-item" style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:8}}>
+                  <button onClick={async ()=>{
+                    if(dialogRef.current?.open && noteRef.current){
+                      const cur = noteRef.current.value;
+                      noteRef.current.value = (cur? cur + '\\n' : '') + `${p.emoji} `;
+                      showToast('메모에 삽입되었습니다.');
+                    } else {
+                      await navigator.clipboard.writeText(p.emoji);
+                      showToast('클립보드에 복사됨');
+                    }
+                  }}><span>{p.emoji}</span> <span>{p.label}</span></button>
+                  {/* 편집 UI는 /auth 에서 제공 */}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
       </section>
 
       <dialog id="noteDialog" ref={dialogRef}>

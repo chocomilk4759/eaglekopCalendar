@@ -5,7 +5,7 @@ a{color:inherit;text-decoration:none}
 header.appbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #e5e7eb}
 header.appbar h1{font-size:1.2rem;margin:0}
 
-.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:12px}
+.controls{display:flex;gap:12px;flex-wrap:wrap;align-items:end;margin-top:12px}
 .controls label{display:flex;flex-direction:column;gap:6px;font-size:.9rem}
 .controls input,.controls select,.controls button{padding:8px 10px;border-radius:10px;border:1px solid #d0d7e2;background:#fff;color:#111}
 .controls button{cursor:pointer}
@@ -15,7 +15,7 @@ header.appbar h1{font-size:1.2rem;margin:0}
 @media (max-width: 980px){.layout{grid-template-columns:1fr} .sidebar{order:2}}
 
 .calendar .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.calendar .header{margin-top:16px; margin-bottom:16px;}
+.calendar .header{margin-top:16px; margin-bottom:16px;} /* 요일과 날짜 사이 간격 확대 */
 .cell{padding:10px;border:1px solid #e2e6ef;border-radius:14px;min-height:94px;background:#fcfdff;display:flex;flex-direction:column}
 .cell.head{min-height:auto;background:#f6f8fc;font-weight:600;text-align:center;justify-content:center}
 .cell .date{font-weight:700;opacity:.95}

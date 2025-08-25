@@ -9,7 +9,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="appbar">
           <h1>연간 계획표</h1>
           <nav style={{display:'flex', gap:8}}>
-            <a href="/auth">로그인</a>
+            <a href="/auth">인증</a>
           </nav>
         </header>
         {children}

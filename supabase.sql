@@ -1,4 +1,4 @@
--- Schema
+-- Tables
 create table if not exists notes (
   id bigint generated always as identity primary key,
   y int not null,
@@ -8,7 +8,6 @@ create table if not exists notes (
   updated_at timestamptz not null default now(),
   updated_by uuid
 );
-
 create unique index if not exists notes_unique_date on notes(y, m, d);
 
 create table if not exists presets (
@@ -22,9 +21,9 @@ create table if not exists presets (
 
 create table if not exists user_roles (
   id bigint generated always as identity primary key,
-  user_id uuid,          -- supabase auth.user id (nullable if email-only control)
-  email text,            -- convenient for granting by email
-  role text not null check (role in ('editor')),
+  user_id uuid,
+  email text,
+  role text not null check (role in ('editor','admin','superadmin')),
   created_at timestamptz not null default now()
 );
 
@@ -33,88 +32,66 @@ alter table notes enable row level security;
 alter table presets enable row level security;
 alter table user_roles enable row level security;
 
--- Policies
--- Everyone can read notes/presets
-create policy if not exists "notes_read_all"
-  on notes for select
-  using (true);
+-- Read policies (public readable)
+drop policy if exists "notes_read_all" on notes;
+create policy "notes_read_all" on notes for select using (true);
 
-create policy if not exists "presets_read_all"
-  on presets for select
-  using (true);
+drop policy if exists "presets_read_all" on presets;
+create policy "presets_read_all" on presets for select using (true);
 
--- Editors can write
-create policy if not exists "notes_write_editor"
-  on notes for insert with check (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
+drop policy if exists "user_roles_read_self" on user_roles;
+create policy "user_roles_read_self" on user_roles for select using (true);
 
-create policy if not exists "notes_update_editor"
-  on notes for update using (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
+-- Write policies for roles: editor/admin/superadmin
+drop policy if exists "notes_write_roles" on notes;
+create policy "notes_write_roles" on notes for insert with check (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+drop policy if exists "notes_update_roles" on notes;
+create policy "notes_update_roles" on notes for update using (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+drop policy if exists "notes_delete_roles" on notes;
+create policy "notes_delete_roles" on notes for delete using (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
 
-create policy if not exists "notes_delete_editor"
-  on notes for delete using (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
-
-create policy if not exists "presets_write_editor"
-  on presets for insert with check (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
-
-create policy if not exists "presets_update_editor"
-  on presets for update using (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
-
-create policy if not exists "presets_delete_editor"
-  on presets for delete using (
-    exists (
-      select 1 from user_roles ur
-      where ur.role='editor'
-        and (
-          ur.user_id = auth.uid()
-          or (ur.email is not null and ur.email = auth.jwt() ->> 'email')
-        )
-    )
-  );
+drop policy if exists "presets_write_roles" on presets;
+create policy "presets_write_roles" on presets for insert with check (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+drop policy if exists "presets_update_roles" on presets;
+create policy "presets_update_roles" on presets for update using (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
+drop policy if exists "presets_delete_roles" on presets;
+create policy "presets_delete_roles" on presets for delete using (
+  exists (
+    select 1 from user_roles ur
+    where ur.role in ('editor','admin','superadmin')
+      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
+  )
+);
 
 -- Seed default presets
 insert into presets (emoji, label, sort_order) values
