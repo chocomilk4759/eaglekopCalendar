@@ -58,37 +58,40 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   useEffect(() => {
     let alive = true;
 
-    // 1) 캐시가 있으면 즉시 표시(깜빡임 억제)
-    const cached = monthCache.get(ymKey);
-    if (cached) {
-      const map: Record<string, Note> = {};
-      cached.forEach((n: any) => {
-        map[`${n.y}-${n.m}-${n.d}`] = {
-          y: n.y,
-          m: n.m,
-          d: n.d,
-          id: n.id,
-          content: n.content || '',
-          items: n.items || [],
-          color: n.color ?? null,
-        };
-      });
-      setNotes(map);
-    }
+    const run = async () => {
+      // 1) 캐시가 있으면 즉시 표시(깜빡임 억제)
+      const cached = monthCache.get(ymKey);
+      if (cached) {
+        const map: Record<string, Note> = {};
+        cached.forEach((n: any) => {
+          map[`${n.y}-${n.m}-${n.d}`] = {
+            y: n.y,
+            m: n.m,
+            d: n.d,
+            id: n.id,
+            content: n.content || '',
+            items: n.items || [],
+            color: n.color ?? null,
+          };
+        });
+        setNotes(map);
+      }
 
-    // 2) 최신 데이터로 갱신
-    setLoading(true);
-    supabase
-      .from('notes')
-      .select('*')
-      .eq('y', ym.y)
-      .eq('m', ym.m)
-      .then(({ data, error }) => {
+      // 2) 최신 데이터로 갱신
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('notes')
+          .select('*')
+          .eq('y', ym.y)
+          .eq('m', ym.m);
+
         if (!alive) return;
         if (error) {
           console.error(error.message);
           return;
         }
+
         const map: Record<string, Note> = {};
         (data || []).forEach((n: any) => {
           map[`${n.y}-${n.m}-${n.d}`] = {
@@ -107,9 +110,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           next.set(ymKey, data || []);
           return next;
         });
-      })
-      .finally(() => alive && setLoading(false));
+      } catch (e) {
+        if (alive) console.error(e);
+      } finally {
+        if (alive) setLoading(false);
+      }
+    };
 
+    run();
     return () => {
       alive = false;
     };
@@ -250,7 +258,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             <h2 style={{ margin: 0 }}>이글콥의 스케쥴표</h2>
           </div>
 
-          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 날짜 선택 + 이동 (horizontal) */}
+          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 오늘 텍스트 | 날짜 선택 + 이동 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button
               onMouseEnter={() => {
@@ -273,6 +281,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             >
               ▶
             </button>
+
+            <span style={{ marginLeft: 8, opacity: 0.8 }}>오늘: {todayLabel}</span>
 
             <div className="jump">
               <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
@@ -306,7 +316,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <TopRibbon buttons={ribbonButtons} containerHeight={64} gap={10} />
+            <TopRibbon buttons={ribbonButtons} containerHeight={48} gap={10} />
           </div>
         </div>
       </div>
@@ -356,7 +366,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
               {showFlagBanner && <div className="flag-banner">{note!.content}</div>}
 
               {showChips && (
-                <div className="chips chips-scroll"> {/* chips-scroll: 높이 제한 + 스크롤 */}
+                <div className="chips chips-scroll">
                   {note!.items.map((it: Item, i: number) => (
                     <span key={i} className="chip">
                       {chipLabel(it)}
