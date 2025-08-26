@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
+import TopRibbon from './TopRibbon';
 
 type Item = { emoji: string | null; label: string; text?: string };
 type Note = {
@@ -21,6 +22,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const supabase = createClient();
 
   const today = new Date();
+  const todayLabel = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
   const [notes, setNotes] = useState<Record<string, Note>>({});
@@ -98,6 +100,17 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   const monthLabel = `${ym.y}.${(ym.m+1).toString().padStart(2,'0')}`;
 
+  const ribbonButtons = [
+    { id:'b1', src:'/ribbon/btn_chzzk.png', alt:'치지직', href:'https://chzzk.naver.com/eaf7b569c9992d0e57db0059eb5c0eeb' },
+    { id:'b2', src:'/ribbon/btn_youtube.png', alt:'유튜브', href:'https://www.youtube.com/channel/UC-711LHT7B6Lb1Xy5m_cjPw' },
+    { id:'b3', src:'/ribbon/btn_replay.png', alt:'다시보기', href:'https://www.youtube.com/@eaglekopFulltime' },
+    { id:'b4', src:'/ribbon/btn_X.png', alt:'X', href:'https://x.com/eagle_kop' },
+    { id:'b5', src:'/ribbon/btn_discord.png', alt:'디스코드', href:'https://discord.gg/sBSwch78bP' },
+    { id:'b6', src:'/ribbon/btn_fanCafe.png', alt:'팬카페', href:'https://cafe.naver.com/eaglekoplockerroom' },
+    { id:'b7', src:'/ribbon/btn_fancim.png', alt:'팬심', href:'https://fancim.me/celeb/profile.aspx?cu_id=eaglekop' },
+    { id:'b8', src:'/ribbon/btn_replay.png', alt:'인스타', href:'https://www.instagram.com/eaglekop/' },
+  ];
+
   function jumpGo(){
     const d = new Date(jump);
     if (Number.isNaN(d.getTime())) { alert('유효한 날짜를 선택하세요.'); return; }
@@ -134,6 +147,11 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
         </div>
         <div />
       </div>
+
+      <TopRibbon
+        buttons={ribbonButtons}
+        extraText={<span className="ribbon-date">TODAY : {todayLabel}</span>}
+      />
 
       <div className="grid grid-lg">
         {['일','월','화','수','목','금','토'].map((n,i)=>(
