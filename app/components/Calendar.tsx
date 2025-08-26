@@ -2,27 +2,25 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
+import PresetsPanel from './PresetsPanel';
 
 type Item = { emoji: string | null; label: string; text?: string };
 type Note = { id?: number; y: number; m: number; d: number; content: string; items: Item[]; is_rest: boolean };
 
 function daysInMonth(y:number,m:number){ return new Date(y, m+1, 0).getDate(); }
-function startWeekday(y:number,m:number){ return new Date(y, m, 1).getDay(); } // 0=Sun
+function startWeekday(y:number,m:number){ return new Date(y, m, 1).getDay(); }
 const pad = (n:number)=> String(n).padStart(2,'0');
 const fmt = (y:number,m:number,d:number)=> `${y}-${pad(m+1)}-${pad(d)}`;
 
 export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const supabase = createClient();
-
   const today = new Date();
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
-
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen]=useState(false);
   const [modalDate, setModalDate]=useState<{y:number;m:number;d:number}|null>(null);
 
-  // fetch month notes
   useEffect(()=>{
     supabase.from('notes')
       .select('*')
@@ -36,13 +34,8 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   },[ym.y, ym.m]);
 
   function key(y:number,m:number,d:number){ return `${y}-${m}-${d}`; }
-  function openInfo(y:number,m:number,d:number){
-    setModalDate({y,m,d});
-    setModalOpen(true);
-  }
-  function onSaved(note:Note){
-    setNotes(prev=> ({ ...prev, [key(note.y,note.m,note.d)]: note }));
-  }
+  function openInfo(y:number,m:number,d:number){ setModalDate({y,m,d}); setModalOpen(true); }
+  function onSaved(note:Note){ setNotes(prev=> ({ ...prev, [key(note.y,note.m,note.d)]: note })); }
 
   async function dropPreset(y:number,m:number,d:number, dataStr:string){
     if(!canEdit) return;
@@ -54,24 +47,16 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
       `세부 내용을 입력하세요 (예: "${preset.emoji ?? ''} 맨시티 vs 리버풀 09:00")`,
       preset.emoji ? `${preset.emoji} ` : ''
     );
-
-    const newItem: Item = {
-      emoji: preset.emoji ?? null,
-      label: preset.label,
-      text: (detail ?? '').trim() || undefined,
-    };
-
+    const newItem: Item = { emoji: preset.emoji ?? null, label: preset.label, text: (detail ?? '').trim() || undefined };
     const k = key(y,m,d);
     const cur = notes[k] || { y, m, d, content:'', items:[], is_rest:false };
     const next:Note = { ...cur, items:[...(cur.items||[]), newItem] };
-
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict:'y,m,d' }).select().single();
     if(error){ alert(error.message); return; }
     onSaved(data as any);
     openInfo(y,m,d);
   }
 
-  // 월 렌더
   const dim = daysInMonth(ym.y, ym.m);
   const start = startWeekday(ym.y, ym.m);
   const cells = useMemo(()=>{
@@ -86,7 +71,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   const monthLabel = `${ym.y}.${(ym.m+1).toString().padStart(2,'0')}`;
 
-  // 날짜 점프
   function jumpGo(){
     const d = new Date(jump);
     if (Number.isNaN(d.getTime())) { alert('유효한 날짜를 선택하세요.'); return; }
@@ -96,7 +80,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   return (
     <>
-      {/* 상단 프로필 & 타이틀 (이미지는 public/ 경로) */}
+      {/* 상단 프로필 & 타이틀 */}
       <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
         <img
           src="/images/channel-profile.png"
@@ -115,19 +99,17 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
           <strong style={{fontSize:18}}>{monthLabel}</strong>
           <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
 
-          {/* ▼ 요구: 우측버튼 오른쪽에 날짜 이동 */}
+          {/* 우측 버튼 오른쪽에 날짜 이동 */}
           <div className="jump">
-            <input
-              type="date"
-              value={jump}
-              onChange={(e)=>setJump(e.target.value)}
-              aria-label="날짜 선택"
-            />
+            <input type="date" value={jump} onChange={(e)=>setJump(e.target.value)} aria-label="날짜 선택" />
             <button onClick={jumpGo}>이동</button>
           </div>
         </div>
         <div />
       </div>
+
+      {/* ▼ 테마 버튼(우상단 고정)의 바로 아래 y-라인에 맞춘 프리셋 한 줄 */}
+      <PresetsPanel canEdit={canEdit} mode="inline" />
 
       <div className="grid grid-lg">
         {['일','월','화','수','목','금','토'].map((n,i)=>(
@@ -146,7 +128,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
             >
               {c.d && <div className="date date-lg">{c.d}</div>}
               {note?.is_rest && <div className="rest-banner">휴방</div>}
-
               {note?.items?.length ? (
                 <div className="chips">
                   {note.items.map((it:Item,i:number)=>(

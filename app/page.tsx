@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import Calendar from './components/Calendar';
-import PresetsPanel from './components/PresetsPanel';
 
 export default function Page(){
   const supabase = createClient();
@@ -16,14 +15,7 @@ export default function Page(){
 
   return (
     <main className="container">
-      <div className="main-grid">
-        <div className="main-col">
-          <Calendar canEdit={canEdit} />
-        </div>
-        <aside className="side-col">
-          <PresetsPanel canEdit={canEdit} />
-        </aside>
-      </div>
+      <Calendar canEdit={canEdit} />
     </main>
   );
 }

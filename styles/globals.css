@@ -368,3 +368,29 @@ button:active{ transform: translateY(0.5px); }
   .cell{ min-height: 96px; }
   .pop{ width: 92vw; }
 }
+
+/* === 인라인 프리셋 행: 테마 버튼 아래, 요일 헤더와 동일선상 느낌으로 === */
+.presets-inline{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;       /* 오른쪽 정렬 (테마 버튼 아래 느낌) */
+  gap: 10px;
+  margin: 2px 0 8px;              /* 요일 라인과 시각적으로 같은 y-라인에 맞추는 여백 */
+}
+.presets-inline .presets-label{
+  /* 요일 글꼴 크기/톤과 맞춤 */
+  font-size: 12px;
+  opacity: .7;
+}
+.preset-strip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  white-space:nowrap;             /* 한 줄 유지 */
+  overflow-x:auto;                /* 넘치면 가로 스크롤 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 좁은 화면에서 스크롤 힌트(선택) */
+.preset-strip::-webkit-scrollbar{ height: 6px; }
+.preset-strip::-webkit-scrollbar-thumb{ background: var(--border); border-radius: 999px; }
