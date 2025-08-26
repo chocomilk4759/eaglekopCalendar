@@ -1,4 +1,4 @@
--- notes
+-- notes: 날짜별 메모
 create table if not exists public.notes (
   id bigserial primary key,
   y int not null,
@@ -10,7 +10,7 @@ create table if not exists public.notes (
 );
 create unique index if not exists notes_unique_date on public.notes(y, m, d);
 
--- presets
+-- presets: 이모지 프리셋
 create table if not exists public.presets (
   id bigserial primary key,
   emoji text not null,
@@ -20,86 +20,43 @@ create table if not exists public.presets (
   updated_by uuid
 );
 
--- user_roles
-create table if not exists public.user_roles (
-  id bigserial primary key,
-  user_id uuid,
-  email text,
-  role text not null check (role in ('editor','admin','superadmin')),
-  created_at timestamptz not null default now()
-);
-
--- Enable RLS
+-- RLS 활성화
 alter table public.notes enable row level security;
 alter table public.presets enable row level security;
-alter table public.user_roles enable row level security;
 
--- Read policies
+-- 모두 읽기 허용
 drop policy if exists notes_read_all on public.notes;
 create policy notes_read_all on public.notes for select using (true);
 
 drop policy if exists presets_read_all on public.presets;
 create policy presets_read_all on public.presets for select using (true);
 
-drop policy if exists user_roles_read_all on public.user_roles;
-create policy user_roles_read_all on public.user_roles for select using (true);
+-- "로그인된 사용자"만 쓰기/수정/삭제 허용
+drop policy if exists notes_write_auth on public.notes;
+create policy notes_write_auth on public.notes
+  for insert with check (auth.role() = 'authenticated');
 
--- Write policies for roles: editor/admin/superadmin
-drop policy if exists notes_write_roles on public.notes;
-create policy notes_write_roles on public.notes for insert with check (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
+drop policy if exists notes_update_auth on public.notes;
+create policy notes_update_auth on public.notes
+  for update using (auth.role() = 'authenticated');
 
-drop policy if exists notes_update_roles on public.notes;
-create policy notes_update_roles on public.notes for update using (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
+drop policy if exists notes_delete_auth on public.notes;
+create policy notes_delete_auth on public.notes
+  for delete using (auth.role() = 'authenticated');
 
-drop policy if exists notes_delete_roles on public.notes;
-create policy notes_delete_roles on public.notes for delete using (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
+drop policy if exists presets_write_auth on public.presets;
+create policy presets_write_auth on public.presets
+  for insert with check (auth.role() = 'authenticated');
 
-drop policy if exists presets_write_roles on public.presets;
-create policy presets_write_roles on public.presets for insert with check (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
+drop policy if exists presets_update_auth on public.presets;
+create policy presets_update_auth on public.presets
+  for update using (auth.role() = 'authenticated');
 
-drop policy if exists presets_update_roles on public.presets;
-create policy presets_update_roles on public.presets for update using (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
+drop policy if exists presets_delete_auth on public.presets;
+create policy presets_delete_auth on public.presets
+  for delete using (auth.role() = 'authenticated');
 
-drop policy if exists presets_delete_roles on public.presets;
-create policy presets_delete_roles on public.presets for delete using (
-  exists (
-    select 1 from public.user_roles ur
-    where ur.role in ('editor','admin','superadmin')
-      and (ur.user_id = auth.uid() or (ur.email is not null and ur.email = auth.jwt() ->> 'email'))
-  )
-);
-
--- Seed presets
+-- 프리셋 기본 시드
 insert into public.presets (emoji, label, sort_order) values
 ('📢', '공지사항·중대발표', 10),
 ('🔔', '알림', 20),
