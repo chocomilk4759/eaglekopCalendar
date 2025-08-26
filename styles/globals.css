@@ -285,6 +285,31 @@ button:active{ transform: translateY(.5px); }
   box-shadow: 0 1px 2px rgba(0,0,0,.4);
 }
 
+/* 프리셋 Dock의 + 추가 폼을 우측 정렬 */
+.presets-dock .preset-add-form{
+  width: auto;                /* 기존 width:100% 덮어쓰기 */
+  align-self: flex-end;       /* 폼 자체를 우측으로 붙임 */
+  display: flex;              /* grid → flex로 덮어쓰기 */
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;      /* 내부 컨트롤들도 우측 정렬 */
+}
+
+/* 입력 컨트롤들은 폼 폭을 채우지 않고 적당한 너비로 */
+.presets-dock .preset-add-form input[type="text"],
+.presets-dock .preset-add-form textarea,
+.presets-dock .preset-add-form select{
+  width: 240px;               /* 필요 시 조절 */
+  max-width: 100%;
+}
+
+/* 버튼 행도 우측 정렬 */
+.presets-dock .preset-add-actions{
+  align-self: flex-end;
+  justify-content: flex-end;
+  width: auto;                /* 기존 width:100% 덮어쓰기 */
+}
+
 /* 접힘 */
 .presets-dock.collapsed{ width: 52px; }
 .presets-dock.collapsed .dock-head,
