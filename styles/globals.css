@@ -176,23 +176,6 @@ button:active{ transform: translateY(.5px); }
   color:#fff; pointer-events:none;
 }
 
-.cell .chips{
-  gap: 0;                 /* 기존 gap(6px) 무시 → 아이템 margin으로만 간격 */
-}
-
-.cell .chip{
-  border-radius: 10px;    /* pill → 사각형 */
-  padding: 8px 10px;      /* 살짝 키움 */
-  margin: 6px;            /* 모서리만 띄워 보이는 간격 */
-  background: var(--card);
-  box-shadow: 0 1px 2px rgba(0,0,0,.06);
-}
-
-[data-theme="dark"] .cell .chip{
-  background: #171a20;
-  box-shadow: 0 1px 2px rgba(0,0,0,.4);
-}
-
 /* 칩 목록 */
 .chips{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
 .chips-scroll{ max-height: calc(100% - 34px); overflow: auto; padding-right: 2px; }
@@ -209,6 +192,23 @@ button:active{ transform: translateY(.5px); }
 [data-theme="dark"] .chip{
   background: linear-gradient(180deg, #1b1d23, #14161b);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.4);
+}
+
+.cell .chips{
+  gap: 0;                 /* 기존 gap(6px) 무시 → 아이템 margin으로만 간격 */
+}
+
+.cell .chip{
+  border-radius: 10px;    /* pill → 사각형 */
+  padding: 8px 10px;      /* 살짝 키움 */
+  margin: 6px;            /* 모서리만 띄워 보이는 간격 */
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+
+[data-theme="dark"] .cell .chip{
+  background: #171a20;
+  box-shadow: 0 1px 2px rgba(0,0,0,.4);
 }
 
 /* =====================================================================================
@@ -267,7 +267,7 @@ button:active{ transform: translateY(.5px); }
   overflow:auto; padding-right:2px;
   display:flex; flex-direction:column; /* 정렬은 우측 */
   align-items:flex-end;
-  gap: 1px;                              /* 기본 간격 제거 → 모서리 margin만 사용 */
+  gap: 0;                              /* 기본 간격 제거 → 모서리 margin만 사용 */
 }
 .presets-dock .preset-chip{
   /* pill → square */
