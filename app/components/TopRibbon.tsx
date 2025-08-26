@@ -39,7 +39,7 @@ export default function TopRibbon({
     const parentH = parent.clientHeight;  // 사용 가능한 세로높이(없으면 0)
 
     // 목표 높이: 우선 순위 (prop 지정 높이) > (부모 높이) > fallback 48
-    const targetH = Math.max(minSize, (containerHeight ?? parentH || 64));
+    const targetH = Math.max(minSize, (containerHeight ?? (parentH || 64)));
 
     // 폭 기준 한 버튼 최대 크기(정사각형 가정)
     const maxByWidth = Math.floor((parentW - gap * (n - 1)) / n);
