@@ -162,14 +162,12 @@ button:active{ transform: translateY(0.5px); }
   padding: 10px;
 
   /* >>> core: minimum square; grows vertically if content overflows */
-  aspect-ratio: 1 / 1;
   min-height: 150px;
 
   position: relative;
   background: var(--card);
   overflow: hidden;
 }
-.cell-lg{ /* kept for compatibility */ }
 .date-lg{ font-size: 15px; }
 
 .cell .date{
