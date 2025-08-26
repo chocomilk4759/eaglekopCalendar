@@ -5,7 +5,7 @@
   - Fixed header (Auth / Theme)
   - Page grid 1:8:1 (left spacer : calendar : right presets dock)
   - Calendar (square cells, weekend colors, rest banner)
-  - Presets Dock (RIGHT / VERTICAL, chips sized to content, + icon toggle form)
+  - Presets Dock (RIGHT / VERTICAL, right-aligned, lowered to weekday row via --dock-offset)
   - Auth popover
   - Date info modal
   - Utilities & responsive tweaks
@@ -30,6 +30,9 @@
   /* rest-day colors */
   --restBg:#ffe5e5;
   --restFg:#a00;
+
+  /* ▼ 프리셋 도크를 요일 헤더 높이에 맞추기 위한 오프셋(필요시 숫자만 조정) */
+  --dock-offset: 88px; /* 타이틀+월 이동 바 높이 합계에 맞춤 */
 }
 
 [data-theme="dark"]{
@@ -159,7 +162,7 @@ button:active{ transform: translateY(0.5px); }
   padding: 10px;
 
   /* >>> core: minimum square; grows vertically if content overflows */
-  /* aspect-ratio: 1 / 1; */
+  aspect-ratio: 1 / 1;
   min-height: 150px;
 
   position: relative;
@@ -220,13 +223,16 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  7) PRESETS DOCK (RIGHT / VERTICAL)
+  7) PRESETS DOCK (RIGHT / VERTICAL, RIGHT-ALIGNED, LOWERED TO WEEKDAY ROW)
      - Vertical list of chips sized to content (not full width)
+     - Right aligned chips
+     - Lowered to weekday row using --dock-offset
      - “＋” icon button toggles input form
 ===================================================================================== */
 .presets-dock{
   position: sticky;
-  top: 56px;   /* below header/theme toggle */
+  top: 56px;            /* 헤더/테마 토글 아래에서 sticky */
+  margin-top: var(--dock-offset); /* ▼ 요일 헤더 라인 높이에 맞춰 내림 */
   z-index: 3;
   width: 100%;
   max-height: calc(100vh - 72px);
@@ -238,18 +244,18 @@ button:active{ transform: translateY(0.5px); }
 .dock-head{
   font-size: 12px;
   opacity: .7;
-  text-align: right;
+  text-align: right;    /* 라벨도 우측 정렬 */
   padding-right: 4px;
 }
 
-/* vertical list (scrollable) */
+/* vertical list (scrollable, right aligned) */
 .preset-vertical-list{
   overflow: auto;
   padding-right: 2px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-end;   /* chips align to right edge */
+  align-items: flex-end;   /* ▼ 칩 우측 정렬 */
 }
 
 /* chip sized to content (pill) */
@@ -269,6 +275,7 @@ button:active{ transform: translateY(0.5px); }
   max-width: 100%;           /* clamp to dock width */
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: right;         /* 내부 텍스트도 우측 정렬 느낌 */
 }
 [data-theme="dark"] .preset-chip{
   background: linear-gradient(180deg, #1b1d23, #14161b);
@@ -404,7 +411,13 @@ button:active{ transform: translateY(0.5px); }
   11) RESPONSIVE TWEAKS
 ===================================================================================== */
 @media (max-width: 980px){
-  .presets-dock{ position: static; width: auto; max-height: none; }
+  .layout-1-8-1{ grid-template-columns: 1fr; }
+  .presets-dock{
+    position: static;
+    width: auto;
+    max-height: none;
+    margin-top: 8px; /* 모바일에서는 살짝만 띄움 */
+  }
 }
 
 @media (max-width: 640px){
