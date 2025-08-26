@@ -1,6 +1,6 @@
-import './globals.css';
+import '../styles/globals.css';
 import type { Metadata } from 'next';
-import UserMenu from './components/UserMenu';
+import UserMenu from './component/UserMenu';
 
 export const metadata: Metadata = {
   title: 'Eaglekop Calendar',
