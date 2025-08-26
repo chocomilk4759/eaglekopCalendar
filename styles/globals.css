@@ -6,7 +6,7 @@
   - Page grid 1:10:1 (left spacer : calendar : right spacer)
   - Calendar (fixed cell height, weekend colors, TODAY outline, FLAG bg)
   - Top Ribbon
-  - Presets Dock (fixed top-right; collapsible)
+  - Presets Dock (fixed top-right; collapsible, Dock 전용 사각 칩)
   - Auth popover
   - Date info modal
   - Utilities & responsive tweaks
@@ -105,7 +105,7 @@ button:active{ transform: translateY(.5px); }
   align-items: start;
 }
 /* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
-.layout-1-8-1 > .col-main { min-width: 0; }  /* ← 변경1 */
+.layout-1-8-1 > .col-main { min-width: 0; }
 
 @media (max-width: 1200px){
   .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
@@ -125,7 +125,7 @@ button:active{ transform: translateY(.5px); }
 /* 7열, 각 칼럼은 부모 폭 안에서 균등 분할 (최소폭 강제 없음) */
 .grid{
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));  /* ← 변경2 */
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
 }
 .grid-lg{ gap: 14px; }
@@ -180,7 +180,7 @@ button:active{ transform: translateY(.5px); }
 .chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
 .chips-scroll{ max-height: calc(100% - 34px); overflow: auto; padding-right: 2px; }
 
-/* 칩 */
+/* 기본 칩(캘린더 등) — pill 스타일 유지 */
 .chip{
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -218,7 +218,7 @@ button:active{ transform: translateY(.5px); }
 @media (max-width: 640px){ .top-btn img{ height: 56px; } }
 
 /* =====================================================================================
-  6) PRESETS DOCK — 고정(오버레이), 접기/펼치기
+  6) PRESETS DOCK — 고정(오버레이), 접기/펼치기 + Dock 전용 ‘사각 칩’
 ===================================================================================== */
 .presets-dock{
   position: fixed;
@@ -244,13 +244,44 @@ button:active{ transform: translateY(.5px); }
 .dock-toggle:hover{ background: rgba(0,0,0,.03); }
 
 .dock-head{ font-size: 12px; opacity: .7; text-align: right; padding: 0 4px; }
-.preset-vertical-list{ overflow:auto; padding-right:2px; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
+
+/* ▼ Dock 내 프리셋 아이템: 사각형 + 모서리만 여백 느낌 */
+.preset-vertical-list{
+  overflow:auto; padding-right:2px;
+  display:flex; flex-direction:column; /* 정렬은 우측 */
+  align-items:flex-end;
+  gap: 4px;                              /* 기본 간격 제거 → 모서리 margin만 사용 */
+}
+.presets-dock .preset-chip{
+  /* pill → square */
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 6px;                         /* 모서리만 벌려 보이도록 아이템 자체에 margin 부여 */
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+[data-theme="dark"] .presets-dock .preset-chip{
+  background: #171a20;
+  border-color: #2a2d36;
+  box-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
 
 /* 접힘 */
 .presets-dock.collapsed{ width: 52px; }
 .presets-dock.collapsed .dock-head,
 .presets-dock.collapsed .preset-vertical-list{ display: none; }
 .presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
+
+/* (선택) Dock 칩 내부의 제거 버튼 스타일 유지 */
+.preset-chip .trash{
+  margin-left:6px; border-radius:6px;
+  border:1px solid #b12a2a; background:#ffefef; color:#b12a2a; padding:2px 8px; font-size:12px;
+}
+.preset-chip .trash:hover{ background:#ffd9d9; }
+[data-theme="dark"] .preset-chip .trash{ background:#3a1212; border-color:#ff7a7a; color:#ff9a9a; }
+[data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
 
 /* =====================================================================================
   7) AUTH POPOVER
