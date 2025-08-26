@@ -12,9 +12,9 @@ type RibbonButton = {
 export default function TopRibbon({
   buttons,
   extraText,
-  containerHeight = 64, // 컨테이너 높이(px)
-  gap = 10,             // 버튼 사이 간격(px)
-  minSize = 24,         // 자동 축소 시 최소 버튼 크기(px)
+  containerHeight, // 선택: 지정 시 버튼 높이를 이 값에 맞춤. 없으면 부모 높이 추정.
+  gap = 10,        // 버튼 사이 간격(px)
+  minSize = 24,    // 자동 축소 시 최소 버튼 크기(px)
 }: {
   buttons: RibbonButton[];
   extraText?: React.ReactNode;
@@ -22,46 +22,46 @@ export default function TopRibbon({
   gap?: number;
   minSize?: number;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const btnRowRef = useRef<HTMLDivElement>(null);
+  // 첫 번째 버튼의 ref로 부모 박스를 관찰(컨테이너 없이 크기 계산)
+  const firstBtnRef = useRef<HTMLButtonElement | null>(null);
+  const [btnSize, setBtnSize] = useState<number>(containerHeight ?? 64);
 
-  // 실제 버튼의 한 변(정사각형) 크기
-  const [btnSize, setBtnSize] = useState<number>(containerHeight);
+  // 버튼 개수·간격 기반 가용폭 내 사이즈 계산
+  const computeSize = () => {
+    const first = firstBtnRef.current;
+    if (!first) return;
 
-  // 컨테이너 padding과 내부 계산용 여백
-  const padH = 12;  // 좌우 padding
-  const padV = 8;   // 상하 padding
+    const parent = first.parentElement; // TopRibbon 상위 컨테이너(예: flex 박스)
+    if (!parent) return;
 
-  const innerTargetHeight = useMemo(
-    () => Math.max(minSize, containerHeight - padV * 2),
-    [containerHeight, minSize]
-  );
+    const n = Math.max(1, buttons.length);
+    const parentW = parent.clientWidth;   // 사용 가능한 가로폭
+    const parentH = parent.clientHeight;  // 사용 가능한 세로높이(없으면 0)
 
-  function recompute() {
-    const wrap = wrapRef.current;
-    const row = btnRowRef.current;
-    if (!wrap || !row) return;
+    // 목표 높이: 우선 순위 (prop 지정 높이) > (부모 높이) > fallback 48
+    const targetH = Math.max(minSize, (containerHeight ?? parentH || 64));
 
-    const n = buttons.length;
-    const innerW = wrap.clientWidth - padH * 2;
-    // 버튼이 정사각형이라고 가정하고, 총 가용폭에서 간격을 뺀 뒤 n으로 나눔
-    const maxByWidth = Math.floor((innerW - gap * Math.max(0, n - 1)) / Math.max(1, n));
+    // 폭 기준 한 버튼 최대 크기(정사각형 가정)
+    const maxByWidth = Math.floor((parentW - gap * (n - 1)) / n);
 
-    // 컨테이너 높이에 맞춰지되, 폭을 넘기지 않도록 자동 축소
-    const size = Math.max(minSize, Math.min(innerTargetHeight, maxByWidth));
+    // 최종 버튼 변 길이
+    const size = Math.max(minSize, Math.min(targetH, maxByWidth));
     setBtnSize(size);
-  }
+  };
 
   useEffect(() => {
-    recompute();
-    // 반응형: ResizeObserver 우선, 없으면 window resize
-    const wrap = wrapRef.current;
+    computeSize();
+
+    // 부모 크기 변화 관찰
+    const first = firstBtnRef.current;
+    const parent = first?.parentElement || null;
+
     let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== 'undefined' && wrap) {
-      ro = new ResizeObserver(recompute);
-      ro.observe(wrap);
+    if (parent && typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(computeSize);
+      ro.observe(parent);
     } else {
-      const onResize = () => recompute();
+      const onResize = () => computeSize();
       window.addEventListener('resize', onResize);
       return () => window.removeEventListener('resize', onResize);
     }
@@ -70,70 +70,49 @@ export default function TopRibbon({
   }, [buttons.length, containerHeight, gap, minSize]);
 
   return (
-    <div
-      ref={wrapRef}
-      className="top-ribbon"
-      style={{
-        height: containerHeight,
-        padding: `${padV}px ${padH}px`,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 16,
-        overflow: 'hidden',
-      }}
-    >
+    <>
+      {/* 선택적 텍스트(별도 컨테이너 없이 바로 노출) */}
       {extraText && (
-        <div className="ribbon-text" style={{ whiteSpace: 'nowrap' }}>
-          {extraText}
-        </div>
+        <span style={{ whiteSpace: 'nowrap', marginRight: gap }}>{extraText}</span>
       )}
 
-      <div
-        ref={btnRowRef}
-        className="top-ribbon-buttons"
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap,
-          flex: 1,
-          justifyContent: 'flex-start',
-          overflow: 'hidden',
-        }}
-      >
-        {buttons.map((b) => (
-          <button
-            key={b.id}
-            className="top-btn"
-            title={b.alt}
-            aria-label={b.alt}
-            onClick={() => {
-              if (b.onClick) b.onClick();
-              else if (b.href) window.open(b.href, '_blank', 'noopener,noreferrer');
-            }}
+      {/* 버튼들만 직접 렌더 (컨테이너 없음) */}
+      {buttons.map((b, i) => (
+        <button
+          key={b.id}
+          ref={i === 0 ? firstBtnRef : undefined}
+          title={b.alt}
+          aria-label={b.alt}
+          onClick={() => {
+            if (b.onClick) b.onClick();
+            else if (b.href) window.open(b.href, '_blank', 'noopener,noreferrer');
+          }}
+          style={{
+            // 정사각형 버튼
+            width: btnSize,
+            height: btnSize,
+            border: 'none',
+            background: 'transparent',
+            padding: 0,
+            borderRadius: 12,
+            // 행 내 간격 (부모가 flex든 inline 흐름이든 동작)
+            marginRight: i < buttons.length - 1 ? gap : 0,
+          }}
+        >
+          <img
+            src={b.src}
+            alt={b.alt || ''}
             style={{
-              width: btnSize,
-              height: btnSize,
-              border: 'none',
-              background: 'transparent',
-              padding: 0,
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
               borderRadius: 12,
-              flex: '0 0 auto',
+              boxShadow: '0 2px 6px rgba(0,0,0,.08)',
             }}
-          >
-            <img
-              src={b.src}
-              alt={b.alt || ''}
-              style={{
-                display: 'block',
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                borderRadius: 12,
-              }}
-            />
-          </button>
-        ))}
-      </div>
-    </div>
+          />
+        </button>
+      ))}
+    </>
   );
 }
