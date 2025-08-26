@@ -1,15 +1,19 @@
-/* ============================================================================
-  0) GLOBALS.CSS — Eaglekop Calendar
-     - Next.js 글로벌 스타일
-     - 테마(light/dark), 캘린더, 프리셋, 팝오버, 모달 포함
-     - 필요에 따라 각 섹션만 교체/추가하세요.
-============================================================================ */
+/* =====================================================================================
+  EAGLEKOP CALENDAR — GLOBAL STYLES (globals.css)
+  - Theme tokens (light/dark)
+  - Base resets & typography
+  - Fixed header (Auth / Theme)
+  - Calendar (square cells, weekend colors, rest banner)
+  - Presets Dock (RIGHT / VERTICAL, chips sized to content, + icon toggle form)
+  - Auth popover
+  - Date info modal
+  - Utilities & responsive tweaks
+===================================================================================== */
 
 
-/* ============================================================================
+/* =====================================================================================
   1) THEME TOKENS (CSS Variables)
-     - 라이트/다크 모드 공통 색상 토큰
-============================================================================ */
+===================================================================================== */
 :root{
   --bg:#ffffff;
   --fg:#111111;
@@ -18,11 +22,11 @@
   --card:#ffffff;
   --accent:#222222;
 
-  /* 주말 색상 */
-  --sun:#d00;     /* 일요일 */
-  --sat:#05c;     /* 토요일 */
+  /* weekend colors */
+  --sun:#d00;     /* Sunday */
+  --sat:#05c;     /* Saturday */
 
-  /* 휴방 배경/글자 */
+  /* rest-day colors */
   --restBg:#ffe5e5;
   --restFg:#a00;
 }
@@ -43,14 +47,12 @@
 }
 
 
-/* ============================================================================
+/* =====================================================================================
   2) BASE RESET & TYPOGRAPHY
-     - 기본 박스 사이징, 바디 폰트/배경, 폼 요소 공통
-============================================================================ */
+===================================================================================== */
 *,
 *::before,
 *::after { box-sizing: border-box; }
-
 html, body { height: 100%; }
 
 body{
@@ -72,7 +74,6 @@ button, input, textarea, select{
   padding: 8px 10px;
   font: inherit;
 }
-
 button{
   cursor: pointer;
   transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
@@ -80,46 +81,14 @@ button{
 button:hover{ background: rgba(0,0,0,.03); }
 button:active{ transform: translateY(0.5px); }
 
+/* page container (reserve right padding when dock is present) */
 .container{ max-width: 1240px; margin: 0 auto; padding: 24px; }
-
-.main-grid{
-  display: grid;
-  grid-template-columns: 1fr 300px; /* 본문 / 사이드 */
-  gap: 20px;
-  align-items: start;
-}
-.side-col{ position: sticky; top: 72px; }
+.container.has-dock{ padding-right: 360px; } /* space for right vertical dock */
 
 
-@media (max-width: 980px){
-  .main-grid{ grid-template-columns: 1fr; }
-  .side-col{ position: static; }
-}
-
-
-.jump{
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  margin-left: 12px;
-}
-.jump input[type="date"]{
-  padding: 6px 8px;
-  border-radius: 8px;
-  font-size: 14px;
-}
-
-
-.grid-lg{ gap: 14px; }
-.cell-lg{ min-height: 150px; }
-.date-lg{ font-size: 15px; }
-
-/* ============================================================================
-  3) FIXED HEADER LAYER
-     - 좌상단: 인증/계정 팝오버 버튼 (AuthButton)
-     - 우상단: 테마 토글 (ThemeToggle)
-     - pointer-events로 내부 버튼만 상호작용
-============================================================================ */
+/* =====================================================================================
+  3) FIXED HEADER (Auth left / Theme right)
+===================================================================================== */
 .header-fixed{
   position: fixed;
   top: 12px;
@@ -139,9 +108,9 @@ button:active{ transform: translateY(0.5px); }
 .header-fixed .right{ right: 12px; }
 
 
-/* ============================================================================
-  4) CALENDAR (Month Grid, Weekend Colors, Rest Banner)
-============================================================================ */
+/* =====================================================================================
+  4) CALENDAR (Month Grid, Weekend Colors, Square Cells, Rest Banner)
+===================================================================================== */
 .cal-header{
   display: flex;
   align-items: center;
@@ -149,13 +118,16 @@ button:active{ transform: translateY(0.5px); }
   margin: 20px 0;
 }
 
+/* month grid */
 .grid{
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 12px;
 }
+/* slightly larger variant (kept for compatibility) */
+.grid-lg{ gap: 14px; }
 
-/* 요일 헤더 */
+/* weekday captions */
 .day-name{
   font-size: 13px;
   opacity: .7;
@@ -164,16 +136,24 @@ button:active{ transform: translateY(0.5px); }
 .day-name.sun{ color: var(--sun); }
 .day-name.sat{ color: var(--sat); }
 
-/* 날짜 셀 */
+/* calendar cells — MINIMUM SQUARE using aspect-ratio */
 .cell{
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 8px;
-  min-height: 140px;
+  padding: 10px;
+
+  /* >>> core: minimum square; grows vertically if content overflows */
+  aspect-ratio: 1 / 1;
+  min-height: 150px;
+
   position: relative;
   background: var(--card);
   overflow: hidden;
 }
+/* legacy compat hooks (no strong effect with aspect-ratio) */
+.cell-lg{ /* kept for compatibility */ }
+.date-lg{ font-size: 15px; }
+
 .cell .date{
   font-size: 14px;
   opacity: .7;
@@ -181,7 +161,7 @@ button:active{ transform: translateY(0.5px); }
 .cell.sun .date{ color: var(--sun); }
 .cell.sat .date{ color: var(--sat); }
 
-/* 휴방 표시 */
+/* rest day overlay */
 .cell.rest{ background: var(--restBg); }
 .cell .rest-banner{
   position: absolute;
@@ -197,72 +177,9 @@ button:active{ transform: translateY(0.5px); }
 }
 
 
-/* ============================================================================
-  5) PRESETS (Panel + Buttons)
-     - 프리셋 리스트, 칩 형태 UI, 삭제(휴지통) 버튼
-     - 드래그 소스가 되는 버튼(.preset[draggable])
-============================================================================ */
-.preset-list{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-/* 프리셋 칩 (볼록한 느낌의 타원형) */
-.preset{
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.8),
-    0 2px 5px rgba(0,0,0,.06);
-  user-select: none;
-}
-[data-theme="dark"] .preset{
-  background: linear-gradient(180deg, #1b1d23, #14161b);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.06),
-    0 2px 6px rgba(0,0,0,.4);
-}
-
-/* 프리셋 추가(＋) 버튼 */
-.preset.add{
-  margin-left: 4px;
-  border-radius: 999px;
-  padding: 0 10px;
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-}
-
-/* 프리셋 삭제(휴지통) 버튼 */
-.preset .trash{
-  margin-left: 6px;
-  border-radius: 999px;
-  border: 1px solid #b12a2a;
-  background: #ffefef;
-  color: #b12a2a;
-  padding: 2px 8px;
-  font-size: 12px;
-}
-.preset .trash:hover{ background: #ffd9d9; }
-[data-theme="dark"] .preset .trash{
-  background: #3a1212;
-  border-color: #ff7a7a;
-  color: #ff9a9a;
-}
-[data-theme="dark"] .preset .trash:hover{ background: #4a1a1a; }
-
-
-/* ============================================================================
-  6) CHIPS (Calendar Cells & Modal)
-     - 날짜 셀/모달에서 보여주는 아이템 칩 UI
-============================================================================ */
+/* =====================================================================================
+  5) CALENDAR ITEM CHIPS (inside cells & modal)
+===================================================================================== */
 .chips{
   display: flex;
   gap: 6px;
@@ -287,14 +204,109 @@ button:active{ transform: translateY(0.5px); }
 }
 
 
-/* ============================================================================
-  7) POPOVER (AuthButton 등)
-     - 작은 팝업 패널(.pop)과 바깥 클릭 닫기용 오버레이(.overlay)
-============================================================================ */
+/* =====================================================================================
+  6) PRESETS DOCK (RIGHT / VERTICAL)
+     - Vertical list of chips sized to content (not full width)
+     - “＋” icon button toggles input form
+===================================================================================== */
+/* dock container: fixed at right, below header/theme toggle */
+.presets-dock{
+  position: fixed;
+  right: 12px;
+  top: 56px;   /* below header */
+  z-index: 9990;
+  width: 320px;
+  max-height: calc(100vh - 72px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+}
+.dock-head{
+  font-size: 12px;
+  opacity: .7;
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* vertical list (scrollable) */
+.preset-vertical-list{
+  overflow: auto;
+  padding-right: 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-end;   /* chips align to right edge */
+}
+
+/* chip sized to content (pill) */
+.preset-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 12px;
+
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 2px 5px rgba(0,0,0,.06);
+
+  white-space: nowrap;       /* single line */
+  max-width: 100%;           /* clamp to dock width */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+[data-theme="dark"] .preset-chip{
+  background: linear-gradient(180deg, #1b1d23, #14161b);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.4);
+}
+
+/* delete button for chip (red) */
+.preset-chip .trash{
+  margin-left: 6px;
+  border-radius: 999px;
+  border: 1px solid #b12a2a;
+  background: #ffefef;
+  color: #b12a2a;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.preset-chip .trash:hover{ background:#ffd9d9; }
+[data-theme="dark"] .preset-chip .trash{
+  background:#3a1212; border-color:#ff7a7a; color:#ff9a9a;
+}
+[data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
+
+/* + icon button (only icon visible by default) */
+.preset-add-icon{
+  display:inline-flex; align-items:center; justify-content:center;
+  width: 34px; height: 34px; border-radius: 999px;
+  border:1px solid var(--border); background:var(--card);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  font-size: 18px; line-height: 1;
+}
+
+/* add form (shown after clicking +) */
+.preset-add-form{
+  width: 100%;
+  display: grid; gap: 6px;
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+}
+.preset-add-actions{ display:flex; gap:8px; justify-content:flex-end; }
+
+
+/* =====================================================================================
+  7) AUTH POPOVER (AuthButton)
+===================================================================================== */
 .pop{
   position: absolute;
   top: 44px;
-  right: 0;             /* 기본: 오른쪽 정렬 */
+  right: 0;
   width: 320px;
   max-width: calc(100vw - 24px);
   background: var(--card);
@@ -316,7 +328,7 @@ button:active{ transform: translateY(0.5px); }
   pointer-events: auto;
 }
 
-/* 외부 클릭 감지용 투명 오버레이 */
+/* outside click overlay */
 .overlay{
   position: fixed;
   inset: 0;
@@ -325,10 +337,9 @@ button:active{ transform: translateY(0.5px); }
 }
 
 
-/* ============================================================================
-  8) MODAL (Date Info)
-     - 날짜 정보 모달 레이어
-============================================================================ */
+/* =====================================================================================
+  8) DATE INFO MODAL
+===================================================================================== */
 .modal{
   position: fixed;
   inset: 0;
@@ -353,115 +364,38 @@ button:active{ transform: translateY(0.5px); }
 }
 
 
-/* ============================================================================
-  9) UTILITIES & TWEAKS
-     - 작게 쓰는 유틸성 클래스
-============================================================================ */
+/* =====================================================================================
+  9) MISC UI (Date jump control / Utilities)
+===================================================================================== */
+/* date-jump inputs placed next to month controls */
+.jump{
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-left: 12px;
+}
+.jump input[type="date"]{
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+/* utilities */
 .text-muted{ color: var(--muted); }
 .text-center{ text-align: center; }
 .round{ border-radius: 999px; }
 .hidden{ display: none !important; }
 
-/* 모바일 간격 보정 */
-@media (max-width: 640px){
-  .container{ padding: 16px; }
-  .cell{ min-height: 96px; }
-  .pop{ width: 92vw; }
-}
 
-/* === 인라인 프리셋 행: 테마 버튼 아래, 요일 헤더와 동일선상 느낌으로 === */
-
-.preset-strip{
-  display:flex;
-  align-items:center;
-  gap:8px;
-  white-space:nowrap;             /* 한 줄 유지 */
-  overflow-x:auto;                /* 넘치면 가로 스크롤 */
-  -webkit-overflow-scrolling: touch;
-}
-
-
-/* === 우측 프리셋 도크(세로) — 테마 토글 아래, 화면 우측에 고정 === */
-.presets-dock{
-  position: fixed;
-  right: 12px;
-  top: 56px;                  /* 헤더(테마 토글) 아래 */
-  z-index: 9990;
-  width: 320px;               /* 도크 너비 */
-  max-height: calc(100vh - 72px);
-  overflow: hidden;           /* 내부 스크롤 컨테이너에 위임 */
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.dock-head{
-  font-size: 12px;
-  opacity: .7;
-  text-align: right;
-  padding-right: 4px;
-}
-
-/* 세로 리스트 컨테이너(스크롤) */
-.preset-vertical-list{
-  overflow: auto;
-  padding-right: 2px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  max-height: 100%;
-}
-
-/* 세로 프리셋 아이템(볼록 스타일 + 전체폭) */
-.preset-v{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 8px 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 2px 5px rgba(0,0,0,.06);
-}
-[data-theme="dark"] .preset-v{
-  background: linear-gradient(180deg, #1b1d23, #14161b);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.4);
-}
-
-/* 세로 프리셋 좌측(아이콘+라벨) */
-.pv-left{ display:flex; align-items:center; gap:10px; min-width:0; }
-.pv-label{ font-size:13px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-
-/* 삭제 버튼 - 기존과 동일하게 빨간 톤 */
-.preset-v .trash,
-.preset .trash{
-  margin-left: 6px;
-  border-radius: 999px;
-  border: 1px solid #b12a2a;
-  background: #ffefef;
-  color: #b12a2a;
-  padding: 2px 8px;
-  font-size: 12px;
-}
-.preset-v .trash:hover,
-.preset .trash:hover{ background:#ffd9d9; }
-[data-theme="dark"] .preset-v .trash,
-[data-theme="dark"] .preset .trash{
-  background:#3a1212; border-color:#ff7a7a; color:#ff9a9a;
-}
-[data-theme="dark"] .preset-v .trash:hover,
-[data-theme="dark"] .preset .trash:hover{ background:#4a1a1a; }
-
-/* 세로 프리셋 추가 블록 */
-.preset-v.add-block{ gap: 8px; }
-.preset-v.add-block .add-btn{ padding: 8px 10px; border-radius: 10px; }
-
-/* 본문 오른쪽 여백 확보(도크와 겹치지 않게) */
-.container.has-dock{ padding-right: 360px; }
-
-/* 좁은 화면 대응: 도크를 상단으로 내리고 본문 패딩 축소 */
+/* =====================================================================================
+  10) RESPONSIVE TWEAKS
+===================================================================================== */
 @media (max-width: 980px){
   .presets-dock{ position: static; width: auto; max-height: none; }
   .container.has-dock{ padding-right: 24px; }
+}
+
+@media (max-width: 640px){
+  .container{ padding: 16px; }
+  .pop{ width: 92vw; }
 }
