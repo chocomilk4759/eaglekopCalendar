@@ -3,6 +3,7 @@
   - Theme tokens (light/dark)
   - Base resets & typography
   - Fixed header (Auth / Theme)
+  - Page grid 1:8:1 (left spacer : calendar : right presets dock)
   - Calendar (square cells, weekend colors, rest banner)
   - Presets Dock (RIGHT / VERTICAL, chips sized to content, + icon toggle form)
   - Auth popover
@@ -81,9 +82,8 @@ button{
 button:hover{ background: rgba(0,0,0,.03); }
 button:active{ transform: translateY(0.5px); }
 
-/* page container (reserve right padding when dock is present) */
-.container{ max-width: 1240px; margin: 0 auto; padding: 24px; }
-.container.has-dock{ padding-right: 360px; } /* space for right vertical dock */
+/* page container */
+.container{ max-width: 1440px; margin: 0 auto; padding: 24px; }
 
 
 /* =====================================================================================
@@ -109,7 +109,24 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  4) CALENDAR (Month Grid, Weekend Colors, Square Cells, Rest Banner)
+  4) PAGE GRID — 1 : 8 : 1 (left spacer : calendar : right dock)
+===================================================================================== */
+.layout-1-8-1{
+  display: grid;
+  grid-template-columns: 1fr 8fr 1fr;  /* 1 : 8 : 1 */
+  gap: 16px;
+  align-items: start;
+}
+@media (max-width: 1200px){
+  .layout-1-8-1{ grid-template-columns: .7fr 8.6fr .7fr; }
+}
+@media (max-width: 980px){
+  .layout-1-8-1{ grid-template-columns: 1fr; }
+}
+
+
+/* =====================================================================================
+  5) CALENDAR (Month Grid, Weekend Colors, Square Cells, Rest Banner)
 ===================================================================================== */
 .cal-header{
   display: flex;
@@ -124,8 +141,7 @@ button:active{ transform: translateY(0.5px); }
   grid-template-columns: repeat(7, 1fr);
   gap: 12px;
 }
-/* slightly larger variant (kept for compatibility) */
-.grid-lg{ gap: 14px; }
+.grid-lg{ gap: 14px; } /* slightly larger variant */
 
 /* weekday captions */
 .day-name{
@@ -143,14 +159,13 @@ button:active{ transform: translateY(0.5px); }
   padding: 10px;
 
   /* >>> core: minimum square; grows vertically if content overflows */
-  aspect-ratio: 1 / 1;
+  /* aspect-ratio: 1 / 1; */
   min-height: 150px;
 
   position: relative;
   background: var(--card);
   overflow: hidden;
 }
-/* legacy compat hooks (no strong effect with aspect-ratio) */
 .cell-lg{ /* kept for compatibility */ }
 .date-lg{ font-size: 15px; }
 
@@ -178,7 +193,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  5) CALENDAR ITEM CHIPS (inside cells & modal)
+  6) CALENDAR ITEM CHIPS (inside cells & modal)
 ===================================================================================== */
 .chips{
   display: flex;
@@ -205,17 +220,15 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  6) PRESETS DOCK (RIGHT / VERTICAL)
+  7) PRESETS DOCK (RIGHT / VERTICAL)
      - Vertical list of chips sized to content (not full width)
      - “＋” icon button toggles input form
 ===================================================================================== */
-/* dock container: fixed at right, below header/theme toggle */
 .presets-dock{
-  position: fixed;
-  right: 12px;
-  top: 56px;   /* below header */
-  z-index: 9990;
-  width: 320px;
+  position: sticky;
+  top: 56px;   /* below header/theme toggle */
+  z-index: 3;
+  width: 100%;
   max-height: calc(100vh - 72px);
   display: flex;
   flex-direction: column;
@@ -290,7 +303,8 @@ button:active{ transform: translateY(0.5px); }
 /* add form (shown after clicking +) */
 .preset-add-form{
   width: 100%;
-  display: grid; gap: 6px;
+  display: grid;
+  gap: 6px;
   background: var(--card);
   border:1px solid var(--border);
   border-radius: 12px;
@@ -301,7 +315,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  7) AUTH POPOVER (AuthButton)
+  8) AUTH POPOVER (AuthButton)
 ===================================================================================== */
 .pop{
   position: absolute;
@@ -338,7 +352,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  8) DATE INFO MODAL
+  9) DATE INFO MODAL
 ===================================================================================== */
 .modal{
   position: fixed;
@@ -365,9 +379,8 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  9) MISC UI (Date jump control / Utilities)
+  10) MISC UI (Date jump control / Utilities)
 ===================================================================================== */
-/* date-jump inputs placed next to month controls */
 .jump{
   display: inline-flex;
   gap: 8px;
@@ -388,11 +401,10 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  10) RESPONSIVE TWEAKS
+  11) RESPONSIVE TWEAKS
 ===================================================================================== */
 @media (max-width: 980px){
   .presets-dock{ position: static; width: auto; max-height: none; }
-  .container.has-dock{ padding-right: 24px; }
 }
 
 @media (max-width: 640px){

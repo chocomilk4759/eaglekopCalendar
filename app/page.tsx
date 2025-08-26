@@ -15,13 +15,13 @@ export default function Page(){
   },[]);
 
   return (
-    <>
-      {/* 우측 고정 도크: 테마 토글(우상단) 아래에 뜸 */}
-      <PresetsDock canEdit={canEdit} />
-      {/* 본문: 도크와 겹치지 않게 우측 패딩 추가 */}
-      <main className="container has-dock">
-        <Calendar canEdit={canEdit} />
-      </main>
-    </>
+    <main className="container">
+      {/* 1 : 8 : 1 */}
+      <div className="layout-1-8-1">
+        <div aria-hidden />
+        <div><Calendar canEdit={canEdit} /></div>
+        <aside><PresetsDock canEdit={canEdit} /></aside>
+      </div>
+    </main>
   );
 }
