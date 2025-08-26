@@ -22,7 +22,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const supabase = createClient();
 
   const today = new Date();
-  const todayLabel = `${today.getFullYear()}.${String(today.getMonth()+1).padStart(2,'0')}.${String(today.getDate()).padStart(2,'0')}`;
+  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth()+1)}.${pad(today.getDate())}`;
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
   const [notes, setNotes] = useState<Record<string, Note>>({});
@@ -98,7 +98,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     return list;
   }, [ym, dim, start]);
 
-  const monthLabel = `${ym.y}.${(ym.m+1).toString().padStart(2,'0')}`;
+  const monthLabel = `${ym.y}.${pad(ym.m+1)}`;
 
   const ribbonButtons = [
     { id:'b1', src:'/ribbon/btn_chzzk.png', alt:'치지직', href:'https://chzzk.naver.com/eaf7b569c9992d0e57db0059eb5c0eeb' },
@@ -108,7 +108,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     { id:'b5', src:'/ribbon/btn_discord.png', alt:'디스코드', href:'https://discord.gg/sBSwch78bP' },
     { id:'b6', src:'/ribbon/btn_fanCafe.png', alt:'팬카페', href:'https://cafe.naver.com/eaglekoplockerroom' },
     { id:'b7', src:'/ribbon/btn_fancim.png', alt:'팬심', href:'https://fancim.me/celeb/profile.aspx?cu_id=eaglekop' },
-    { id:'b8', src:'/ribbon/btn_replay.png', alt:'인스타', href:'https://www.instagram.com/eaglekop/' },
+    { id:'b8', src:'/ribbon/btn_insta.png', alt:'인스타', href:'https://www.instagram.com/eaglekop/' },
   ];
 
   function jumpGo(){
@@ -117,42 +117,66 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     setYM({ y: d.getFullYear(), m: d.getMonth() });
     openInfo(d.getFullYear(), d.getMonth(), d.getDate());
   }
-  
+
   return (
     <>
-      {/* 상단 프로필 & 타이틀 */}
-      <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
-        <img
-          src="/images/channel-profile.png"
-          alt="채널 프로필"
-          width={40}
-          height={40}
-          style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
-        />
-        <h2 style={{margin:0}}>이글콥의 스케쥴표</h2>
-      </div>
+      {/* ==================== 상단 컨테이너 (horizontal) ==================== */}
+      <div
+        style={{
+          display: 'flex', justifyContent: 'space-between', alignItems: 'stretch',
+          gap: 16, margin: '6px 0 14px'
+        }}
+      >
+        {/* -------- 좌측 컨테이너 (vertical) -------- */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 360, flex: '1 1 60%' }}>
+          {/* 좌측 상단: 아이콘 + 텍스트 (horizontal) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <img
+              src="/images/channel-profile.png"
+              alt="채널 프로필"
+              width={40}
+              height={40}
+              style={{ borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
+            />
+            <h2 style={{ margin: 0 }}>이글콥의 스케쥴표</h2>
+          </div>
 
-      {/* 월 변경 + 날짜 점프 */}
-      <div className="cal-header">
-        <div style={{display:'flex', gap:10, alignItems:'center', fontSize:16}}>
-          <button onClick={()=>setYM(({y,m})=> m?({y,m:m-1}):({y:y-1,m:11}))}>◀</button>
-          <strong style={{fontSize:18}}>{monthLabel}</strong>
-          <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
+          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 오늘 텍스트 | 날짜 선택 + 이동 (horizontal) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => setYM(({ y, m }) => m ? ({ y, m: m - 1 }) : ({ y: y - 1, m: 11 }))}>◀</button>
+            <strong style={{ fontSize: 18 }}>{monthLabel}</strong>
+            <button onClick={() => setYM(({ y, m }) => m < 11 ? ({ y, m: m + 1 }) : ({ y: y + 1, m: 0 }))}>▶</button>
 
-          {/* 우측 버튼 오른쪽에 날짜 이동 */}
-          <div className="jump">
-            <input type="date" value={jump} onChange={(e)=>setJump(e.target.value)} aria-label="날짜 선택" />
-            <button onClick={jumpGo}>이동</button>
+            <span style={{ marginLeft: 8, opacity: .8 }}>오늘: {todayLabel}</span>
+
+            <div className="jump">
+              <input type="date" value={jump} onChange={(e)=>setJump(e.target.value)} aria-label="날짜 선택" />
+              <button onClick={jumpGo}>이동</button>
+            </div>
           </div>
         </div>
-        <div />
+
+        {/* -------- 우측 컨테이너 (vertical) -------- */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 40%' }}>
+          {/* 우측 상단: 오늘 날짜 크게 */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{
+              fontWeight: 800, fontSize: 'clamp(20px, 4vw, 28px)',
+              color: 'var(--accent)'
+            }}>
+              {todayLabel}
+            </div>
+          </div>
+
+          {/* 우측 하단: Ribbon Buttons (horizontal) */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <TopRibbon buttons={ribbonButtons} size={40} />
+          </div>
+        </div>
       </div>
+      {/* ==================== /상단 컨테이너 ==================== */}
 
-      <TopRibbon
-        buttons={ribbonButtons}
-        extraText={<span className="ribbon-date">TODAY : {todayLabel}</span>}
-      />
-
+      {/* 요일/달력 그리드 */}
       <div className="grid grid-lg">
         {['일','월','화','수','목','금','토'].map((n,i)=>(
           <div key={n} className={`day-name ${i===0?'sun':''} ${i===6?'sat':''}`}>{n}</div>
