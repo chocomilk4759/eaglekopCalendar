@@ -6,7 +6,7 @@
   - Page grid 1:10:1 (left spacer : calendar : right spacer)
   - Calendar (fixed cell height, width clamp, weekend colors, TODAY outline, FLAG bg)
   - Top Ribbon (text + image buttons)
-  - Presets Dock (fixed top-right; collapsible)
+  - Presets Dock (fixed top-right; collapsible) + dock-open 시 컨텐츠 padding-right 부여
   - Auth popover
   - Date info modal
   - Utilities & responsive tweaks
@@ -32,8 +32,19 @@
   --flagRed:#E74C4C;
   --flagBlue:#4C88DB;
 
-  /* PresetsDock offset under ThemeToggle */
-  --dock-top: 144px;
+  /* PresetsDock geometry */
+  --dock-top: 144px;              /* ThemeToggle 아래 */
+  --dock-width-expanded: 320px;   /* 펼침 폭 */
+  --dock-gap: 16px;               /* 컨텐츠와의 간격 */
+  --dock-gutter: 0px;             /* 컨텐츠 오른쪽 여백(동적으로 변경) */
+}
+
+/* 도크 상태에 따라 컨텐츠 오른쪽 여백 결정 */
+html[data-dock="open"]{
+  --dock-gutter: calc(var(--dock-width-expanded) + var(--dock-gap));
+}
+html[data-dock="closed"]{
+  --dock-gutter: 0px;
 }
 
 [data-theme="dark"]{
@@ -87,7 +98,13 @@ button:hover{ background: rgba(0,0,0,.03); }
 button:active{ transform: translateY(0.5px); }
 
 /* page container */
-.container{ max-width: 1440px; margin: 0 auto; padding: 24px; }
+.container{
+  max-width: 1440px; margin: 0 auto;
+  padding: 24px;
+  /* 도크가 펼쳐지면 오른쪽 여백을 확보해 캘린더가 가려지지 않게 함 */
+  padding-right: calc(24px + var(--dock-gutter));
+  transition: padding-right .18s ease;
+}
 
 
 /* =====================================================================================
@@ -265,7 +282,7 @@ button:active{ transform: translateY(0.5px); }
   right: 12px;
   top: var(--dock-top);
   z-index: 9990;
-  width: 320px;
+  width: var(--dock-width-expanded);
   max-height: calc(100vh - 72px);
   display: flex; flex-direction: column; gap: 8px;
   overflow: hidden;
@@ -384,11 +401,16 @@ button:active{ transform: translateY(0.5px); }
   /* 모바일에서는 폭 강제 clamp 대신 유연한 칼럼으로 */
   .grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
 
+  /* 모바일일 때는 도크 여백을 주지 않음(겹침 허용 or UX에 맞게 수정 가능) */
+  .container{
+    padding: 16px;
+    padding-right: 16px; /* dock-gutter 무시 */
+  }
+
   .presets-dock{
     position: static; width: auto; max-height: none; right:auto; top:auto; margin-top:8px;
   }
 }
 @media (max-width: 640px){
-  .container{ padding: 16px; }
   .pop{ width: 92vw; }
 }

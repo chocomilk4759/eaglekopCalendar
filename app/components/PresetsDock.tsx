@@ -1,9 +1,19 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PresetsPanel from './PresetsPanel';
 
 export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
+
+  // 접힘/펼침 상태를 <html data-dock="open|closed">에 반영
+  useEffect(() => {
+    const el = document.documentElement;
+    el.setAttribute('data-dock', collapsed ? 'closed' : 'open');
+    return () => {
+      // 언마운트 시 안전하게 닫힘 상태로
+      el.setAttribute('data-dock', 'closed');
+    };
+  }, [collapsed]);
 
   return (
     <aside
