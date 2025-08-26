@@ -6,15 +6,14 @@
   - Page grid 1:10:1 (left spacer : calendar : right spacer)
   - Calendar (fixed cell height, width clamp, weekend colors, TODAY outline, FLAG bg)
   - Top Ribbon (text + image buttons)
-  - Presets Dock (fixed top-right; collapsible) + dock-open 시 컨텐츠 padding-right 부여
+  - Presets Dock (fixed top-right; collapsible)
   - Auth popover
   - Date info modal
   - Utilities & responsive tweaks
 ===================================================================================== */
 
-
 /* =====================================================================================
-  1) THEME TOKENS (CSS Variables)
+  1) THEME TOKENS
 ===================================================================================== */
 :root{
   --bg:#ffffff;
@@ -24,27 +23,14 @@
   --card:#ffffff;
   --accent:#222222;
 
-  /* weekend colors */
-  --sun:#d00;     /* Sunday */
-  --sat:#05c;     /* Saturday */
+  --sun:#d00;     /* 일요일 */
+  --sat:#05c;     /* 토요일 */
 
-  /* flag colors */
   --flagRed:#E74C4C;
   --flagBlue:#4C88DB;
 
-  /* PresetsDock geometry */
-  --dock-top: 144px;              /* ThemeToggle 아래 */
-  --dock-width-expanded: 320px;   /* 펼침 폭 */
-  --dock-gap: 16px;               /* 컨텐츠와의 간격 */
-  --dock-gutter: 0px;             /* 컨텐츠 오른쪽 여백(동적으로 변경) */
-}
-
-/* 도크 상태에 따라 컨텐츠 오른쪽 여백 결정 */
-html[data-dock="open"]{
-  --dock-gutter: calc(var(--dock-width-expanded) + var(--dock-gap));
-}
-html[data-dock="closed"]{
-  --dock-gutter: 0px;
+  --dock-top: 144px;            /* ThemeToggle 아래 */
+  --dock-width-expanded: 320px; /* 프리셋 펼침 폭 */
 }
 
 [data-theme="dark"]{
@@ -62,9 +48,8 @@ html[data-dock="closed"]{
   --flagBlue:#4C88DB;
 }
 
-
 /* =====================================================================================
-  2) BASE RESET & TYPOGRAPHY
+  2) BASE
 ===================================================================================== */
 *,
 *::before,
@@ -90,49 +75,30 @@ button, input, textarea, select{
   padding: 8px 10px;
   font: inherit;
 }
-button{
-  cursor: pointer;
-  transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
-}
+button{ cursor: pointer; transition: background .12s, box-shadow .12s, transform .06s; }
 button:hover{ background: rgba(0,0,0,.03); }
-button:active{ transform: translateY(0.5px); }
+button:active{ transform: translateY(.5px); }
 
-/* page container */
-.container{
-  max-width: 1440px; margin: 0 auto;
-  padding: 24px;
-  /* 도크가 펼쳐지면 오른쪽 여백을 확보해 캘린더가 가려지지 않게 함 */
-  padding-right: calc(24px + var(--dock-gutter));
-  transition: padding-right .18s ease;
-}
-
+/* 페이지 컨테이너 */
+.container{ max-width: 1440px; margin: 0 auto; padding: 24px; }
 
 /* =====================================================================================
-  3) FIXED HEADER (Auth left / Theme right)
+  3) FIXED HEADER
 ===================================================================================== */
 .header-fixed{
-  position: fixed;
-  top: 12px;
-  left: 0;
-  right: 0;
-  width: 100%;
-  pointer-events: none;
-  z-index: 9999;
+  position: fixed; top: 12px; left: 0; right: 0; width: 100%;
+  pointer-events: none; z-index: 9999;
 }
-.header-fixed .left,
-.header-fixed .right{
-  position: absolute;
-  top: 0;
-  pointer-events: auto;
+.header-fixed .left, .header-fixed .right{
+  position: absolute; top: 0; pointer-events: auto;
 }
 .header-fixed .left{ left: 12px; }
 .header-fixed .right{ right: 12px; }
 
-
 /* =====================================================================================
-  4) PAGE GRID — 1 : 10 : 1 (left spacer : calendar : right spacer)
+  4) PAGE GRID — 1 : 10 : 1
 ===================================================================================== */
-.layout-1-8-1{
+.layout-1-8-1{ /* 이름은 유지, 값만 1:10:1 */
   display: grid;
   grid-template-columns: 1fr 10fr 1fr;
   gap: 16px;
@@ -145,18 +111,15 @@ button:active{ transform: translateY(0.5px); }
   .layout-1-8-1{ grid-template-columns: 1fr; }
 }
 
-
 /* =====================================================================================
-  5) CALENDAR (Fixed cell height + width clamp + chips scroll)
+  5) CALENDAR (고정 높이 + 가로폭 clamp + 칩 스크롤)
 ===================================================================================== */
 .cal-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   margin: 20px 0;
 }
 
-/* 7열 그리드 + 각 칼럼 폭의 최소값을 clamp */
+/* 7열, 각 칼럼 최소폭 clamp */
 .grid{
   display: grid;
   grid-template-columns: repeat(7, minmax(clamp(120px, 12vw, 240px), 1fr));
@@ -164,39 +127,34 @@ button:active{ transform: translateY(0.5px); }
 }
 .grid-lg{ gap: 14px; }
 
-.day-name{
-  font-size: 13px;
-  opacity: .7;
-  text-align: center;
-}
+.day-name{ font-size: 13px; opacity: .7; text-align: center; }
 .day-name.sun{ color: var(--sun); }
 .day-name.sat{ color: var(--sat); }
 
-/* ⬇️ 셀 높이 고정(반응형) — 내용 증가로 높이 흔들림 방지 */
+/* 셀 */
 .cell{
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px;
-  height: clamp(120px, 12vw, 200px);
+  height: clamp(120px, 12vw, 200px); /* 고정 높이(반응형) */
   position: relative;
   background: var(--card);
-  overflow: hidden; /* 내부는 스크롤, 셀은 고정 */
+  overflow: hidden;
 }
 .date-lg{ font-size: 15px; }
 .cell .date{ font-size: 14px; opacity: .7; }
 .cell.sun .date{ color: var(--sun); }
 .cell.sat .date{ color: var(--sat); }
 
-/* 오늘 테두리 */
+/* 오늘 */
 .cell.today{ outline: 2px solid var(--flagBlue); outline-offset: 2px; }
 
-/* 플래그 배경 + 날짜 흰색 */
+/* 플래그 배경 */
 .cell.flag-red{ background: var(--flagRed); border-color: color-mix(in srgb, var(--flagRed) 85%, #000 15%); }
 .cell.flag-blue{ background: var(--flagBlue); border-color: color-mix(in srgb, var(--flagBlue) 85%, #000 15%); }
-.cell.flag-red .date,
-.cell.flag-blue .date{ color:#fff !important; opacity:1; }
+.cell.flag-red .date, .cell.flag-blue .date{ color:#fff !important; opacity:1; }
 
-/* 칩 대비 (플래그 상태) */
+/* 칩 대비(플래그일 때) */
 .cell.flag-red .chips .chip,
 .cell.flag-blue .chips .chip{
   background: rgba(255,255,255,.16);
@@ -204,28 +162,22 @@ button:active{ transform: translateY(0.5px); }
   color: #fff;
 }
 
-/* 플래그 배너(메모 있을 때 큰 흰색 텍스트) — absolute라 높이 영향 없음 */
+/* 플래그 배너(메모 있을 때) */
 .cell .flag-banner{ display: none; }
 .cell.flag-red .flag-banner,
 .cell.flag-blue .flag-banner{
   position: absolute; inset: 0;
-  display: flex; align-items: center; justify-content: center;
-  padding: 12px; text-align: center;
-  font-weight: 800; font-size: clamp(18px, 2.6vw, 30px);
-  letter-spacing: .2px; color:#fff; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+  padding:12px; text-align:center;
+  font-weight:800; font-size: clamp(18px, 2.6vw, 30px);
+  color:#fff; pointer-events:none;
 }
+
+/* 칩 목록 */
+.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
+.chips-scroll{ max-height: calc(100% - 34px); overflow: auto; padding-right: 2px; }
 
 /* 칩 */
-.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-
-/* 칩 스크롤: 셀 내부 높이 제한 */
-.chips-scroll{
-  max-height: calc(100% - 34px);  /* 날짜 라인 높이 만큼 제외 */
-  overflow: auto;
-  padding-right: 2px;
-}
-
-/* 개별 칩 */
 .chip{
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -239,9 +191,8 @@ button:active{ transform: translateY(0.5px); }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.4);
 }
 
-
 /* =====================================================================================
-  5.5) TOP RIBBON (Text + Image Buttons)
+  5.5) TOP RIBBON
 ===================================================================================== */
 .top-ribbon{
   display:flex; align-items:center; gap:16px;
@@ -255,27 +206,16 @@ button:active{ transform: translateY(0.5px); }
 .ribbon-text{ font-weight: 700; opacity: .9; white-space: nowrap; }
 .ribbon-date{ color: var(--muted); font-weight: 700; }
 
-.top-ribbon-buttons{
-  display:flex; gap:10px;
-  overflow:hidden; padding: 4px;
-}
-.top-btn{
-  border:none; background: transparent; padding:0;
-  border-radius: 12px; flex: 0 0 auto;
-}
+.top-ribbon-buttons{ display:flex; gap:10px; overflow:hidden; padding: 4px; }
+.top-btn{ border:none; background: transparent; padding:0; border-radius: 12px; flex: 0 0 auto; }
 .top-btn img{
-  display:block;
-  height: 64px; width:auto; /* TopRibbon.tsx에서 인라인로 override됨 */
-  border-radius: 12px;
+  display:block; height: 64px; width:auto; border-radius: 12px;
   box-shadow: 0 2px 6px rgba(0,0,0,.08);
 }
-@media (max-width: 640px){
-  .top-btn img{ height: 56px; }
-}
-
+@media (max-width: 640px){ .top-btn img{ height: 56px; } }
 
 /* =====================================================================================
-  6) PRESETS DOCK — FIXED TOP-RIGHT (COLLAPSIBLE)
+  6) PRESETS DOCK — 고정(오버레이), 접기/펼치기
 ===================================================================================== */
 .presets-dock{
   position: fixed;
@@ -291,36 +231,23 @@ button:active{ transform: translateY(0.5px); }
   border-radius: 12px;
   padding: 8px;
   box-shadow: 0 6px 16px rgba(0,0,0,.06);
-  transition: width .18s ease, transform .18s ease;
+  transition: width .18s ease;
 }
-
-/* 토글 버튼 영역 */
-.dock-toggle-wrap{
-  display:flex; justify-content:flex-end; align-items:center; height: 28px;
-}
+.dock-toggle-wrap{ display:flex; justify-content:flex-end; align-items:center; height: 28px; }
 .dock-toggle{
-  width: 28px; height: 28px;
-  display:inline-flex; align-items:center; justify-content:center;
-  border: 1px solid var(--border);
-  border-radius: 8px; background: var(--card);
-  font-weight: 700;
+  width: 28px; height: 28px; display:inline-flex; align-items:center; justify-content:center;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--card); font-weight: 700;
 }
 .dock-toggle:hover{ background: rgba(0,0,0,.03); }
 
 .dock-head{ font-size: 12px; opacity: .7; text-align: right; padding: 0 4px; }
 .preset-vertical-list{ overflow:auto; padding-right:2px; display:flex; flex-direction:column; gap:8px; align-items:flex-end; }
 
-/* 접힌 상태 */
-.presets-dock.collapsed{
-  width: 52px;
-}
+/* 접힘 */
+.presets-dock.collapsed{ width: 52px; }
 .presets-dock.collapsed .dock-head,
-.presets-dock.collapsed .preset-vertical-list{
-  display: none;
-}
-.presets-dock.collapsed .dock-toggle-wrap{
-  justify-content:center;
-}
+.presets-dock.collapsed .preset-vertical-list{ display: none; }
+.presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
 
 /* 프리셋 칩 */
 .preset-chip{
@@ -334,14 +261,6 @@ button:active{ transform: translateY(0.5px); }
   background: linear-gradient(180deg, #1b1d23, #14161b);
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.4);
 }
-.preset-chip .trash{ margin-left:6px; border-radius:999px; border:1px solid #b12a2a; background:#ffefef; color:#b12a2a; padding:2px 8px; font-size:12px; }
-.preset-chip .trash:hover{ background:#ffd9d9; }
-[data-theme="dark"] .preset-chip .trash{ background:#3a1212; border-color:#ff7a7a; color:#ff9a9a; }
-[data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
-.preset-add-icon{ display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:999px; border:1px solid var(--border); background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06); font-size:18px; line-height:1; }
-.preset-add-form{ width:100%; display:grid; gap:6px; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; box-shadow:0 4px 12px rgba(0,0,0,.08); }
-.preset-add-actions{ display:flex; gap:8px; justify-content:flex-end; }
-
 
 /* =====================================================================================
   7) AUTH POPOVER
@@ -352,11 +271,10 @@ button:active{ transform: translateY(0.5px); }
   background: var(--card); border:1px solid var(--border); border-radius:12px;
   box-shadow: 0 8px 24px rgba(0,0,0,.1); padding:12px;
   opacity:0; transform: scale(.96); transform-origin: top right;
-  pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
+  pointer-events:none; transition: opacity .12s, transform .12s; z-index:9998;
 }
 .pop.open{ opacity:1; transform: scale(1); pointer-events:auto; }
 .overlay{ position:fixed; inset:0; background:transparent; z-index:9997; }
-
 
 /* =====================================================================================
   8) DATE INFO MODAL
@@ -364,21 +282,14 @@ button:active{ transform: translateY(0.5px); }
 .modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
 .modal .sheet{ width:min(720px,95vw); background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 18px 48px rgba(0,0,0,.22); }
 .modal .bar{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-
-/* date header + flag buttons */
 .modal .date-head{ display:flex; align-items:center; gap:10px; }
 .flag-buttons{ display:flex; gap:8px; margin-left:auto; }
-.flag-btn{ width:18px; height:18px; border-radius:6px; border:1px solid var(--border); background:transparent; }
+.flag-btn{ width:18px; height:18px; border-radius:6px; border:1px solid var(--border); }
 .flag-btn.red{ background: var(--flagRed); border-color: var(--flagRed); }
 .flag-btn.blue{ background: var(--flagBlue); border-color: var(--flagBlue); }
 .flag-btn.active{ box-shadow: 0 0 0 2px #fff inset; }
-
-/* memo area */
 .modal textarea{ resize: none; }
-
-/* actions row */
 .actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-
 
 /* =====================================================================================
   9) MISC
@@ -391,22 +302,13 @@ button:active{ transform: translateY(0.5px); }
 .round{ border-radius: 999px; }
 .hidden{ display: none !important; }
 
-
 /* =====================================================================================
   10) RESPONSIVE
 ===================================================================================== */
 @media (max-width: 980px){
   .layout-1-8-1{ grid-template-columns: 1fr; }
-
-  /* 모바일에서는 폭 강제 clamp 대신 유연한 칼럼으로 */
   .grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
-
-  /* 모바일일 때는 도크 여백을 주지 않음(겹침 허용 or UX에 맞게 수정 가능) */
-  .container{
-    padding: 16px;
-    padding-right: 16px; /* dock-gutter 무시 */
-  }
-
+  .container{ padding: 16px; }
   .presets-dock{
     position: static; width: auto; max-height: none; right:auto; top:auto; margin-top:8px;
   }

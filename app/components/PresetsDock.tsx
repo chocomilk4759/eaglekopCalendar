@@ -1,19 +1,9 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import PresetsPanel from './PresetsPanel';
 
 export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
   const [collapsed, setCollapsed] = useState(false);
-
-  // 접힘/펼침 상태를 <html data-dock="open|closed">에 반영
-  useEffect(() => {
-    const el = document.documentElement;
-    el.setAttribute('data-dock', collapsed ? 'closed' : 'open');
-    return () => {
-      // 언마운트 시 안전하게 닫힘 상태로
-      el.setAttribute('data-dock', 'closed');
-    };
-  }, [collapsed]);
 
   return (
     <aside
@@ -35,10 +25,8 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
         </button>
       </div>
 
-      {/* 접힌 상태에서는 CSS에서 .dock-head / 리스트가 hide 됩니다 */}
       <div className="dock-head">프리셋</div>
 
-      {/* 기존 프리셋 UI */}
       <div className="preset-vertical-list">
         <PresetsPanel canEdit={canEdit} mode="vertical" />
       </div>
