@@ -2,7 +2,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
-import PresetsPanel from './PresetsPanel';
 
 type Item = { emoji: string | null; label: string; text?: string };
 type Note = { id?: number; y: number; m: number; d: number; content: string; items: Item[]; is_rest: boolean };
@@ -107,9 +106,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
         </div>
         <div />
       </div>
-
-      {/* ▼ 테마 버튼(우상단 고정)의 바로 아래 y-라인에 맞춘 프리셋 한 줄 */}
-      <PresetsPanel canEdit={canEdit} mode="inline" />
 
       <div className="grid grid-lg">
         {['일','월','화','수','목','금','토'].map((n,i)=>(

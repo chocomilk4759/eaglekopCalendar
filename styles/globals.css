@@ -370,18 +370,7 @@ button:active{ transform: translateY(0.5px); }
 }
 
 /* === 인라인 프리셋 행: 테마 버튼 아래, 요일 헤더와 동일선상 느낌으로 === */
-.presets-inline{
-  display:flex;
-  align-items:center;
-  justify-content:flex-end;       /* 오른쪽 정렬 (테마 버튼 아래 느낌) */
-  gap: 10px;
-  margin: 2px 0 8px;              /* 요일 라인과 시각적으로 같은 y-라인에 맞추는 여백 */
-}
-.presets-inline .presets-label{
-  /* 요일 글꼴 크기/톤과 맞춤 */
-  font-size: 12px;
-  opacity: .7;
-}
+
 .preset-strip{
   display:flex;
   align-items:center;
@@ -391,6 +380,36 @@ button:active{ transform: translateY(0.5px); }
   -webkit-overflow-scrolling: touch;
 }
 
-/* 좁은 화면에서 스크롤 힌트(선택) */
-.preset-strip::-webkit-scrollbar{ height: 6px; }
-.preset-strip::-webkit-scrollbar-thumb{ background: var(--border); border-radius: 999px; }
+/* === 우측 프리셋 도크: 테마 토글(우상단) 바로 아래, 화면 우측에 고정 === */
+.presets-dock{
+  position: fixed;
+  right: 12px;
+  top: 56px;                 /* 헤더(테마 토글) 아래로 간격 */
+  z-index: 9990;            /* 헤더(9999)보다 낮고, 본문보다 높게 */
+  max-width: 40vw;
+}
+
+/* 도크 안 내용(한 줄 + 가로 스크롤) */
+.presets-inline{
+  display:flex; align-items:center; gap:10px;
+  justify-content:flex-end; /* 우측 정렬 느낌 유지 */
+}
+
+.presets-inline .presets-label{
+  font-size: 12px; opacity: .7; /* 요일 헤더와 유사 톤 */
+}
+
+.preset-strip{
+  display:flex; align-items:center; gap:8px;
+  white-space:nowrap; overflow-x:auto; -webkit-overflow-scrolling: touch;
+  max-width: 320px; /* 필요시 조정 */
+}
+
+/* 본문이 도크와 겹치지 않도록 우측 여백 확보 */
+.container.has-dock{ padding-right: 360px; }
+
+/* 반응형: 좁을 때 도크를 상단으로 내리거나 겹침 허용 */
+@media (max-width: 980px){
+  .presets-dock{ position: static; max-width: none; padding: 0 12px; }
+  .container.has-dock{ padding-right: 24px; }
+}
