@@ -36,31 +36,45 @@ export default function DateInfoModal({
     setInitialMemo(base.content || '');
   }, [open, initial?.id]);
 
-  async function persist(upd:Partial<Note>){
-    const payload = { ...note, ...upd };
-    const { data, error } = await supabase
-      .from('notes')
-      .upsert(payload, { onConflict:'y,m,d' })
-      .select()
-      .single();
-    if(error){ alert(error.message); return; }
-    setNote(data as any);
-    onSaved(data as any);
-    return data as Note;
+async function persist(upd: Partial<Note>): Promise<Note> {
+  const payload = { ...note, ...upd };
+  const { data, error } = await supabase
+    .from('notes')
+    .upsert(payload, { onConflict: 'y,m,d' })
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
   }
 
-  async function toggleFlag(color:'red'|'blue'){
-    if(!canEdit) return;
-    const next: 'red'|'blue'|null = note.color===color ? null : color;
+  setNote(data as any);
+  onSaved(data as any);
+  return data as Note;
+}
+
+// 플래그 토글도 try/catch
+async function toggleFlag(color: 'red' | 'blue') {
+  if (!canEdit) return;
+  const next: 'red' | 'blue' | null = note.color === color ? null : color;
+  try {
     await persist({ color: next });
+  } catch (e: any) {
+    alert(e?.message ?? '플래그 저장 중 오류가 발생했습니다.');
   }
+}
 
-  async function saveMemo(){
-    if(!canEdit) return;
+// 저장 시에도 try/catch, saved는 항상 Note 타입
+async function saveMemo() {
+  if (!canEdit) return;
+  try {
     const saved = await persist({ content: memo });
     setInitialMemo(saved.content || '');
     alert('메모가 저장되었습니다.');
+  } catch (e: any) {
+    alert(e?.message ?? '저장 중 오류가 발생했습니다.');
   }
+}
   function resetMemo(){
     setMemo(initialMemo || '');
   }
