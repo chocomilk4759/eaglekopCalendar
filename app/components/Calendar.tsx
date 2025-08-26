@@ -98,6 +98,13 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   const monthLabel = `${ym.y}.${(ym.m+1).toString().padStart(2,'0')}`;
 
+  function jumpGo(){
+    const d = new Date(jump);
+    if (Number.isNaN(d.getTime())) { alert('유효한 날짜를 선택하세요.'); return; }
+    setYM({ y: d.getFullYear(), m: d.getMonth() });
+    openInfo(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+  
   return (
     <>
       {/* 상단 프로필 & 타이틀 */}
