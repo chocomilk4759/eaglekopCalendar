@@ -1,8 +1,9 @@
 'use client';
 import { createClient } from '@/lib/supabaseClient';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
-type Note = { id?:number; y:number; m:number; d:number; content:string; items:any[]; is_rest:boolean };
+type Item = { emoji: string | null; label: string; text?: string };
+type Note = { id?:number; y:number; m:number; d:number; content:string; items:Item[]; is_rest:boolean };
 
 export default function DateInfoModal({
   open, onClose, date, note:initial, canEdit, onSaved
@@ -14,10 +15,18 @@ export default function DateInfoModal({
   onSaved:(n:Note)=>void;
 }){
   const supabase = createClient();
-  const [note,setNote]=useState<Note>( initial || {y:date.y,m:date.m,d:date.d, content:'', items:[], is_rest:false} );
+  const emptyNote: Note = { y:date.y, m:date.m, d:date.d, content:'', items:[], is_rest:false };
+  const [note,setNote]=useState<Note>( initial || emptyNote );
+  const [memo, setMemo] = useState(note.content || '');
   const title = useMemo(()=>`${date.y}-${(date.m+1).toString().padStart(2,'0')}-${date.d.toString().padStart(2,'0')}`,[date]);
 
-  if (open && initial && note.id !== initial.id) setNote(initial);
+  // 초기 note 변경 시 동기화
+  useEffect(()=>{
+    if(!open) return;
+    const base = initial || emptyNote;
+    setNote(base);
+    setMemo(base.content || '');
+  }, [open, initial?.id]);
 
   async function save(upd:Partial<Note>){
     const payload = { ...note, ...upd };
@@ -39,6 +48,13 @@ export default function DateInfoModal({
   async function clearContent(){
     if(!canEdit) return;
     await save({ content:'', items:[] });
+    setMemo('');
+  }
+
+  async function saveMemo(){
+    if(!canEdit) return;
+    await save({ content: memo });
+    alert('메모가 저장되었습니다.');
   }
 
   if(!open) return null;
@@ -52,18 +68,32 @@ export default function DateInfoModal({
           <div style={{opacity:.6,fontSize:13}}>없음</div>
         ) : (
           <div className="chips">
-            {note.items.map((it:any,idx:number)=>(
+            {note.items.map((it:Item,idx:number)=>(
               <span key={idx} className="chip">
-                {it.emoji ? `${it.emoji} ` : ''}{it.label}
+                {it.text?.length ? it.text : `${it.emoji ? it.emoji+' ' : ''}${it.label}`}
               </span>
             ))}
           </div>
         )}
 
         <div style={{fontSize:13, opacity:.8, margin:'12px 0 6px'}}>메모</div>
-        <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:48}}>
-          {note.content || <span style={{opacity:.5}}>내용 없음</span>}
-        </div>
+        {!canEdit ? (
+          <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:72}}>
+            {note.content || <span style={{opacity:.5}}>내용 없음</span>}
+          </div>
+        ) : (
+          <>
+            <textarea
+              value={memo}
+              onChange={(e)=>setMemo(e.target.value)}
+              placeholder="메모를 입력하세요"
+              style={{width:'100%', minHeight:120, borderRadius:10}}
+            />
+            <div style={{display:'flex', justifyContent:'flex-end', marginTop:6}}>
+              <button onClick={saveMemo}>메모 저장</button>
+            </div>
+          </>
+        )}
 
         <div className="bar">
           {canEdit && (

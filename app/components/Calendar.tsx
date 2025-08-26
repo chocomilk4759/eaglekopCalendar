@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 
-type Note = { id?:number; y:number; m:number; d:number; content:string; items:any[]; is_rest:boolean };
+type Item = { emoji: string | null; label: string; text?: string };
+type Note = { id?: number; y: number; m: number; d: number; content: string; items: Item[]; is_rest: boolean };
 
 function daysInMonth(y:number,m:number){ return new Date(y, m+1, 0).getDate(); }
 function startWeekday(y:number,m:number){ return new Date(y, m, 1).getDay(); } // 0=Sun
@@ -18,6 +19,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const [modalOpen, setModalOpen]=useState(false);
   const [modalDate, setModalDate]=useState<{y:number;m:number;d:number}|null>(null);
 
+  // fetch month notes
   useEffect(()=>{
     supabase.from('notes')
       .select('*')
@@ -40,15 +42,32 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   }
 
   async function dropPreset(y:number,m:number,d:number, dataStr:string){
+    if(!canEdit) return;
     let payload:any; try{ payload = JSON.parse(dataStr); } catch{ return; }
     if(payload?.type!=='preset') return;
-    const preset = payload.preset;
+    const preset = payload.preset as { emoji:string|null; label:string };
+
+    // ▼ 드롭 시 상세 내용 입력
+    const detail = window.prompt(
+      `세부 내용을 입력하세요 (예: "${preset.emoji ?? ''} 맨시티 vs 리버풀 09:00")`,
+      preset.emoji ? `${preset.emoji} ` : ''
+    );
+
+    const newItem: Item = {
+      emoji: preset.emoji ?? null,
+      label: preset.label,
+      text: (detail ?? '').trim() || undefined,
+    };
+
     const k = key(y,m,d);
     const cur = notes[k] || { y, m, d, content:'', items:[], is_rest:false };
-    const next:Note = { ...cur, items:[...(cur.items||[]), {emoji:preset.emoji, label:preset.label}] };
+    const next:Note = { ...cur, items:[...(cur.items||[]), newItem] };
+
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict:'y,m,d' }).select().single();
     if(error){ alert(error.message); return; }
     onSaved(data as any);
+
+    // 드롭 후 해당 날짜 정보창 열기
     openInfo(y,m,d);
   }
 
@@ -68,40 +87,52 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   return (
     <>
-      <div className="cal-header">
-        <div style={{display:'flex', gap:8, alignItems:'center'}}>
-          <button onClick={()=>setYM(({y,m})=> m?({y,m:m-1}):({y:y-1,m:11}))}>◀</button>
-          <strong>{monthLabel}</strong>
-          <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
-        </div>
-        <div style={{fontSize:12, color:'var(--muted)'}}>
-          {canEdit ? '편집 모드' : '읽기 모드'}
-        </div>
+      {/* 상단 프로필 & 타이틀 */}
+      <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
+        <img
+          src="https://game.naver.com/profile/eaf7b569c9992d0e57db0059eb5c0eeb"
+          alt="채널 프로필"
+          width={36}
+          height={36}
+          style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
+        />
+        <h2 style={{margin:0}}>이글콥의 스케쥴표</h2>
       </div>
 
-      <div className="grid">
+      {/* 월 변경 헤더 (읽기/편집 표시 제거) */}
+      <div className="cal-header">
+        <div style={{display:'flex', gap:10, alignItems:'center', fontSize:16}}>
+          <button onClick={()=>setYM(({y,m})=> m?({y,m:m-1}):({y:y-1,m:11}))}>◀</button>
+          <strong style={{fontSize:18}}>{monthLabel}</strong>
+          <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
+        </div>
+        {/* 오른쪽엔 아무것도 노출 안 함 */}
+        <div />
+      </div>
+
+      <div className="grid grid-lg">
         {['일','월','화','수','목','금','토'].map((n,i)=>(
           <div key={n} className={`day-name ${i===0?'sun':''} ${i===6?'sat':''}`}>{n}</div>
         ))}
         {cells.map((c,idx)=>{
           const k = key(c.y,c.m,c.d??-1);
           const note = c.d? notes[k] : null;
-          const cn = `cell ${c.w===0?'sun':''} ${c.w===6?'sat':''} ${note?.is_rest?'rest':''}`;
+          const cn = `cell cell-lg ${c.w===0?'sun':''} ${c.w===6?'sat':''} ${note?.is_rest?'rest':''}`;
           return (
             <div key={idx}
-              className={cn}
-              onClick={()=> c.d && openInfo(c.y,c.m,c.d)}
-              onDragOver={(e)=>{ if(canEdit && c.d){ e.preventDefault(); }}}
-              onDrop={(e)=>{ if(canEdit && c.d){ e.preventDefault(); dropPreset(c.y,c.m,c.d, e.dataTransfer.getData('application/json')); }}}
+                 className={cn}
+                 onClick={()=> c.d && openInfo(c.y,c.m,c.d)}
+                 onDragOver={(e)=>{ if(canEdit && c.d){ e.preventDefault(); }}}
+                 onDrop={(e)=>{ if(canEdit && c.d){ e.preventDefault(); dropPreset(c.y,c.m,c.d, e.dataTransfer.getData('application/json')); }}}
             >
-              {c.d && <div className="date">{c.d}</div>}
+              {c.d && <div className="date date-lg">{c.d}</div>}
               {note?.is_rest && <div className="rest-banner">휴방</div>}
 
               {note?.items?.length ? (
                 <div className="chips">
-                  {note.items.map((it:any,i:number)=>(
+                  {note.items.map((it:Item,i:number)=>(
                     <span key={i} className="chip">
-                      {it.emoji ? `${it.emoji} ` : ''}{it.label}
+                      {it.text?.length ? it.text : `${it.emoji ? it.emoji+' ' : ''}${it.label}`}
                     </span>
                   ))}
                 </div>
