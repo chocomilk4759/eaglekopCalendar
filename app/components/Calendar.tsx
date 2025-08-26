@@ -141,14 +141,11 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
             <h2 style={{ margin: 0 }}>이글콥의 스케쥴표</h2>
           </div>
 
-          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 오늘 텍스트 | 날짜 선택 + 이동 (horizontal) */}
+          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 날짜 선택 + 이동 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button onClick={() => setYM(({ y, m }) => m ? ({ y, m: m - 1 }) : ({ y: y - 1, m: 11 }))}>◀</button>
             <strong style={{ fontSize: 18 }}>{monthLabel}</strong>
             <button onClick={() => setYM(({ y, m }) => m < 11 ? ({ y, m: m + 1 }) : ({ y: y + 1, m: 0 }))}>▶</button>
-
-            <span style={{ marginLeft: 8, opacity: .8 }}>오늘: {todayLabel}</span>
-
             <div className="jump">
               <input type="date" value={jump} onChange={(e)=>setJump(e.target.value)} aria-label="날짜 선택" />
               <button onClick={jumpGo}>이동</button>

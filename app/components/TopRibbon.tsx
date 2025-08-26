@@ -11,7 +11,7 @@ type RibbonButton = {
 export default function TopRibbon({
   buttons,
   extraText,
-  size = 40,           // ✅ 기본 높이 축소(기존 56 → 40)
+  size = 56,           // ✅ 기본 높이 축소(기존 56 → 40)
 }: {
   buttons: RibbonButton[];
   extraText?: React.ReactNode;

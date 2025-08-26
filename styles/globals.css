@@ -113,16 +113,16 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  4) PAGE GRID — 1 : 8 : 1 (left spacer : calendar : right spacer)
+  4) PAGE GRID — 1 : 10 : 1 (left spacer : calendar : right spacer)
 ===================================================================================== */
 .layout-1-8-1{
   display: grid;
-  grid-template-columns: 1fr 8fr 1fr;  /* 1 : 8 : 1 */
+  grid-template-columns: 1fr 10fr 1fr;  /* 1 : 10 : 1 */
   gap: 16px;
   align-items: start;
 }
 @media (max-width: 1200px){
-  .layout-1-8-1{ grid-template-columns: .7fr 8.6fr .7fr; }
+  .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
 }
 @media (max-width: 980px){
   .layout-1-8-1{ grid-template-columns: 1fr; }
