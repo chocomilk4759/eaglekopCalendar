@@ -1,4 +1,5 @@
 'use client';
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
@@ -89,12 +90,13 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     <>
       {/* 상단 프로필 & 타이틀 */}
       <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
-        <img
-          src="../eaglekopCute.png"
-          alt="채널 프로필"
-          width={36}
-          height={36}
-          style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
+        <Image
+        src="/images/channel-profile.png"
+        alt="채널 프로필"
+        width={36}
+        height={36}
+        priority
+        style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
         />
         <h2 style={{margin:0}}>이글콥의 스케쥴표</h2>
       </div>
