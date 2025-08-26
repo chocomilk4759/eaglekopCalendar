@@ -167,7 +167,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <TopRibbon buttons={ribbonButtons} size={40} />
+            <TopRibbon buttons={ribbonButtons} containerHeight={48} gap={10} />
           </div>
         </div>
       </div>
