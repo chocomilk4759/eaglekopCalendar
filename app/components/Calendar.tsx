@@ -14,13 +14,15 @@ type Note = {
 
 function daysInMonth(y:number,m:number){ return new Date(y, m+1, 0).getDate(); }
 function startWeekday(y:number,m:number){ return new Date(y, m, 1).getDay(); } // 0=Sun
+const pad = (n:number)=> String(n).padStart(2,'0');
+const fmt = (y:number,m:number,d:number)=> `${y}-${pad(m+1)}-${pad(d)}`;
 
 export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const supabase = createClient();
 
   const today = new Date();
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
-
+  const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen]=useState(false);
   const [modalDate, setModalDate]=useState<{y:number;m:number;d:number}|null>(null);

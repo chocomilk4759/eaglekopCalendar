@@ -4,7 +4,7 @@
   - Base resets & typography
   - Fixed header (Auth / Theme)
   - Page grid 1:8:1 (left spacer : calendar : right spacer)
-  - Calendar (responsive cells, weekend colors, “today” outline, flag banner)
+  - Calendar (responsive cells, weekend colors, TODAY outline, FLAG background overlay)
   - Presets Dock (fixed top-right under ThemeToggle; vertical)
   - Auth popover
   - Date info modal (flag buttons, actions row)
@@ -27,13 +27,9 @@
   --sun:#d00;     /* Sunday */
   --sat:#05c;     /* Saturday */
 
-  /* flag colors */
+  /* flag colors for red/blue days */
   --flagRed:#e11d48;   /* red-600 */
   --flagBlue:#2563eb;  /* blue-600 */
-
-  /* rest-day legacy (not used now but kept for compatibility) */
-  --restBg:#ffe5e5;
-  --restFg:#a00;
 
   /* PresetsDock offset under ThemeToggle */
   --dock-top: 144px;
@@ -50,11 +46,9 @@
   --sun:#ff6b6b;
   --sat:#6ab0ff;
 
-  --flagRed:#fb7185;   /* lighter red on dark */
-  --flagBlue:#60a5fa;  /* lighter blue on dark */
-
-  --restBg:#3a1212;
-  --restFg:#ff9a9a;
+  /* 다크 모드에서도 충분히 진한 배경 유지 위해 동일 계열 사용 */
+  --flagRed:#e11d48;
+  --flagBlue:#2563eb;
 }
 
 
@@ -136,7 +130,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  5) CALENDAR (Responsive Cells, Weekend Colors, “Today” Outline, Flag Banner)
+  5) CALENDAR (Responsive Cells, Weekend Colors, TODAY Outline, FLAG Overlay)
 ===================================================================================== */
 .cal-header{
   display: flex;
@@ -168,7 +162,7 @@ button:active{ transform: translateY(0.5px); }
   border-radius: 12px;
   padding: 10px;
 
-  /* ▼ 핵심: 정사각형 해제, 화면에 맞춰 자동 높이 (최소값 보장) */
+  /* ▼ 정사각형 해제: 화면에 맞춰 자동 높이 (최소값 보장) */
   min-height: clamp(120px, 12vw, 200px);
 
   position: relative;
@@ -185,13 +179,18 @@ button:active{ transform: translateY(0.5px); }
 .cell.sun .date{ color: var(--sun); }
 .cell.sat .date{ color: var(--sat); }
 
-/* today outline */
+/* TODAY outline */
 .cell.today{
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-/* flag banner (shows big memo text when red/blue flag is set) */
+/* FLAG OVERLAY
+   - 플래그(red/blue) 설정 + 메모 내용이 있을 때, 전체 배경을 해당 색으로 채우고 텍스트를 흰색으로 크게 표시
+*/
+.cell .flag-banner{
+  display: none; /* 기본 비표시 */
+}
 .cell.flag-red .flag-banner,
 .cell.flag-blue .flag-banner{
   position: absolute;
@@ -199,15 +198,17 @@ button:active{ transform: translateY(0.5px); }
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10px;
+  padding: 12px;
   text-align: center;
   font-weight: 800;
   font-size: clamp(18px, 2.6vw, 30px);
   letter-spacing: 0.2px;
+  color: #fff;            /* ✅ 텍스트 흰색 */
+  border-radius: 12px;     /* 셀과 동일한 라운드 */
   pointer-events: none;
 }
-.cell.flag-red .flag-banner{ color: var(--flagRed); }
-.cell.flag-blue .flag-banner{ color: var(--flagBlue); }
+.cell.flag-red .flag-banner{ background: var(--flagRed); }   /* ✅ 배경 빨강 */
+.cell.flag-blue .flag-banner{ background: var(--flagBlue); } /* ✅ 배경 파랑 */
 
 
 /* =====================================================================================
@@ -309,11 +310,11 @@ button:active{ transform: translateY(0.5px); }
 }
 [data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
 
-/* + icon button (only icon visible by default) */
+/* + icon button */
 .preset-add-icon{
   display:inline-flex; align-items:center; justify-content:center;
   width: 34px; height: 34px; border-radius: 999px;
-  border:1px solid var(--border); background:var(--card);
+  border:1px solid var(--border); background: var(--card);
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
   font-size: 18px; line-height: 1;
 }
@@ -409,9 +410,9 @@ button:active{ transform: translateY(0.5px); }
   border:1px solid var(--border);
   background:transparent;
 }
-.flag-btn.red{ background: color-mix(in srgb, var(--flagRed) 18%, transparent); border-color: var(--flagRed); }
-.flag-btn.blue{ background: color-mix(in srgb, var(--flagBlue) 18%, transparent); border-color: var(--flagBlue); }
-.flag-btn.active{ box-shadow: 0 0 0 2px currentColor inset; }
+.flag-btn.red{ background: var(--flagRed); border-color: var(--flagRed); }
+.flag-btn.blue{ background: var(--flagBlue); border-color: var(--flagBlue); }
+.flag-btn.active{ box-shadow: 0 0 0 2px #fff inset; }
 
 /* actions row */
 .actions{
