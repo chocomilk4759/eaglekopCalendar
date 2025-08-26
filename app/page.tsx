@@ -23,7 +23,9 @@ export default function Page(){
       <main className="container">
         <div className="layout-1-8-1">
           <div aria-hidden />
-          <div><Calendar canEdit={canEdit} /></div>
+          <div className="col-main">
+            <Calendar canEdit={canEdit} />
+          </div>
           <div aria-hidden />
         </div>
       </main>

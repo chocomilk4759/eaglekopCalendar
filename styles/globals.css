@@ -4,8 +4,8 @@
   - Base resets & typography
   - Fixed header (Auth / Theme)
   - Page grid 1:10:1 (left spacer : calendar : right spacer)
-  - Calendar (fixed cell height, width clamp, weekend colors, TODAY outline, FLAG bg)
-  - Top Ribbon (text + image buttons)
+  - Calendar (fixed cell height, weekend colors, TODAY outline, FLAG bg)
+  - Top Ribbon
   - Presets Dock (fixed top-right; collapsible)
   - Auth popover
   - Date info modal
@@ -98,12 +98,15 @@ button:active{ transform: translateY(.5px); }
 /* =====================================================================================
   4) PAGE GRID — 1 : 10 : 1
 ===================================================================================== */
-.layout-1-8-1{ /* 이름은 유지, 값만 1:10:1 */
+.layout-1-8-1{
   display: grid;
   grid-template-columns: 1fr 10fr 1fr;
   gap: 16px;
   align-items: start;
 }
+/* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
+.layout-1-8-1 > .col-main { min-width: 0; }  /* ← 변경1 */
+
 @media (max-width: 1200px){
   .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
 }
@@ -112,17 +115,17 @@ button:active{ transform: translateY(.5px); }
 }
 
 /* =====================================================================================
-  5) CALENDAR (고정 높이 + 가로폭 clamp + 칩 스크롤)
+  5) CALENDAR (고정 높이 + 칩 스크롤)
 ===================================================================================== */
 .cal-header{
   display: flex; align-items: center; justify-content: space-between;
   margin: 20px 0;
 }
 
-/* 7열, 각 칼럼 최소폭 clamp */
+/* 7열, 각 칼럼은 부모 폭 안에서 균등 분할 (최소폭 강제 없음) */
 .grid{
   display: grid;
-  grid-template-columns: repeat(7, minmax(clamp(120px, 12vw, 240px), 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));  /* ← 변경2 */
   gap: 12px;
 }
 .grid-lg{ gap: 14px; }
@@ -136,7 +139,7 @@ button:active{ transform: translateY(.5px); }
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px;
-  height: clamp(120px, 12vw, 200px); /* 고정 높이(반응형) */
+  height: clamp(120px, 12vw, 200px); /* 높이만 clamp → 레이아웃 침범 방지 */
   position: relative;
   background: var(--card);
   overflow: hidden;
@@ -248,19 +251,6 @@ button:active{ transform: translateY(.5px); }
 .presets-dock.collapsed .dock-head,
 .presets-dock.collapsed .preset-vertical-list{ display: none; }
 .presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
-
-/* 프리셋 칩 */
-.preset-chip{
-  display:inline-flex; align-items:center; gap:6px;
-  border:1px solid var(--border); border-radius:999px; padding:6px 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 2px 5px rgba(0,0,0,.06);
-  white-space: nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis; text-align:right;
-}
-[data-theme="dark"] .preset-chip{
-  background: linear-gradient(180deg, #1b1d23, #14161b);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.4);
-}
 
 /* =====================================================================================
   7) AUTH POPOVER
