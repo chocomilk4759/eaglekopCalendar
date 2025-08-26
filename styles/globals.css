@@ -4,10 +4,10 @@
   - Base resets & typography
   - Fixed header (Auth / Theme)
   - Page grid 1:8:1 (left spacer : calendar : right spacer)
-  - Calendar (square cells, weekend colors, rest banner)
-  - Presets Dock (FIXED at top-right under ThemeToggle; vertical, right-aligned)
+  - Calendar (responsive cells, weekend colors, “today” outline, flag banner)
+  - Presets Dock (fixed top-right under ThemeToggle; vertical)
   - Auth popover
-  - Date info modal
+  - Date info modal (flag buttons, actions row)
   - Utilities & responsive tweaks
 ===================================================================================== */
 
@@ -27,12 +27,16 @@
   --sun:#d00;     /* Sunday */
   --sat:#05c;     /* Saturday */
 
-  /* rest-day colors */
+  /* flag colors */
+  --flagRed:#e11d48;   /* red-600 */
+  --flagBlue:#2563eb;  /* blue-600 */
+
+  /* rest-day legacy (not used now but kept for compatibility) */
   --restBg:#ffe5e5;
   --restFg:#a00;
 
-  /* ▼ PresetsDock vertical offset: ThemeToggle 바로 아래 높이에 맞춤 */
-  --dock-top: 128px;  /* 헤더/토글 높이에 맞게 조정 */
+  /* PresetsDock offset under ThemeToggle */
+  --dock-top: 144px;
 }
 
 [data-theme="dark"]{
@@ -45,6 +49,9 @@
 
   --sun:#ff6b6b;
   --sat:#6ab0ff;
+
+  --flagRed:#fb7185;   /* lighter red on dark */
+  --flagBlue:#60a5fa;  /* lighter blue on dark */
 
   --restBg:#3a1212;
   --restFg:#ff9a9a;
@@ -129,7 +136,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  5) CALENDAR (Month Grid, Weekend Colors, Square Cells, Rest Banner)
+  5) CALENDAR (Responsive Cells, Weekend Colors, “Today” Outline, Flag Banner)
 ===================================================================================== */
 .cal-header{
   display: flex;
@@ -155,19 +162,20 @@ button:active{ transform: translateY(0.5px); }
 .day-name.sun{ color: var(--sun); }
 .day-name.sat{ color: var(--sat); }
 
-/* calendar cells — MINIMUM SQUARE using aspect-ratio */
+/* calendar cells — responsive height (no square), keep a minimum size */
 .cell{
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 10px;
 
-  /* >>> core: minimum square; grows vertically if content overflows */
-  min-height: 150px;
+  /* ▼ 핵심: 정사각형 해제, 화면에 맞춰 자동 높이 (최소값 보장) */
+  min-height: clamp(120px, 12vw, 200px);
 
   position: relative;
   background: var(--card);
   overflow: hidden;
 }
+.cell-lg{ /* kept for compatibility */ }
 .date-lg{ font-size: 15px; }
 
 .cell .date{
@@ -177,20 +185,29 @@ button:active{ transform: translateY(0.5px); }
 .cell.sun .date{ color: var(--sun); }
 .cell.sat .date{ color: var(--sat); }
 
-/* rest day overlay */
-.cell.rest{ background: var(--restBg); }
-.cell .rest-banner{
+/* today outline */
+.cell.today{
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* flag banner (shows big memo text when red/blue flag is set) */
+.cell.flag-red .flag-banner,
+.cell.flag-blue .flag-banner{
   position: absolute;
   inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 10px;
+  text-align: center;
   font-weight: 800;
-  color: var(--restFg);
-  font-size: 24px;
-  opacity: .9;
+  font-size: clamp(18px, 2.6vw, 30px);
+  letter-spacing: 0.2px;
   pointer-events: none;
 }
+.cell.flag-red .flag-banner{ color: var(--flagRed); }
+.cell.flag-blue .flag-banner{ color: var(--flagBlue); }
 
 
 /* =====================================================================================
@@ -226,7 +243,7 @@ button:active{ transform: translateY(0.5px); }
 .presets-dock{
   position: fixed;
   right: 12px;
-  top: var(--dock-top);  /* ✅ ThemeToggle 바로 아래 */
+  top: var(--dock-top);  /* ThemeToggle 바로 아래 */
   z-index: 9990;
   width: 320px;
   max-height: calc(100vh - 72px);
@@ -238,7 +255,7 @@ button:active{ transform: translateY(0.5px); }
 .dock-head{
   font-size: 12px;
   opacity: .7;
-  text-align: right;    /* 라벨도 우측 정렬 */
+  text-align: right;
   padding-right: 4px;
 }
 
@@ -249,7 +266,7 @@ button:active{ transform: translateY(0.5px); }
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-items: flex-end;   /* 칩 우측 정렬 */
+  align-items: flex-end;
 }
 
 /* chip sized to content (pill) */
@@ -265,8 +282,8 @@ button:active{ transform: translateY(0.5px); }
   background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 2px 5px rgba(0,0,0,.06);
 
-  white-space: nowrap;       /* single line */
-  max-width: 100%;           /* clamp to dock width */
+  white-space: nowrap;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   text-align: right;
@@ -276,7 +293,7 @@ button:active{ transform: translateY(0.5px); }
   box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 2px 6px rgba(0,0,0,.4);
 }
 
-/* delete button for chip (red) */
+/* delete button for chip */
 .preset-chip .trash{
   margin-left: 6px;
   border-radius: 999px;
@@ -300,12 +317,9 @@ button:active{ transform: translateY(0.5px); }
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
   font-size: 18px; line-height: 1;
 }
-
-/* add form (shown after clicking +) */
 .preset-add-form{
   width: 100%;
-  display: grid;
-  gap: 6px;
+  display: grid; gap: 6px;
   background: var(--card);
   border:1px solid var(--border);
   border-radius: 12px;
@@ -353,7 +367,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  9) DATE INFO MODAL
+  9) DATE INFO MODAL (Flag buttons + Action row)
 ===================================================================================== */
 .modal{
   position: fixed;
@@ -376,6 +390,35 @@ button:active{ transform: translateY(0.5px); }
   gap: 8px;
   justify-content: flex-end;
   margin-top: 8px;
+}
+
+/* date header with flag buttons */
+.modal .date-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.flag-buttons{
+  display:flex;
+  gap:8px;
+  margin-left:auto;
+}
+.flag-btn{
+  width:18px; height:18px;
+  border-radius:6px;
+  border:1px solid var(--border);
+  background:transparent;
+}
+.flag-btn.red{ background: color-mix(in srgb, var(--flagRed) 18%, transparent); border-color: var(--flagRed); }
+.flag-btn.blue{ background: color-mix(in srgb, var(--flagBlue) 18%, transparent); border-color: var(--flagBlue); }
+.flag-btn.active{ box-shadow: 0 0 0 2px currentColor inset; }
+
+/* actions row */
+.actions{
+  display:flex;
+  gap:8px;
+  justify-content:flex-end;
+  margin-top:8px;
 }
 
 
