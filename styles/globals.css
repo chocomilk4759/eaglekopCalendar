@@ -1,42 +1,339 @@
+/* ============================================================================
+  0) GLOBALS.CSS — Eaglekop Calendar
+     - Next.js 글로벌 스타일
+     - 테마(light/dark), 캘린더, 프리셋, 팝오버, 모달 포함
+     - 필요에 따라 각 섹션만 교체/추가하세요.
+============================================================================ */
+
+
+/* ============================================================================
+  1) THEME TOKENS (CSS Variables)
+     - 라이트/다크 모드 공통 색상 토큰
+============================================================================ */
 :root{
-  --bg:#ffffff; --fg:#111111; --muted:#666; --border:#e5e5e5; --card:#fff;
-  --accent:#222;
-  --sun:#d00; --sat:#05c;
-  --restBg:#ffe5e5; --restFg:#a00;
+  --bg:#ffffff;
+  --fg:#111111;
+  --muted:#666666;
+  --border:#e5e5e5;
+  --card:#ffffff;
+  --accent:#222222;
+
+  /* 주말 색상 */
+  --sun:#d00;     /* 일요일 */
+  --sat:#05c;     /* 토요일 */
+
+  /* 휴방 배경/글자 */
+  --restBg:#ffe5e5;
+  --restFg:#a00;
 }
+
 [data-theme="dark"]{
-  --bg:#0e0f12; --fg:#e9eaee; --muted:#a1a6b3; --border:#2a2d36; --card:#14161b;
+  --bg:#0e0f12;
+  --fg:#e9eaee;
+  --muted:#a1a6b3;
+  --border:#2a2d36;
+  --card:#14161b;
   --accent:#f1f2f4;
-  --sun:#ff6b6b; --sat:#6ab0ff;
-  --restBg:#3a1212; --restFg:#ff9a9a;
+
+  --sun:#ff6b6b;
+  --sat:#6ab0ff;
+
+  --restBg:#3a1212;
+  --restFg:#ff9a9a;
 }
-html,body{height:100%;}
-body{background:var(--bg); color:var(--fg); margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
-button,input,textarea,select{color:inherit; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 10px;}
-button{cursor:pointer;}
-button:hover{background:rgba(0,0,0,.03);}
-.container{max-width:1100px; margin:0 auto; padding:20px;}
-/* 캘린더 */
-.cal-header{display:flex; align-items:center; justify-content:space-between; margin:16px 0;}
-.grid{display:grid; grid-template-columns:repeat(7,1fr); gap:8px;}
-.day-name{font-size:12px; opacity:.7; text-align:center;}
-.day-name.sun{color:var(--sun);} .day-name.sat{color:var(--sat);}
-.cell{border:1px solid var(--border); border-radius:12px; padding:8px; min-height:110px; position:relative; background:var(--card);}
-.cell .date{font-size:12px; opacity:.7;}
-.cell.sun .date{color:var(--sun);} .cell.sat .date{color:var(--sat);}
-.cell.rest{background:var(--restBg);}
-.cell .rest-banner{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-weight:800; color:var(--restFg); font-size:24px; opacity:.9; pointer-events:none;}
-.preset-list{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0;}
-.preset{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;}
-.preset .add{margin-left:4px; border-radius:999px; padding:0 8px; height:26px;}
-/* 우상단 테마 토글, 좌상단 인증 버튼 */
-.header-fixed{position:fixed; top:12px; width:100%; pointer-events:none;}
-.header-fixed .left, .header-fixed .right{pointer-events:auto; position:absolute; top:0;}
-.header-fixed .left{left:12px;} .header-fixed .right{right:12px;}
-.pop{position:absolute; top:44px; right:0; width:320px; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.1); padding:12px; opacity:0; transform:scale(.96); transform-origin:top right; pointer-events:none; transition:opacity .12s, transform .12s;}
-.pop.open{opacity:1; transform:scale(1); pointer-events:auto;}
-.overlay{position:fixed; inset:0; background:transparent;}
-/* 모달 */
-.modal{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000;}
-.modal .sheet{width:min(720px,95vw); background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 18px 48px rgba(0,0,0,.22);}
-.modal .bar{display:flex; gap:8px; justify-content:flex-end; margin-top:8px;}
+
+
+/* ============================================================================
+  2) BASE RESET & TYPOGRAPHY
+     - 기본 박스 사이징, 바디 폰트/배경, 폼 요소 공통
+============================================================================ */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body{
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a{ color: inherit; text-decoration: none; }
+
+button, input, textarea, select{
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+button{
+  cursor: pointer;
+  transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
+}
+button:hover{ background: rgba(0,0,0,.03); }
+button:active{ transform: translateY(0.5px); }
+
+.container{ max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+
+/* ============================================================================
+  3) FIXED HEADER LAYER
+     - 좌상단: 인증/계정 팝오버 버튼 (AuthButton)
+     - 우상단: 테마 토글 (ThemeToggle)
+     - pointer-events로 내부 버튼만 상호작용
+============================================================================ */
+.header-fixed{
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+.header-fixed .left,
+.header-fixed .right{
+  position: absolute;
+  top: 0;
+  pointer-events: auto;
+}
+.header-fixed .left{ left: 12px; }
+.header-fixed .right{ right: 12px; }
+
+
+/* ============================================================================
+  4) CALENDAR (Month Grid, Weekend Colors, Rest Banner)
+============================================================================ */
+.cal-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0;
+}
+
+.grid{
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+/* 요일 헤더 */
+.day-name{
+  font-size: 12px;
+  opacity: .7;
+  text-align: center;
+}
+.day-name.sun{ color: var(--sun); }
+.day-name.sat{ color: var(--sat); }
+
+/* 날짜 셀 */
+.cell{
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 110px;
+  position: relative;
+  background: var(--card);
+  overflow: hidden;
+}
+.cell .date{
+  font-size: 12px;
+  opacity: .7;
+}
+.cell.sun .date{ color: var(--sun); }
+.cell.sat .date{ color: var(--sat); }
+
+/* 휴방 표시 */
+.cell.rest{ background: var(--restBg); }
+.cell .rest-banner{
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: var(--restFg);
+  font-size: 24px;
+  opacity: .9;
+  pointer-events: none;
+}
+
+
+/* ============================================================================
+  5) PRESETS (Panel + Buttons)
+     - 프리셋 리스트, 칩 형태 UI, 삭제(휴지통) 버튼
+     - 드래그 소스가 되는 버튼(.preset[draggable])
+============================================================================ */
+.preset-list{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+/* 프리셋 칩 (볼록한 느낌의 타원형) */
+.preset{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(240,240,240,.9));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    0 2px 5px rgba(0,0,0,.06);
+  user-select: none;
+}
+[data-theme="dark"] .preset{
+  background: linear-gradient(180deg, #1b1d23, #14161b);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 2px 6px rgba(0,0,0,.4);
+}
+
+/* 프리셋 추가(＋) 버튼 */
+.preset.add{
+  margin-left: 4px;
+  border-radius: 999px;
+  padding: 0 10px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* 프리셋 삭제(휴지통) 버튼 */
+.preset .trash{
+  margin-left: 6px;
+  border-radius: 999px;
+  border: 1px solid #b12a2a;
+  background: #ffefef;
+  color: #b12a2a;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+.preset .trash:hover{ background: #ffd9d9; }
+[data-theme="dark"] .preset .trash{
+  background: #3a1212;
+  border-color: #ff7a7a;
+  color: #ff9a9a;
+}
+[data-theme="dark"] .preset .trash:hover{ background: #4a1a1a; }
+
+
+/* ============================================================================
+  6) CHIPS (Calendar Cells & Modal)
+     - 날짜 셀/모달에서 보여주는 아이템 칩 UI
+============================================================================ */
+.chips{
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+.chip{
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,242,242,.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.8),
+    0 1px 2px rgba(0,0,0,.06);
+}
+[data-theme="dark"] .chip{
+  background: linear-gradient(180deg, #1b1d23, #14161b);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.06),
+    0 1px 2px rgba(0,0,0,.4);
+}
+
+
+/* ============================================================================
+  7) POPOVER (AuthButton 등)
+     - 작은 팝업 패널(.pop)과 바깥 클릭 닫기용 오버레이(.overlay)
+============================================================================ */
+.pop{
+  position: absolute;
+  top: 44px;
+  right: 0;             /* 기본: 오른쪽 정렬 */
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1);
+  padding: 12px;
+
+  opacity: 0;
+  transform: scale(.96);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 9998;
+}
+.pop.open{
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* 외부 클릭 감지용 투명 오버레이 */
+.overlay{
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9997;
+}
+
+
+/* ============================================================================
+  8) MODAL (Date Info)
+     - 날짜 정보 모달 레이어
+============================================================================ */
+.modal{
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+.modal .sheet{
+  width: min(720px, 95vw);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(0,0,0,.22);
+}
+.modal .bar{
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+
+/* ============================================================================
+  9) UTILITIES & TWEAKS
+     - 작게 쓰는 유틸성 클래스
+============================================================================ */
+.text-muted{ color: var(--muted); }
+.text-center{ text-align: center; }
+.round{ border-radius: 999px; }
+.hidden{ display: none !important; }
+
+/* 모바일 간격 보정 */
+@media (max-width: 640px){
+  .container{ padding: 16px; }
+  .cell{ min-height: 96px; }
+  .pop{ width: 92vw; }
+}

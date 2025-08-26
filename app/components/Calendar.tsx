@@ -18,7 +18,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const [modalOpen, setModalOpen]=useState(false);
   const [modalDate, setModalDate]=useState<{y:number;m:number;d:number}|null>(null);
 
-  // fetch month notes
   useEffect(()=>{
     supabase.from('notes')
       .select('*')
@@ -47,7 +46,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     const k = key(y,m,d);
     const cur = notes[k] || { y, m, d, content:'', items:[], is_rest:false };
     const next:Note = { ...cur, items:[...(cur.items||[]), {emoji:preset.emoji, label:preset.label}] };
-    // upsert
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict:'y,m,d' }).select().single();
     if(error){ alert(error.message); return; }
     onSaved(data as any);
@@ -91,18 +89,20 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
           const cn = `cell ${c.w===0?'sun':''} ${c.w===6?'sat':''} ${note?.is_rest?'rest':''}`;
           return (
             <div key={idx}
-                 className={cn}
-                 onClick={()=> c.d && openInfo(c.y,c.m,c.d)}
-                 onDragOver={(e)=>{ if(canEdit && c.d){ e.preventDefault(); }}}
-                 onDrop={(e)=>{ if(canEdit && c.d){ e.preventDefault(); dropPreset(c.y,c.m,c.d, e.dataTransfer.getData('application/json')); }}}
+              className={cn}
+              onClick={()=> c.d && openInfo(c.y,c.m,c.d)}
+              onDragOver={(e)=>{ if(canEdit && c.d){ e.preventDefault(); }}}
+              onDrop={(e)=>{ if(canEdit && c.d){ e.preventDefault(); dropPreset(c.y,c.m,c.d, e.dataTransfer.getData('application/json')); }}}
             >
               {c.d && <div className="date">{c.d}</div>}
               {note?.is_rest && <div className="rest-banner">휴방</div>}
 
               {note?.items?.length ? (
-                <div style={{display:'flex', gap:6, flexWrap:'wrap', marginTop:6}}>
+                <div className="chips">
                   {note.items.map((it:any,i:number)=>(
-                    <span key={i} style={{fontSize:13}}>{it.emoji} {it.label}</span>
+                    <span key={i} className="chip">
+                      {it.emoji ? `${it.emoji} ` : ''}{it.label}
+                    </span>
                   ))}
                 </div>
               ) : null}

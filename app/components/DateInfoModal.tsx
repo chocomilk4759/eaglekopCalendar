@@ -17,7 +17,6 @@ export default function DateInfoModal({
   const [note,setNote]=useState<Note>( initial || {y:date.y,m:date.m,d:date.d, content:'', items:[], is_rest:false} );
   const title = useMemo(()=>`${date.y}-${(date.m+1).toString().padStart(2,'0')}-${date.d.toString().padStart(2,'0')}`,[date]);
 
-  // 초기 note가 바뀔 때 동기화
   if (open && initial && note.id !== initial.id) setNote(initial);
 
   async function save(upd:Partial<Note>){
@@ -49,13 +48,17 @@ export default function DateInfoModal({
         <h3 style={{margin:'8px 0'}}>{title}</h3>
 
         <div style={{fontSize:13, opacity:.8, marginBottom:8}}>아이템</div>
-        {(note.items?.length||0)===0 ? <div style={{opacity:.6,fontSize:13}}>없음</div> :
-          <ul style={{display:'flex', gap:8, flexWrap:'wrap', margin:0, padding:0, listStyle:'none'}}>
+        {(note.items?.length||0)===0 ? (
+          <div style={{opacity:.6,fontSize:13}}>없음</div>
+        ) : (
+          <div className="chips">
             {note.items.map((it:any,idx:number)=>(
-              <li key={idx} style={{border:'1px solid var(--border)', borderRadius:999, padding:'6px 10px'}}>{it.emoji} {it.label}</li>
+              <span key={idx} className="chip">
+                {it.emoji ? `${it.emoji} ` : ''}{it.label}
+              </span>
             ))}
-          </ul>
-        }
+          </div>
+        )}
 
         <div style={{fontSize:13, opacity:.8, margin:'12px 0 6px'}}>메모</div>
         <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:48}}>
