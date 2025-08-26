@@ -10,7 +10,6 @@ const idToEmail = (id: string) => `${id}@${INTERNAL_DOMAIN}`;
 
 export default function AuthCorner() {
   const supabase = createClient();
-
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -19,10 +18,9 @@ export default function AuthCorner() {
   const [pw, setPw] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const btnRef = useRef<HTMLButtonElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  // Load current user & subscribe to auth changes
+  // 현재 로그인 상태 로드 + 상태 변화 반영
   useEffect(() => {
     let mounted = true;
     supabase.auth.getUser().then(({ data }) => {
@@ -31,7 +29,7 @@ export default function AuthCorner() {
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setUserEmail(s?.user?.email ?? null);
-      // 로그인/로그아웃 이벤트 후 자동 닫힘
+      // 로그인/로그아웃 시 패널은 닫힘
       setOpen(false);
       setId('');
       setPw('');
@@ -42,42 +40,16 @@ export default function AuthCorner() {
     };
   }, []);
 
-  // Close on outside click & ESC
-  useEffect(() => {
-    function onDown(e: MouseEvent) {
-      if (!open) return;
-      const t = e.target as Node;
-      if (panelRef.current?.contains(t) || btnRef.current?.contains(t)) return;
-      setOpen(false);
-    }
-    function onKey(e: KeyboardEvent) {
-      if (!open) return;
-      if (e.key === 'Escape') setOpen(false);
-    }
-    document.addEventListener('mousedown', onDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
   async function login() {
-    if (!id || !pw) {
-      alert('ID와 비밀번호를 입력하세요.');
-      return;
-    }
+    if (!id || !pw) { alert('ID와 비밀번호를 입력하세요.'); return; }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
       email: idToEmail(id),
       password: pw,
     });
     setLoading(false);
-    if (error) {
-      alert(error.message);
-      return;
-    }
-    // 성공 시 onAuthStateChange에서 닫힘 처리됨
+    if (error) { alert(error.message); return; }
+    // 성공 → onAuthStateChange에서 자동 반영
   }
 
   async function logout() {
@@ -88,25 +60,28 @@ export default function AuthCorner() {
   const isAuthed = !!userEmail;
 
   return (
-    <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 1000 }}>
-      {/* Top-right button */}
+    <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 99999 }}>
+      {/* 트리거 버튼 (우상단) */}
       <button
-        ref={btnRef}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(v => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
         title={isAuthed ? '메뉴' : '인증'}
         className="authcorner-trigger"
       >
-        {isAuthed ? (
-          // 사람 아이콘
-          <span aria-hidden>👤</span>
-        ) : (
-          '인증'
-        )}
+        {isAuthed ? <span aria-hidden>👤</span> : '인증'}
       </button>
 
-      {/* Popover panel */}
+      {/* 오버레이: 열렸을 때만, 바깥 클릭 닫기용 */}
+      {open && (
+        <div
+          className="authcorner-overlay"
+          onClick={() => setOpen(false)}
+          aria-hidden
+        />
+      )}
+
+      {/* 팝오버 패널 */}
       <div
         ref={panelRef}
         className={`authcorner-panel ${open ? 'open' : ''}`}
@@ -120,12 +95,14 @@ export default function AuthCorner() {
               placeholder="ID"
               value={id}
               onChange={(e) => setId(e.target.value)}
+              autoComplete="username"
             />
             <input
               type="password"
               placeholder="비밀번호"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
+              autoComplete="current-password"
             />
             <button onClick={login} disabled={loading}>
               {loading ? '로그인 중…' : '로그인'}
@@ -134,17 +111,12 @@ export default function AuthCorner() {
         ) : (
           <div className="panel-inner">
             <div className="user-line">{userEmail}</div>
-            <Link href="/account" className="row-btn">
-              정보편집
-            </Link>
-            <button className="row-btn" onClick={logout}>
-              로그아웃
-            </button>
+            <Link href="/account" className="row-btn">정보편집</Link>
+            <button className="row-btn" onClick={logout}>로그아웃</button>
           </div>
         )}
       </div>
 
-      {/* minimal styles */}
       <style jsx>{`
         .authcorner-trigger {
           padding: 8px 12px;
@@ -156,6 +128,14 @@ export default function AuthCorner() {
           box-shadow: 0 1px 3px rgba(0,0,0,0.06);
         }
         .authcorner-trigger:hover { background: #f8f8f8; }
+
+        /* 화면 전체 오버레이(투명) - 바깥 클릭 닫기 */
+        .authcorner-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99998;
+          background: transparent;
+        }
 
         .authcorner-panel {
           position: absolute;
@@ -173,12 +153,14 @@ export default function AuthCorner() {
           transform-origin: top right;
           pointer-events: none;
           transition: opacity .12s ease, transform .12s ease;
+          z-index: 99999;
         }
         .authcorner-panel.open {
           opacity: 1;
           transform: scale(1);
           pointer-events: auto;
         }
+
         .panel-inner { display: grid; gap: 8px; }
         h4 { margin: 4px 0 6px; font-size: 14px; }
         input {
