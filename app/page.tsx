@@ -3,8 +3,6 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import Calendar from './components/Calendar';
 import PresetsPanel from './components/PresetsPanel';
-import ThemeToggle from './components/ThemeToggle';
-import AuthButton from './components/AuthButton';
 
 export default function Page(){
   const supabase = createClient();
@@ -17,17 +15,15 @@ export default function Page(){
   },[]);
 
   return (
-    <>
-      {/* 고정 헤더: 좌상단 인증 / 우상단 테마 */}
-      <div className="header-fixed">
-        <div className="left"><AuthButton /></div>
-        <div className="right"><ThemeToggle /></div>
+    <main className="container">
+      <div className="main-grid">
+        <div className="main-col">
+          <Calendar canEdit={canEdit} />
+        </div>
+        <aside className="side-col">
+          <PresetsPanel canEdit={canEdit} />
+        </aside>
       </div>
-
-      <main className="container">
-        <Calendar canEdit={canEdit} />
-        <PresetsPanel canEdit={canEdit} />
-      </main>
-    </>
+    </main>
   );
 }

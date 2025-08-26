@@ -1,5 +1,4 @@
 'use client';
-import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
@@ -9,12 +8,15 @@ type Note = { id?: number; y: number; m: number; d: number; content: string; ite
 
 function daysInMonth(y:number,m:number){ return new Date(y, m+1, 0).getDate(); }
 function startWeekday(y:number,m:number){ return new Date(y, m, 1).getDay(); } // 0=Sun
+const pad = (n:number)=> String(n).padStart(2,'0');
+const fmt = (y:number,m:number,d:number)=> `${y}-${pad(m+1)}-${pad(d)}`;
 
 export default function Calendar({ canEdit }:{ canEdit:boolean }){
   const supabase = createClient();
 
   const today = new Date();
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
+  const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
 
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen]=useState(false);
@@ -48,7 +50,6 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     if(payload?.type!=='preset') return;
     const preset = payload.preset as { emoji:string|null; label:string };
 
-    // ▼ 드롭 시 상세 내용 입력
     const detail = window.prompt(
       `세부 내용을 입력하세요 (예: "${preset.emoji ?? ''} 맨시티 vs 리버풀 09:00")`,
       preset.emoji ? `${preset.emoji} ` : ''
@@ -67,11 +68,10 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict:'y,m,d' }).select().single();
     if(error){ alert(error.message); return; }
     onSaved(data as any);
-
-    // 드롭 후 해당 날짜 정보창 열기
     openInfo(y,m,d);
   }
 
+  // 월 렌더
   const dim = daysInMonth(ym.y, ym.m);
   const start = startWeekday(ym.y, ym.m);
   const cells = useMemo(()=>{
@@ -86,29 +86,46 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   const monthLabel = `${ym.y}.${(ym.m+1).toString().padStart(2,'0')}`;
 
+  // 날짜 점프
+  function jumpGo(){
+    const d = new Date(jump);
+    if (Number.isNaN(d.getTime())) { alert('유효한 날짜를 선택하세요.'); return; }
+    setYM({ y: d.getFullYear(), m: d.getMonth() });
+    openInfo(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
   return (
     <>
-      {/* 상단 프로필 & 타이틀 */}
+      {/* 상단 프로필 & 타이틀 (이미지는 public/ 경로) */}
       <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
-        <Image
-        src="/images/channel-profile.png"
-        alt="채널 프로필"
-        width={36}
-        height={36}
-        priority
-        style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
+        <img
+          src="/images/channel-profile.png"
+          alt="채널 프로필"
+          width={40}
+          height={40}
+          style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
         />
         <h2 style={{margin:0}}>이글콥의 스케쥴표</h2>
       </div>
 
-      {/* 월 변경 헤더 (읽기/편집 표시 제거) */}
+      {/* 월 변경 + 날짜 점프 */}
       <div className="cal-header">
         <div style={{display:'flex', gap:10, alignItems:'center', fontSize:16}}>
           <button onClick={()=>setYM(({y,m})=> m?({y,m:m-1}):({y:y-1,m:11}))}>◀</button>
           <strong style={{fontSize:18}}>{monthLabel}</strong>
           <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
+
+          {/* ▼ 요구: 우측버튼 오른쪽에 날짜 이동 */}
+          <div className="jump">
+            <input
+              type="date"
+              value={jump}
+              onChange={(e)=>setJump(e.target.value)}
+              aria-label="날짜 선택"
+            />
+            <button onClick={jumpGo}>이동</button>
+          </div>
         </div>
-        {/* 오른쪽엔 아무것도 노출 안 함 */}
         <div />
       </div>
 
