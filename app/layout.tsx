@@ -7,7 +7,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body>
         <header className="appbar">
-          <h1>연간 계획표</h1>
+          <h1>이글콥 계획표</h1>
           <nav style={{display:'flex', gap:8}}>
             <a href="/auth">인증</a>
           </nav>
