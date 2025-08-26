@@ -29,6 +29,13 @@ function startWeekday(y: number, m: number) {
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
 
+function prevOf({ y, m }: { y: number; m: number }) {
+  return m ? { y, m: m - 1 } : { y: y - 1, m: 11 };
+}
+function nextOf({ y, m }: { y: number; m: number }) {
+  return m < 11 ? { y, m: m + 1 } : { y: y + 1, m: 0 };
+}
+
 export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = createClient();
 
@@ -42,21 +49,20 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
 
-  // 해당 월의 노트 불러오기
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from('notes')
-        .select('*')
-        .eq('y', ym.y)
-        .eq('m', ym.m);
+  // ---- SWR 캐시 & 로딩 상태
+  const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
+  const ymKey = `${ym.y}-${ym.m}`;
+  const [loading, setLoading] = useState(false);
 
-      if (error) {
-        console.error(error.message);
-        return;
-      }
+  // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
+  useEffect(() => {
+    let alive = true;
+
+    // 1) 캐시가 있으면 즉시 표시(깜빡임 억제)
+    const cached = monthCache.get(ymKey);
+    if (cached) {
       const map: Record<string, Note> = {};
-      (data || []).forEach((n: any) => {
+      cached.forEach((n: any) => {
         map[`${n.y}-${n.m}-${n.d}`] = {
           y: n.y,
           m: n.m,
@@ -68,8 +74,60 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         };
       });
       setNotes(map);
-    })();
-  }, [supabase, ym.y, ym.m]);
+    }
+
+    // 2) 최신 데이터로 갱신
+    setLoading(true);
+    supabase
+      .from('notes')
+      .select('*')
+      .eq('y', ym.y)
+      .eq('m', ym.m)
+      .then(({ data, error }) => {
+        if (!alive) return;
+        if (error) {
+          console.error(error.message);
+          return;
+        }
+        const map: Record<string, Note> = {};
+        (data || []).forEach((n: any) => {
+          map[`${n.y}-${n.m}-${n.d}`] = {
+            y: n.y,
+            m: n.m,
+            d: n.d,
+            id: n.id,
+            content: n.content || '',
+            items: n.items || [],
+            color: n.color ?? null,
+          };
+        });
+        setNotes(map);
+        setMonthCache((prev) => {
+          const next = new Map(prev);
+          next.set(ymKey, data || []);
+          return next;
+        });
+      })
+      .finally(() => alive && setLoading(false));
+
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ymKey]);
+
+  async function prefetchMonth(y: number, m: number) {
+    const k = `${y}-${m}`;
+    if (monthCache.has(k)) return;
+    const { data, error } = await supabase.from('notes').select('*').eq('y', y).eq('m', m);
+    if (!error) {
+      setMonthCache((prev) => {
+        const next = new Map(prev);
+        next.set(k, data || []);
+        return next;
+      });
+    }
+  }
 
   function key(y: number, m: number, d: number) {
     return `${y}-${m}-${d}`;
@@ -147,12 +205,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     { id: 'b8', src: '/ribbon/btn_insta.png', alt: '인스타', href: 'https://www.instagram.com/eaglekop/' },
   ];
 
-  function jumpGo() {
+  async function jumpGo() {
     const d = new Date(jump);
     if (Number.isNaN(d.getTime())) {
       alert('유효한 날짜를 선택하세요.');
       return;
     }
+    // 이동 전 미리 당겨오기
+    await prefetchMonth(d.getFullYear(), d.getMonth());
     setYM({ y: d.getFullYear(), m: d.getMonth() });
     openInfo(d.getFullYear(), d.getMonth(), d.getDate());
   }
@@ -192,13 +252,39 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
           {/* 좌측 하단: ◀ 월 텍스트 ▶ | 날짜 선택 + 이동 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <button onClick={() => setYM(({ y, m }) => (m ? { y, m: m - 1 } : { y: y - 1, m: 11 }))}>◀</button>
+            <button
+              onMouseEnter={() => {
+                const p = prevOf(ym);
+                prefetchMonth(p.y, p.m);
+              }}
+              onClick={() => setYM(prevOf(ym))}
+            >
+              ◀
+            </button>
+
             <strong style={{ fontSize: 18 }}>{monthLabel}</strong>
-            <button onClick={() => setYM(({ y, m }) => (m < 11 ? { y, m: m + 1 } : { y: y + 1, m: 0 }))}>▶</button>
+
+            <button
+              onMouseEnter={() => {
+                const n = nextOf(ym);
+                prefetchMonth(n.y, n.m);
+              }}
+              onClick={() => setYM(nextOf(ym))}
+            >
+              ▶
+            </button>
 
             <div className="jump">
               <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
-              <button onClick={jumpGo}>이동</button>
+              <button
+                onMouseEnter={() => {
+                  const d = new Date(jump);
+                  if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
+                }}
+                onClick={jumpGo}
+              >
+                이동
+              </button>
             </div>
           </div>
         </div>
@@ -226,8 +312,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       </div>
       {/* ==================== /상단 컨테이너 ==================== */}
 
-      {/* 요일/달력 그리드 */}
-      <div className="grid grid-lg">
+      {/* 요일/달력 그리드 (로딩 시 미세 페이드) */}
+      <div className="grid grid-lg" style={{ opacity: loading ? 0.96 : 1, transition: 'opacity .12s linear' }}>
         {['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
           <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>
             {n}
@@ -270,7 +356,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
               {showFlagBanner && <div className="flag-banner">{note!.content}</div>}
 
               {showChips && (
-                <div className="chips">
+                <div className="chips chips-scroll"> {/* chips-scroll: 높이 제한 + 스크롤 */}
                   {note!.items.map((it: Item, i: number) => (
                     <span key={i} className="chip">
                       {chipLabel(it)}

@@ -164,7 +164,7 @@ export default function DateInfoModal({
     setEditingText('');
   }
 
-  // 편집 중 삭제
+  // 편집 중 삭제 버튼
   async function deleteChip(){
     if(editingIndex===null || !canEdit) return;
     const ok = window.confirm('해당 아이템을 삭제할까요?');
@@ -229,13 +229,9 @@ export default function DateInfoModal({
     }
   }
 
-  // 칩 표시 텍스트(emojiOnly 지원)
   function chipLabel(it: Item){
     if (it.text && it.text.length) return it.text;
-    if (it.emojiOnly) {
-      // 아이콘만. 아이콘 없으면 라벨 fallback
-      return it.emoji ? it.emoji : it.label;
-    }
+    if (it.emojiOnly) return it.emoji ? it.emoji : it.label;
     return `${it.emoji ? it.emoji+' ' : ''}${it.label}`;
   }
 
@@ -301,7 +297,7 @@ export default function DateInfoModal({
           </div>
         )}
 
-        {/* ▽ 칩 편집 영역: 더블클릭 시 표시 */}
+        {/* ▽ 칩 편집 영역: 더블클릭 시 표시 (삭제 버튼 추가) */}
         {canEdit && editingIndex!==null && (
           <div style={{
             display:'flex', gap:8, alignItems:'center',

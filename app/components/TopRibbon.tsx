@@ -12,7 +12,7 @@ type RibbonButton = {
 export default function TopRibbon({
   buttons,
   extraText,
-  containerHeight = 48, // 컨테이너 높이(px)
+  containerHeight = 64, // 컨테이너 높이(px)
   gap = 10,             // 버튼 사이 간격(px)
   minSize = 24,         // 자동 축소 시 최소 버튼 크기(px)
 }: {
@@ -74,7 +74,6 @@ export default function TopRibbon({
       ref={wrapRef}
       className="top-ribbon"
       style={{
-        // 배경/테마는 globals.css의 .top-ribbon 규칙을 사용
         height: containerHeight,
         padding: `${padV}px ${padH}px`,
         display: 'flex',
@@ -112,7 +111,6 @@ export default function TopRibbon({
               else if (b.href) window.open(b.href, '_blank', 'noopener,noreferrer');
             }}
             style={{
-              // 버튼도 정사각형: 높이=컨테이너 높이(자동 축소 반영)
               width: btnSize,
               height: btnSize,
               border: 'none',
@@ -125,7 +123,6 @@ export default function TopRibbon({
             <img
               src={b.src}
               alt={b.alt || ''}
-              // 이미지도 정사각형 영역에 딱 맞춘다 (기존 CSS의 height:56px을 무시)
               style={{
                 display: 'block',
                 width: '100%',
