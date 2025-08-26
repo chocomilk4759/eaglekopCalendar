@@ -3,9 +3,9 @@
   - Theme tokens (light/dark)
   - Base resets & typography
   - Fixed header (Auth / Theme)
-  - Page grid 1:8:1 (left spacer : calendar : right presets dock)
+  - Page grid 1:8:1 (left spacer : calendar : right spacer)
   - Calendar (square cells, weekend colors, rest banner)
-  - Presets Dock (RIGHT / VERTICAL, right-aligned, lowered to weekday row via --dock-offset)
+  - Presets Dock (FIXED at top-right under ThemeToggle; vertical, right-aligned)
   - Auth popover
   - Date info modal
   - Utilities & responsive tweaks
@@ -31,8 +31,8 @@
   --restBg:#ffe5e5;
   --restFg:#a00;
 
-  /* ▼ 프리셋 도크를 요일 헤더 높이에 맞추기 위한 오프셋(필요시 숫자만 조정) */
-  --dock-offset: 120px;
+  /* ▼ PresetsDock vertical offset: ThemeToggle 바로 아래 높이에 맞춤 */
+  --dock-top: 128px;  /* 헤더/토글 높이에 맞게 조정 */
 }
 
 [data-theme="dark"]{
@@ -112,7 +112,7 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  4) PAGE GRID — 1 : 8 : 1 (left spacer : calendar : right dock)
+  4) PAGE GRID — 1 : 8 : 1 (left spacer : calendar : right spacer)
 ===================================================================================== */
 .layout-1-8-1{
   display: grid;
@@ -223,18 +223,14 @@ button:active{ transform: translateY(0.5px); }
 
 
 /* =====================================================================================
-  7) PRESETS DOCK (RIGHT / VERTICAL, RIGHT-ALIGNED, LOWERED TO WEEKDAY ROW)
-     - Vertical list of chips sized to content (not full width)
-     - Right aligned chips
-     - Lowered to weekday row using --dock-offset
-     - “＋” icon button toggles input form
+  7) PRESETS DOCK — FIXED AT TOP-RIGHT (UNDER THEME TOGGLE), VERTICAL, RIGHT-ALIGNED
 ===================================================================================== */
 .presets-dock{
-  position: sticky;
-  top: 56px;            /* 헤더/테마 토글 아래에서 sticky */
-  margin-top: var(--dock-offset); /* ▼ 요일 헤더 라인 높이에 맞춰 내림 */
-  z-index: 3;
-  width: 100%;
+  position: fixed;
+  right: 12px;
+  top: var(--dock-top);  /* ✅ ThemeToggle 바로 아래 */
+  z-index: 9990;
+  width: 320px;
   max-height: calc(100vh - 72px);
   display: flex;
   flex-direction: column;
@@ -255,8 +251,7 @@ button:active{ transform: translateY(0.5px); }
   display: flex;
   flex-direction: column;
   gap: 8px;
-  align-self: flex-end;
-  align-items: flex-end;   /* ▼ 칩 우측 정렬 */
+  align-items: flex-end;   /* 칩 우측 정렬 */
 }
 
 /* chip sized to content (pill) */
@@ -276,7 +271,7 @@ button:active{ transform: translateY(0.5px); }
   max-width: 100%;           /* clamp to dock width */
   overflow: hidden;
   text-overflow: ellipsis;
-  text-align: right;         /* 내부 텍스트도 우측 정렬 느낌 */
+  text-align: right;
 }
 [data-theme="dark"] .preset-chip{
   background: linear-gradient(180deg, #1b1d23, #14161b);
@@ -417,7 +412,8 @@ button:active{ transform: translateY(0.5px); }
     position: static;
     width: auto;
     max-height: none;
-    margin-top: 8px; /* 모바일에서는 살짝만 띄움 */
+    right: auto; top: auto;
+    margin-top: 8px;
   }
 }
 

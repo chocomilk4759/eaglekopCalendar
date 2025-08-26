@@ -16,15 +16,14 @@ export default function ThemeToggle(){
 
   // 현재 상태만 렌더 (호버로 컨텐츠/아이콘 바꾸지 않음)
   const icon = theme === 'light' ? '☀️' : '🌙';
-  const label = theme === 'light' ? 'Light' : 'Dark';
 
   return (
     <button
       onClick={toggle}
-      aria-label={`현재 테마: ${label}. 클릭 시 전환`}
+      aria-label={`현재 테마: ${icon}. 클릭 시 전환`}
       // title 제거: 호버 시 텍스트 뜨는 부작용 차단
     >
-      {icon} {label}
+      {icon}
     </button>
   );
 }

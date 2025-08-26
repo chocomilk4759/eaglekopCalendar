@@ -15,13 +15,16 @@ export default function Page(){
   },[]);
 
   return (
-    <main className="container">
-      {/* 1 : 8 : 1 */}
-      <div className="layout-1-8-1">
-        <div aria-hidden />
-        <div><Calendar canEdit={canEdit} /></div>
-        <aside><PresetsDock canEdit={canEdit} /></aside>
-      </div>
-    </main>
+    <>
+      {/* ✅ 프리셋 도크: ThemeToggle 바로 아래(우상단 고정) */}
+      <PresetsDock canEdit={canEdit} />
+
+      {/* 본문: 1 : 8 : 1 레이아웃에서 우측은 스페이서만 둠 */}
+      <main className="container">
+        <div className="layout-1-8-1">
+          <div><Calendar canEdit={canEdit} /></div>
+        </div>
+      </main>
+    </>
   );
 }
