@@ -22,7 +22,9 @@ export default function Page(){
       {/* 본문: 1 : 8 : 1 레이아웃에서 우측은 스페이서만 둠 */}
       <main className="container">
         <div className="layout-1-8-1">
+          <div aria-hidden />
           <div><Calendar canEdit={canEdit} /></div>
+          <div aria-hidden />
         </div>
       </main>
     </>
