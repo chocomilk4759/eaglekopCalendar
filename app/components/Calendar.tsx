@@ -90,7 +90,7 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
       {/* 상단 프로필 & 타이틀 */}
       <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
         <img
-          src="https://game.naver.com/profile/eaf7b569c9992d0e57db0059eb5c0eeb"
+          src="https://game.naver.com/profile/eaf7b569c9992d0e57db0059eb5c0eebhttps://nng-phinf.pstatic.net/MjAyMzEyMTlfMjAg/MDAxNzAyOTc2MDc4MjIw.QvMDCwv6PZHhFsTp7FRQbd6r2oQJAuXC0hGgaKVkfLgg.M-aTWoUNqz-19-Kc8eGfZqzIRz259CfJoQQxw33QVawg.PNG/1.png?type=f120_120_na"
           alt="채널 프로필"
           width={36}
           height={36}
