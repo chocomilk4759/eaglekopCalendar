@@ -2,13 +2,20 @@
 import { createClient } from '@/lib/supabaseClient';
 import { useEffect, useMemo, useState } from 'react';
 
-type Item = { emoji: string | null; label: string; text?: string };
+type Item = {
+  emoji: string | null;
+  label: string;
+  text?: string;
+  /** 텍스트 없이 아이콘만 보여줄지 여부 (초기 드롭이 비어있거나, 편집 중 비우고 저장 시 true) */
+  emojiOnly?: boolean;
+};
+
 type Note = {
   id?: number;
   y: number; m: number; d: number;
   content: string;
   items: Item[];
-  color: 'red' | 'blue' | null; // 플래그
+  color: 'red' | 'blue' | null;
 };
 
 export default function DateInfoModal({
@@ -27,24 +34,30 @@ export default function DateInfoModal({
   const [memo, setMemo] = useState(note.content || '');
   const [initialMemo, setInitialMemo] = useState(note.content || '');
 
-  // drag state (칩 재정렬)
+  // 칩 편집 상태
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingText, setEditingText] = useState<string>('');
+
+  // 드래그 상태(순서 변경)
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  const title = useMemo(() => (
-    `${date.y}-${(date.m+1).toString().padStart(2,'0')}-${date.d.toString().padStart(2,'0')}`
-  ), [date]);
+  const title = useMemo(() =>
+    `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`
+  , [date]);
 
   useEffect(()=>{
-    if(!open) return;
+    if (!open) return;
     const base = initial || emptyNote;
     setNote(base);
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
+    setEditingIndex(null);
+    setEditingText('');
     setDragIndex(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
-  // 항상 Note 반환(에러는 throw)
+  // 항상 Note 반환(에러 throw)
   async function persist(upd: Partial<Note>): Promise<Note> {
     const payload = { ...note, ...upd };
     const { data, error } = await supabase
@@ -52,9 +65,7 @@ export default function DateInfoModal({
       .upsert(payload, { onConflict: 'y,m,d' })
       .select()
       .single();
-
     if (error) throw new Error(error.message);
-
     setNote(data as any);
     onSaved(data as any);
     return data as Note;
@@ -62,7 +73,7 @@ export default function DateInfoModal({
 
   async function toggleFlag(color: 'red' | 'blue'){
     if(!canEdit) return;
-    const next: 'red' | 'blue' | null = note.color === color ? null : color;
+    const next: 'red'|'blue'|null = note.color===color ? null : color;
     try{
       await persist({ color: next });
     }catch(e:any){
@@ -85,13 +96,13 @@ export default function DateInfoModal({
     setMemo(initialMemo || '');
   }
 
-  // 초기화: 메모/아이템/색상 전부 삭제(행 삭제)
+  // 초기화: 행 삭제(메모/아이템/플래그 모두 제거)
   async function clearAll(){
     if(!canEdit){
       setMemo('');
       return;
     }
-    const ok = window.confirm('해당 날짜의 메모/아이템/색상 표시를 모두 삭제할까요? 이 작업은 되돌릴 수 없습니다.');
+    const ok = window.confirm('해당 날짜의 메모/아이템/색상 표시를 모두 삭제할까요?');
     if(!ok) return;
 
     try{
@@ -107,35 +118,67 @@ export default function DateInfoModal({
       setNote(cleared);
       setMemo('');
       setInitialMemo('');
-      onSaved(cleared);
+      setEditingIndex(null);
       alert('초기화했습니다.');
+      onSaved(cleared);
     }catch(e:any){
       alert(e?.message ?? '초기화 중 오류가 발생했습니다.');
     }
   }
 
-  // ===== 칩 상세 수정(더블클릭) =====
-  async function editChip(idx: number){
+  // ===== 칩 더블클릭 → 편집 모드 진입 =====
+  function onDoubleClickChip(idx:number){
     if(!canEdit) return;
     const cur = note.items?.[idx];
     if(!cur) return;
-    const nextText = window.prompt('상세 내용을 수정하세요', cur.text ?? '');
-    if(nextText === null) return; // 취소
-    const trimmed = nextText.trim();
+    setEditingIndex(idx);
+    setEditingText(cur.text ?? '');
+  }
 
+  // 편집 저장
+  async function saveChipEdit(){
+    if(editingIndex===null || !canEdit) return;
     const items = [...(note.items || [])];
-    if(trimmed.length === 0){
-      // 빈 입력이면 상세 텍스트 제거(라벨/이모지는 유지)
-      const { text, ...rest } = items[idx];
-      items[idx] = rest;
-    }else{
-      items[idx] = { ...items[idx], text: trimmed };
-    }
+    const cur = items[editingIndex];
+    if(!cur) return;
+
+    const t = editingText.trim();
+    items[editingIndex] = {
+      ...cur,
+      text: t.length ? t : undefined,
+      emojiOnly: t.length ? false : true, // 입력 비어있으면 아이콘만
+    };
 
     try{
       await persist({ items });
+      setEditingIndex(null);
+      setEditingText('');
     }catch(e:any){
-      alert(e?.message ?? '아이템 수정 중 오류가 발생했습니다.');
+      alert(e?.message ?? '아이템 저장 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 편집 취소
+  function cancelChipEdit(){
+    setEditingIndex(null);
+    setEditingText('');
+  }
+
+  // 편집 중 삭제
+  async function deleteChip(){
+    if(editingIndex===null || !canEdit) return;
+    const ok = window.confirm('해당 아이템을 삭제할까요?');
+    if(!ok) return;
+
+    const items = [...(note.items || [])];
+    items.splice(editingIndex, 1);
+
+    try{
+      await persist({ items });
+      setEditingIndex(null);
+      setEditingText('');
+    }catch(e:any){
+      alert(e?.message ?? '아이템 삭제 중 오류가 발생했습니다.');
     }
   }
 
@@ -144,7 +187,6 @@ export default function DateInfoModal({
     if(!canEdit) return;
     setDragIndex(idx);
     e.dataTransfer.effectAllowed = 'move';
-    // Safari 대응용
     e.dataTransfer.setData('text/plain', String(idx));
   }
   function onDragOverChip(e: React.DragEvent<HTMLSpanElement>){
@@ -156,8 +198,7 @@ export default function DateInfoModal({
     if(!canEdit) return;
     e.preventDefault();
     const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain'));
-    if(isNaN(from)) return;
-    if(from === targetIdx) return;
+    if(isNaN(from) || from === targetIdx) return;
 
     const items = [...(note.items || [])];
     const [moved] = items.splice(from, 1);
@@ -170,7 +211,6 @@ export default function DateInfoModal({
       alert(e?.message ?? '순서 변경 중 오류가 발생했습니다.');
     }
   }
-  // 컨테이너에 드랍 → 맨 끝으로 이동
   async function onDropContainer(e: React.DragEvent<HTMLDivElement>){
     if(!canEdit) return;
     e.preventDefault();
@@ -189,6 +229,16 @@ export default function DateInfoModal({
     }
   }
 
+  // 칩 표시 텍스트(emojiOnly 지원)
+  function chipLabel(it: Item){
+    if (it.text && it.text.length) return it.text;
+    if (it.emojiOnly) {
+      // 아이콘만. 아이콘 없으면 라벨 fallback
+      return it.emoji ? it.emoji : it.label;
+    }
+    return `${it.emoji ? it.emoji+' ' : ''}${it.label}`;
+  }
+
   if(!open) return null;
 
   return (
@@ -198,7 +248,6 @@ export default function DateInfoModal({
         <div className="date-head">
           <h3 style={{margin:'8px 0'}}>{title}</h3>
 
-          {/* 초기화 버튼 (날짜 우측) */}
           <button
             onClick={clearAll}
             title="초기화"
@@ -208,7 +257,6 @@ export default function DateInfoModal({
             초기화
           </button>
 
-          {/* 빨간/파란 작은 버튼 */}
           <div className="flag-buttons" aria-label="날짜 강조 색상">
             <button
               className={`flag-btn red ${note.color==='red'?'active':''}`}
@@ -240,16 +288,36 @@ export default function DateInfoModal({
                 key={idx}
                 className="chip"
                 title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : undefined}
-                onDoubleClick={()=> editChip(idx)}
+                onDoubleClick={()=> onDoubleClickChip(idx)}
                 draggable={canEdit}
                 onDragStart={(e)=>onDragStartChip(e, idx)}
                 onDragOver={onDragOverChip}
                 onDrop={(e)=>onDropChip(e, idx)}
                 style={dragIndex===idx ? { opacity:.6 } : undefined}
               >
-                {it.text?.length ? it.text : `${it.emoji ? it.emoji+' ' : ''}${it.label}`}
+                {chipLabel(it)}
               </span>
             ))}
+          </div>
+        )}
+
+        {/* ▽ 칩 편집 영역: 더블클릭 시 표시 */}
+        {canEdit && editingIndex!==null && (
+          <div style={{
+            display:'flex', gap:8, alignItems:'center',
+            padding:'8px 10px', border:'1px solid var(--border)',
+            borderRadius:10, margin:'6px 0'
+          }}>
+            <span style={{fontSize:12, opacity:.7}}>아이템 편집</span>
+            <input
+              value={editingText}
+              onChange={(e)=>setEditingText(e.target.value)}
+              placeholder="빈칸으로 저장하면 아이콘만 표시"
+              style={{flex:1, padding:'6px 8px', borderRadius:8}}
+            />
+            <button onClick={saveChipEdit}>저장</button>
+            <button onClick={deleteChip} style={{borderColor:'#b12a2a', color:'#b12a2a'}}>삭제</button>
+            <button onClick={cancelChipEdit}>취소</button>
           </div>
         )}
 
