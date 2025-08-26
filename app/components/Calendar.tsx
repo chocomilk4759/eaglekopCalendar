@@ -98,12 +98,30 @@ export default function Calendar({ canEdit }:{ canEdit:boolean }){
 
   return (
     <>
-      {/* 월 변경 헤더 */}
+      {/* 상단 프로필 & 타이틀 */}
+      <div style={{display:'flex', alignItems:'center', gap:12, margin:'8px 0 4px'}}>
+        <img
+          src="/images/channel-profile.png"
+          alt="채널 프로필"
+          width={40}
+          height={40}
+          style={{borderRadius:12, objectFit:'cover', border:'1px solid var(--border)'}}
+        />
+        <h2 style={{margin:0}}>이글콥의 스케쥴표</h2>
+      </div>
+
+      {/* 월 변경 + 날짜 점프 */}
       <div className="cal-header">
         <div style={{display:'flex', gap:10, alignItems:'center', fontSize:16}}>
           <button onClick={()=>setYM(({y,m})=> m?({y,m:m-1}):({y:y-1,m:11}))}>◀</button>
           <strong style={{fontSize:18}}>{monthLabel}</strong>
           <button onClick={()=>setYM(({y,m})=> m<11?({y,m:m+1}):({y:y+1,m:0}))}>▶</button>
+
+          {/* 우측 버튼 오른쪽에 날짜 이동 */}
+          <div className="jump">
+            <input type="date" value={jump} onChange={(e)=>setJump(e.target.value)} aria-label="날짜 선택" />
+            <button onClick={jumpGo}>이동</button>
+          </div>
         </div>
         <div />
       </div>
