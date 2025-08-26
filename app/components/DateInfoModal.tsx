@@ -4,13 +4,15 @@ import { useEffect, useMemo, useState } from 'react';
 
 type Item = { emoji: string | null; label: string; text?: string };
 type Note = {
-  id?:number; y:number; m:number; d:number;
-  content:string; items:Item[];
-  color: 'red' | 'blue' | null;
+  id?: number;
+  y: number; m: number; d: number;
+  content: string;
+  items: Item[];
+  color: 'red' | 'blue' | null; // 플래그
 };
 
 export default function DateInfoModal({
-  open, onClose, date, note:initial, canEdit, onSaved
+  open, onClose, date, note: initial, canEdit, onSaved
 }:{
   open:boolean; onClose:()=>void;
   date:{y:number;m:number;d:number};
@@ -21,11 +23,16 @@ export default function DateInfoModal({
   const supabase = createClient();
   const emptyNote: Note = { y:date.y, m:date.m, d:date.d, content:'', items:[], color:null };
 
-  const [note,setNote]=useState<Note>( initial || emptyNote );
+  const [note, setNote] = useState<Note>(initial || emptyNote);
   const [memo, setMemo] = useState(note.content || '');
   const [initialMemo, setInitialMemo] = useState(note.content || '');
 
-  const title = useMemo(()=>`${date.y}-${(date.m+1).toString().padStart(2,'0')}-${date.d.toString().padStart(2,'0')}`,[date]);
+  // drag state (칩 재정렬)
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  const title = useMemo(() => (
+    `${date.y}-${(date.m+1).toString().padStart(2,'0')}-${date.d.toString().padStart(2,'0')}`
+  ), [date]);
 
   useEffect(()=>{
     if(!open) return;
@@ -33,10 +40,11 @@ export default function DateInfoModal({
     setNote(base);
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
+    setDragIndex(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
-  // 항상 Note를 반환(에러는 throw)
+  // 항상 Note 반환(에러는 throw)
   async function persist(upd: Partial<Note>): Promise<Note> {
     const payload = { ...note, ...upd };
     const { data, error } = await supabase
@@ -54,7 +62,7 @@ export default function DateInfoModal({
 
   async function toggleFlag(color: 'red' | 'blue'){
     if(!canEdit) return;
-    const next: 'red'|'blue'|null = note.color===color ? null : color;
+    const next: 'red' | 'blue' | null = note.color === color ? null : color;
     try{
       await persist({ color: next });
     }catch(e:any){
@@ -77,10 +85,9 @@ export default function DateInfoModal({
     setMemo(initialMemo || '');
   }
 
-  // ✅ 초기화 버튼: 입력 중 내용 제거 + DB 저장분도 삭제(행 삭제) + 플래그/아이템도 초기화
+  // 초기화: 메모/아이템/색상 전부 삭제(행 삭제)
   async function clearAll(){
     if(!canEdit){
-      // 읽기 모드에서도 입력 중 내용만 초기화
       setMemo('');
       return;
     }
@@ -96,19 +103,94 @@ export default function DateInfoModal({
         .eq('d', date.d);
       if(error) throw new Error(error.message);
 
-      // 로컬 상태 초기화
-      setMemo('');
-      setInitialMemo('');
       const cleared: Note = { ...emptyNote };
       setNote(cleared);
-      onSaved(cleared); // 캘린더 상태 갱신(빈 노트로 동기화)
+      setMemo('');
+      setInitialMemo('');
+      onSaved(cleared);
       alert('초기화했습니다.');
     }catch(e:any){
       alert(e?.message ?? '초기화 중 오류가 발생했습니다.');
     }
   }
 
+  // ===== 칩 상세 수정(더블클릭) =====
+  async function editChip(idx: number){
+    if(!canEdit) return;
+    const cur = note.items?.[idx];
+    if(!cur) return;
+    const nextText = window.prompt('상세 내용을 수정하세요', cur.text ?? '');
+    if(nextText === null) return; // 취소
+    const trimmed = nextText.trim();
+
+    const items = [...(note.items || [])];
+    if(trimmed.length === 0){
+      // 빈 입력이면 상세 텍스트 제거(라벨/이모지는 유지)
+      const { text, ...rest } = items[idx];
+      items[idx] = rest;
+    }else{
+      items[idx] = { ...items[idx], text: trimmed };
+    }
+
+    try{
+      await persist({ items });
+    }catch(e:any){
+      alert(e?.message ?? '아이템 수정 중 오류가 발생했습니다.');
+    }
+  }
+
+  // ===== 칩 순서 변경(드래그/드랍) =====
+  function onDragStartChip(e: React.DragEvent<HTMLSpanElement>, idx: number){
+    if(!canEdit) return;
+    setDragIndex(idx);
+    e.dataTransfer.effectAllowed = 'move';
+    // Safari 대응용
+    e.dataTransfer.setData('text/plain', String(idx));
+  }
+  function onDragOverChip(e: React.DragEvent<HTMLSpanElement>){
+    if(!canEdit) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+  async function onDropChip(e: React.DragEvent<HTMLSpanElement>, targetIdx: number){
+    if(!canEdit) return;
+    e.preventDefault();
+    const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain'));
+    if(isNaN(from)) return;
+    if(from === targetIdx) return;
+
+    const items = [...(note.items || [])];
+    const [moved] = items.splice(from, 1);
+    items.splice(targetIdx, 0, moved);
+
+    try{
+      await persist({ items });
+      setDragIndex(null);
+    }catch(e:any){
+      alert(e?.message ?? '순서 변경 중 오류가 발생했습니다.');
+    }
+  }
+  // 컨테이너에 드랍 → 맨 끝으로 이동
+  async function onDropContainer(e: React.DragEvent<HTMLDivElement>){
+    if(!canEdit) return;
+    e.preventDefault();
+    const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain'));
+    if(isNaN(from)) return;
+
+    const items = [...(note.items || [])];
+    const [moved] = items.splice(from, 1);
+    items.push(moved);
+
+    try{
+      await persist({ items });
+      setDragIndex(null);
+    }catch(e:any){
+      alert(e?.message ?? '순서 변경 중 오류가 발생했습니다.');
+    }
+  }
+
   if(!open) return null;
+
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet" onClick={e=>e.stopPropagation()}>
@@ -121,11 +203,7 @@ export default function DateInfoModal({
             onClick={clearAll}
             title="초기화"
             aria-label="초기화"
-            style={{
-              marginLeft:'auto',
-              fontSize:12, padding:'6px 8px',
-              borderRadius:8
-            }}
+            style={{ marginLeft:'auto', fontSize:12, padding:'6px 8px', borderRadius:8 }}
           >
             초기화
           </button>
@@ -147,13 +225,28 @@ export default function DateInfoModal({
           </div>
         </div>
 
-        {/* 아이템 표시 */}
-        {(note.items?.length||0)===0 ? (
+        {/* 아이템 목록 (더블클릭 편집 + 드래그/드랍 순서변경) */}
+        {(note.items?.length || 0) === 0 ? (
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>아이템 없음</div>
         ) : (
-          <div className="chips" style={{marginBottom:6}}>
-            {note.items.map((it:Item,idx:number)=>(
-              <span key={idx} className="chip">
+          <div
+            className="chips"
+            style={{marginBottom:6}}
+            onDragOver={(e)=>{ if(canEdit){ e.preventDefault(); }}}
+            onDrop={onDropContainer}
+          >
+            {note.items.map((it:Item, idx:number)=>(
+              <span
+                key={idx}
+                className="chip"
+                title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : undefined}
+                onDoubleClick={()=> editChip(idx)}
+                draggable={canEdit}
+                onDragStart={(e)=>onDragStartChip(e, idx)}
+                onDragOver={onDragOverChip}
+                onDrop={(e)=>onDropChip(e, idx)}
+                style={dragIndex===idx ? { opacity:.6 } : undefined}
+              >
                 {it.text?.length ? it.text : `${it.emoji ? it.emoji+' ' : ''}${it.label}`}
               </span>
             ))}
