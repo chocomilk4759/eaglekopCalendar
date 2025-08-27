@@ -579,7 +579,7 @@ export default function DateInfoModal({
             )}
 
             {/* 하단 버튼 줄: 메모/리셋/닫기 + (이미지 삽입) (링크 토글) */}
-            <div className="actions" style={{ dispaly:'flex', flexWrap:'wrap', alignItems:'left'}}>
+            <div className="actions" style={{ display:'flex', flexWrap:'wrap', alignItems:'left'}}>
               <button onClick={openPicker} disabled={!canEdit || uploading}>
                 {uploading ? '업로드 중…' : '이미지 삽입'}
               </button>
@@ -598,7 +598,7 @@ export default function DateInfoModal({
                 <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>
               )}
             </div>
-            
+
             <div className="actions" style={{ display:'flex', flexWrap:'wrap', alignItems:'right' }}>
               <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
