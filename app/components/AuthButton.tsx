@@ -192,9 +192,6 @@ export default function AuthButton() {
               <button onClick={() => setOpen(false)}>닫기</button>
               <button onClick={handleLogin}>로그인</button>
             </div>
-            <small className="text-muted">
-              * 아이디에 <code>@</code>가 없으면 <code>@{loginDomain}</code> 도메인을 붙여 인증합니다.
-            </small>
           </div>
         ) : (
           <div style={{ display: 'grid', gap: 10 }}>
