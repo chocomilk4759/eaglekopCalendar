@@ -18,7 +18,23 @@ type Note = {
   content: string;
   items: Item[];
   color: 'red' | 'blue' | null; // 플래그
+  link?: string | null;
+  image_url?: string | null;
 };
+
+function normalizeNote(row: any): Note {
+  return {
+    id: row?.id ?? undefined,
+    y: row?.y ?? 0,
+    m: row?.m ?? 0,
+    d: row?.d ?? 1,
+    content: row?.content ?? '',
+    items: Array.isArray(row?.items) ? row.items as Item[] : [],   // ← 필수
+    color: (row?.color === 'red' || row?.color === 'blue') ? row.color : null, // ← 필수
+    link: row?.link ?? null,
+    image_url: row?.image_url ?? null,
+  };
+}
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -72,6 +88,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             content: n.content || '',
             items: n.items || [],
             color: n.color ?? null,
+            link: n.link ?? null,
+            image_url: n.image_url ?? null,
           };
         });
         setNotes(map);
@@ -102,6 +120,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             content: n.content || '',
             items: n.items || [],
             color: n.color ?? null,
+            link: n.link ?? null,
+            image_url: n.image_url ?? null,
           };
         });
         setNotes(map);
@@ -175,7 +195,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     };
 
     const k = key(y, m, d);
-    const cur = notes[k] || { y, m, d, content: '', items: [], color: null };
+    const cur = notes[k] || { y, m, d, content: '', items: [], color: null, link: null, image_url: null };
     const next: Note = { ...cur, items: [...(cur.items || []), newItem] };
 
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict: 'y,m,d' }).select().single();

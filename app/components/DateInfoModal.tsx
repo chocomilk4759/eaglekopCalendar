@@ -16,6 +16,8 @@ type Note = {
   content: string;
   items: Item[];
   color: 'red' | 'blue' | null;
+  link: null;
+  image_url: null;
 };
 
 export default function DateInfoModal({
