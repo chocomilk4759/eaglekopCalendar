@@ -397,7 +397,6 @@ export default function DateInfoModal({
         {/* 프리셋 선택 박스 */}
         {presetPickerOpen && presets && (
           <div style={{ border:'1px solid var(--border)', borderRadius:10, padding:8, margin:'6px 0 4px', background:'#fff' }}>
-            <div style={{fontSize:12, opacity:.7, marginBottom:6}}>프리셋 선택</div>
             <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:6}}>
               {presets.map((p, i)=>(
                 <button key={i} onClick={()=> addPresetItem(p)} disabled={!canEdit}
@@ -445,14 +444,23 @@ export default function DateInfoModal({
                       placeholder="메모를 입력하세요"
                       style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}} />
 
+                      
+            {/* ▽ 링크 패널(토글) — 메모와 버튼 사이에 표시 */}
             {linkPanelOpen && (
-              <div style={{ display:'flex', gap:8, alignItems:'center',
-                            border:'1px solid var(--border)', borderRadius:10,
-                            padding:'8px 10px', background:'#fff' }}>
-                <input placeholder="https://example.com" value={linkInput}
-                       onChange={(e)=> setLinkInput(e.target.value)}
-                       onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
-                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }} />
+              <div
+                style={{
+                  display:'flex', gap:8, alignItems:'center',
+                  border:'1px solid var(--border)', borderRadius:10,
+                  padding:'8px 10px', background:'#fff'
+                }}
+              >
+                <input
+                  placeholder="https://example.com"
+                  value={linkInput}
+                  onChange={(e)=> setLinkInput(e.target.value)}
+                  onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
+                  style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
+                />
                 <button type="button" onClick={saveLink} disabled={!canEdit}>링크 저장</button>
                 <button type="button" onClick={deleteLink} disabled={!canEdit}>링크 삭제</button>
               </div>
