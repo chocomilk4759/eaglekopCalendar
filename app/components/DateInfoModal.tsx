@@ -36,7 +36,7 @@ export default function DateInfoModal({
 
   // 링크/이미지 상태
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
-  const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false); // ← 링크 버튼 토글
+  const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false); // 링크 버튼 토글
   const [imageUrl, setImageUrl] = useState<string | null>(note.image_url ?? null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -143,7 +143,7 @@ export default function DateInfoModal({
 
   // ===== 칩 더블클릭 → 편집 모드 진입 =====
   function onDoubleClickChip(idx:number){
-    if(!canEdit) return;
+    // 읽기 모드에서도 패널은 띄우되, 저장/삭제만 비활성화
     const cur = note.items?.[idx];
     if(!cur) return;
     setEditingIndex(idx);
@@ -389,9 +389,8 @@ export default function DateInfoModal({
     };
     items.push(newItem); // 맨 끝 → 우측에 배치됨
     try {
-      const saved = await persist({ items });
+      await persist({ items });
       setPresetPickerOpen(false);
-      // saved로 note state 갱신은 persist가 수행
     } catch (e:any) {
       alert(e?.message ?? '아이템 추가 중 오류가 발생했습니다.');
     }
@@ -435,17 +434,15 @@ export default function DateInfoModal({
         {(note.items?.length || 0) === 0 ? (
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
-            {canEdit && (
-              <button
-                onClick={async ()=>{
-                  await ensurePresets();
-                  setPresetPickerOpen(v=>!v);
-                }}
-                style={{ marginLeft:8, border:'1px dashed var(--border)', borderRadius:999, padding:'2px 10px' }}
-                title="아이템 추가"
-                aria-label="아이템 추가"
-              >＋</button>
-            )}
+            <button
+              onClick={async ()=>{
+                await ensurePresets();
+                setPresetPickerOpen(v=>!v);
+              }}
+              style={{ marginLeft:8, border:'1px dashed var(--border)', borderRadius:999, padding:'2px 10px' }}
+              title="아이템 추가"
+              aria-label="아이템 추가"
+            >＋</button>
           </div>
         ) : (
           <div
@@ -458,7 +455,7 @@ export default function DateInfoModal({
               <span
                 key={idx}
                 className="chip"
-                title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : undefined}
+                title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : '더블클릭: 보기'}
                 onDoubleClick={()=> onDoubleClickChip(idx)}
                 draggable={canEdit}
                 onDragStart={(e)=>onDragStartChip(e, idx)}
@@ -476,20 +473,18 @@ export default function DateInfoModal({
             ))}
 
             {/* (+) 버튼은 항상 맨 끝(우측)에 표시 */}
-            {canEdit && (
-              <button
-                onClick={async ()=>{
-                  await ensurePresets();
-                  setPresetPickerOpen(v=>!v);
-                }}
-                style={{
-                  border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
-                  background:'#fff', cursor:'pointer', fontSize:12
-                }}
-                title="아이템 추가"
-                aria-label="아이템 추가"
-              >＋</button>
-            )}
+            <button
+              onClick={async ()=>{
+                await ensurePresets();
+                setPresetPickerOpen(v=>!v);
+              }}
+              style={{
+                border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
+                background:'#fff', cursor:'pointer', fontSize:12
+              }}
+              title="아이템 추가"
+              aria-label="아이템 추가"
+            >＋</button>
           </div>
         )}
 
@@ -507,10 +502,12 @@ export default function DateInfoModal({
                 <button
                   key={i}
                   onClick={()=> addPresetItem(p)}
+                  disabled={!canEdit}
                   style={{
                     display:'flex', alignItems:'center', gap:8,
                     border:'1px solid var(--border)', borderRadius:8,
-                    padding:'6px 8px', textAlign:'left', background:'#fff'
+                    padding:'6px 8px', textAlign:'left', background:'#fff',
+                    opacity: canEdit ? 1 : .6, cursor: canEdit ? 'pointer' : 'not-allowed'
                   }}
                 >
                   <span>{p.emoji ?? ''}</span>
@@ -552,20 +549,20 @@ export default function DateInfoModal({
                   onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
                   style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
                 />
-                <button type="button" onClick={saveLink}>링크 저장</button>
-                <button type="button" onClick={deleteLink}>링크 삭제</button>
+                <button type="button" onClick={saveLink} disabled={!canEdit}>링크 저장</button>
+                <button type="button" onClick={deleteLink} disabled={!canEdit}>링크 삭제</button>
               </div>
             )}
 
             {/* 하단 버튼 줄: 메모/리셋/닫기 + (이미지 삽입) (링크 토글) */}
             <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-              <button onClick={saveMemo}>메모 저장</button>
+              <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
               <button onClick={onClose}>닫기</button>
 
               <span style={{ flex: '0 0 12px' }} />
 
-              <button onClick={openPicker} disabled={uploading}>
+              <button onClick={openPicker} disabled={!canEdit || uploading}>
                 {uploading ? '업로드 중…' : '이미지 삽입'}
               </button>
               <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
@@ -580,7 +577,7 @@ export default function DateInfoModal({
               </button>
 
               {imageUrl && (
-                <button onClick={removeImage}>이미지 제거</button>
+                <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>
               )}
             </div>
 
@@ -592,6 +589,30 @@ export default function DateInfoModal({
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ▽ 칩 편집 영역: 이제 canEdit와 무관하게 "표시"는 됨 (버튼/입력만 제어) */}
+        {editingIndex!==null && (
+          <div style={{
+            display:'flex', gap:8, alignItems:'center',
+            padding:'8px 10px', border:'1px solid var(--border)',
+            borderRadius:10, margin:'10px 0 4px', background:'#fff'
+          }}>
+            <span style={{fontSize:12, opacity:.7}}>
+              아이템 편집{!canEdit ? ' (읽기 전용)' : ''}
+            </span>
+            <input
+              value={editingText}
+              onChange={(e)=>setEditingText(e.target.value)}
+              onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
+              placeholder="빈칸으로 저장하면 아이콘만 표시"
+              style={{flex:1, padding:'6px 8px', borderRadius:8}}
+              readOnly={!canEdit}
+            />
+            <button onClick={saveChipEdit} disabled={!canEdit}>저장</button>
+            <button onClick={deleteChip} disabled={!canEdit} style={{borderColor:'#b12a2a', color: canEdit ? '#b12a2a' : undefined}}>삭제</button>
+            <button onClick={cancelChipEdit}>닫기</button>
           </div>
         )}
       </div>
