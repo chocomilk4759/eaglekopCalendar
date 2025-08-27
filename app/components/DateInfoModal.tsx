@@ -5,6 +5,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 
+type Preset = { emoji: string | null; label: string };
+
 export default function DateInfoModal({
   open, onClose, date, note: initial, canEdit, onSaved
 }:{
@@ -32,15 +34,22 @@ export default function DateInfoModal({
   // 드래그 상태(순서 변경)
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  // 추가: 링크/이미지 편집 상태
+  // 링크/이미지 상태
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
+  const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false); // ← 링크 버튼 토글
   const [imageUrl, setImageUrl] = useState<string | null>(note.image_url ?? null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const title = useMemo(() =>
-    `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`
-  , [date]);
+  // 프리셋 추가 관련
+  const [presetPickerOpen, setPresetPickerOpen] = useState(false);
+  const [presets, setPresets] = useState<Preset[] | null>(null);
+  const loadingPresetsRef = useRef(false);
+
+  const title = useMemo(
+    () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
+    [date]
+  );
 
   useEffect(()=>{
     if (!open) return;
@@ -53,6 +62,8 @@ export default function DateInfoModal({
     setDragIndex(null);
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
+    setLinkPanelOpen(false);
+    setPresetPickerOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
@@ -121,6 +132,8 @@ export default function DateInfoModal({
       setEditingIndex(null);
       setLinkInput('');
       setImageUrl(null);
+      setLinkPanelOpen(false);
+      setPresetPickerOpen(false);
       alert('초기화했습니다.');
       onSaved(cleared);
     }catch(e:any){
@@ -284,6 +297,9 @@ export default function DateInfoModal({
     if (!canEdit) { alert('권한이 없습니다.'); return; }
     setUploading(true);
     try {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
+
       const blob = await compressToWebp(f);
       const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.webp`;
       const { error } = await supabase.storage
@@ -311,6 +327,73 @@ export default function DateInfoModal({
       setImageUrl(saved.image_url);
     } catch (e:any) {
       alert(e?.message ?? '이미지 제거 중 오류가 발생했습니다.');
+    }
+  }
+
+  // ───────── 프리셋 로드 & 추가 ─────────
+  async function ensurePresets() {
+    if (presets || loadingPresetsRef.current) return;
+    loadingPresetsRef.current = true;
+    try {
+      // presets 테이블이 있으면 거기서 불러오고, 없거나 에러면 기본 세트 사용
+      const { data, error } = await supabase.from('presets').select('emoji,label');
+      if (!error && data && Array.isArray(data) && data.length) {
+        setPresets(
+          data.map((r:any)=>({ emoji: r.emoji ?? null, label: String(r.label ?? '') }))
+        );
+      } else {
+        setPresets([
+          { emoji: '📢', label: '공지' },
+          { emoji: '🔔', label: '알림' },
+          { emoji: '⚽', label: '축구' },
+          { emoji: '⚾', label: '야구' },
+          { emoji: '🏁', label: 'F1' },
+          { emoji: '🥎', label: '촌지' },
+          { emoji: '🏆', label: '대회' },
+          { emoji: '🎮', label: '게임' },
+          { emoji: '📺', label: '함께' },
+          { emoji: '🤼‍♂️', label: '합방' },
+          { emoji: '👄', label: '저챗' },
+          { emoji: '🍚', label: '광고' },
+          { emoji: '🎤', label: '노래' },
+        ]);
+      }
+    } catch {
+      setPresets([
+          { emoji: '📢', label: '공지' },
+          { emoji: '🔔', label: '알림' },
+          { emoji: '⚽', label: '축구' },
+          { emoji: '⚾', label: '야구' },
+          { emoji: '🏁', label: 'F1' },
+          { emoji: '🥎', label: '촌지' },
+          { emoji: '🏆', label: '대회' },
+          { emoji: '🎮', label: '게임' },
+          { emoji: '📺', label: '함께' },
+          { emoji: '🤼‍♂️', label: '합방' },
+          { emoji: '👄', label: '저챗' },
+          { emoji: '🍚', label: '광고' },
+          { emoji: '🎤', label: '노래' },
+      ]);
+    } finally {
+      loadingPresetsRef.current = false;
+    }
+  }
+
+  async function addPresetItem(p: Preset) {
+    if (!canEdit) return;
+    const items = [...(note.items || [])];
+    const newItem: Item = {
+      emoji: p.emoji ?? null,
+      label: p.label,
+      emojiOnly: true, // 텍스트 없이 아이콘/라벨만
+    };
+    items.push(newItem); // 맨 끝 → 우측에 배치됨
+    try {
+      const saved = await persist({ items });
+      setPresetPickerOpen(false);
+      // saved로 note state 갱신은 persist가 수행
+    } catch (e:any) {
+      alert(e?.message ?? '아이템 추가 중 오류가 발생했습니다.');
     }
   }
 
@@ -348,13 +431,26 @@ export default function DateInfoModal({
           </div>
         </div>
 
-        {/* 아이템 목록 (더블클릭 편집 + 드래그/드랍 순서변경) */}
+        {/* 아이템 목록 + (+) 버튼 */}
         {(note.items?.length || 0) === 0 ? (
-          <div style={{opacity:.6,fontSize:13, marginBottom:6}}>아이템 없음</div>
+          <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
+            아이템 없음
+            {canEdit && (
+              <button
+                onClick={async ()=>{
+                  await ensurePresets();
+                  setPresetPickerOpen(v=>!v);
+                }}
+                style={{ marginLeft:8, border:'1px dashed var(--border)', borderRadius:999, padding:'2px 10px' }}
+                title="아이템 추가"
+                aria-label="아이템 추가"
+              >＋</button>
+            )}
+          </div>
         ) : (
           <div
             className="chips"
-            style={{marginBottom:6}}
+            style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:8}}
             onDragOver={(e)=>{ if(canEdit){ e.preventDefault(); }}}
             onDrop={onDropContainer}
           >
@@ -368,57 +464,87 @@ export default function DateInfoModal({
                 onDragStart={(e)=>onDragStartChip(e, idx)}
                 onDragOver={onDragOverChip}
                 onDrop={(e)=>onDropChip(e, idx)}
-                style={dragIndex===idx ? { opacity:.6 } : undefined}
+                style={{
+                  display:'inline-flex', alignItems:'center',
+                  border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
+                  fontSize:12, background:'#fff',
+                  ...(dragIndex===idx ? { opacity:.6 } : null)
+                }}
               >
                 {chipLabel(it)}
               </span>
             ))}
+
+            {/* (+) 버튼은 항상 맨 끝(우측)에 표시 */}
+            {canEdit && (
+              <button
+                onClick={async ()=>{
+                  await ensurePresets();
+                  setPresetPickerOpen(v=>!v);
+                }}
+                style={{
+                  border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
+                  background:'#fff', cursor:'pointer', fontSize:12
+                }}
+                title="아이템 추가"
+                aria-label="아이템 추가"
+              >＋</button>
+            )}
           </div>
         )}
 
-        {/* ▽ 칩 편집 영역: 더블클릭 시 표시 (삭제 버튼 추가) */}
-        {canEdit && editingIndex!==null && (
-          <div style={{
-            display:'flex', gap:8, alignItems:'center',
-            padding:'8px 10px', border:'1px solid var(--border)',
-            borderRadius:10, margin:'6px 0'
-          }}>
-            <span style={{fontSize:12, opacity:.7}}>아이템 편집</span>
-            <input
-              value={editingText}
-              onChange={(e)=>setEditingText(e.target.value)}
-              placeholder="빈칸으로 저장하면 아이콘만 표시"
-              style={{flex:1, padding:'6px 8px', borderRadius:8}}
-            />
-            <button onClick={saveChipEdit}>저장</button>
-            <button onClick={deleteChip} style={{borderColor:'#b12a2a', color:'#b12a2a'}}>삭제</button>
-            <button onClick={cancelChipEdit}>취소</button>
+        {/* 프리셋 선택 박스 (토글) */}
+        {presetPickerOpen && presets && (
+          <div
+            style={{
+              border:'1px solid var(--border)', borderRadius:10, padding:8,
+              margin:'6px 0 4px', background:'#fff'
+            }}
+          >
+            <div style={{fontSize:12, opacity:.7, marginBottom:6}}>프리셋 선택</div>
+            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:6}}>
+              {presets.map((p, i)=>(
+                <button
+                  key={i}
+                  onClick={()=> addPresetItem(p)}
+                  style={{
+                    display:'flex', alignItems:'center', gap:8,
+                    border:'1px solid var(--border)', borderRadius:8,
+                    padding:'6px 8px', textAlign:'left', background:'#fff'
+                  }}
+                >
+                  <span>{p.emoji ?? ''}</span>
+                  <span style={{fontSize:12}}>{p.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        {/* ===== 메모 + 링크/이미지 (비파괴: 기존 UI 유지, 우측 영역은 있을 때만) ===== */}
+        {/* ===== 메모 + (링크 패널) + 하단 버튼들 ===== */}
         {!canEdit ? (
           <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:96}}>
             {note.content || <span style={{opacity:.5}}>메모 없음</span>}
           </div>
         ) : (
-          <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
-            {/* 좌: 메모 + 링크 입력 + 이미지 삽입 버튼 */}
-            <div style={{ flex:'1 1 auto' }}>
-              <textarea
-                value={memo}
-                onChange={(e)=>setMemo(e.target.value)}
-                placeholder="메모를 입력하세요"
-                style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}}
-              />
-              <div className="actions" style={{ display:'flex', gap:8, marginTop:6, flexWrap:'wrap' }}>
-                <button onClick={saveMemo}>메모 저장</button>
-                <button onClick={resetMemo}>리셋</button>
-                <button onClick={onClose}>닫기</button>
-              </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            {/* 메모 */}
+            <textarea
+              value={memo}
+              onChange={(e)=>setMemo(e.target.value)}
+              placeholder="메모를 입력하세요"
+              style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}}
+            />
 
-              {/* 링크 지정 줄 */}
-              <div style={{ display:'flex', gap:8, marginTop:8 }}>
+            {/* ▽ 링크 패널(토글) — 메모와 버튼 사이에 표시 */}
+            {linkPanelOpen && (
+              <div
+                style={{
+                  display:'flex', gap:8, alignItems:'center',
+                  border:'1px solid var(--border)', borderRadius:10,
+                  padding:'8px 10px', background:'#fff'
+                }}
+              >
                 <input
                   placeholder="https://example.com"
                   value={linkInput}
@@ -429,23 +555,41 @@ export default function DateInfoModal({
                 <button type="button" onClick={saveLink}>링크 저장</button>
                 <button type="button" onClick={deleteLink}>링크 삭제</button>
               </div>
+            )}
 
-              {/* 이미지 삽입 버튼 */}
-              <div style={{ marginTop:8, display:'flex', gap:8, alignItems:'center' }}>
-                <button onClick={openPicker} disabled={uploading}>
-                  {uploading ? '업로드 중…' : '이미지 삽입'}
-                </button>
-                <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
-              </div>
+            {/* 하단 버튼 줄: 메모/리셋/닫기 + (이미지 삽입) (링크 토글) */}
+            <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
+              <button onClick={saveMemo}>메모 저장</button>
+              <button onClick={resetMemo}>리셋</button>
+              <button onClick={onClose}>닫기</button>
+
+              <span style={{ flex: '0 0 12px' }} />
+
+              <button onClick={openPicker} disabled={uploading}>
+                {uploading ? '업로드 중…' : '이미지 삽입'}
+              </button>
+              <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
+
+              <button
+                type="button"
+                onClick={()=> setLinkPanelOpen(v=>!v)}
+                aria-expanded={linkPanelOpen}
+                aria-controls="link-panel"
+              >
+                링크
+              </button>
+
+              {imageUrl && (
+                <button onClick={removeImage}>이미지 제거</button>
+              )}
             </div>
 
-            {/* 우: 이미지 미리보기 (있을 때만; 영역 미점유) */}
+            {/* (읽기 전용 미리보기는 하단에 유지) */}
             {imageUrl && (
-              <div style={{ flex:'0 0 240px' }}>
+              <div style={{ width:'100%', maxWidth:480 }}>
                 <div style={{ width:'100%', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
                   <img src={imageUrl} alt="미리보기" style={{ width:'100%', display:'block' }} />
                 </div>
-                <button onClick={removeImage} style={{ marginTop:6 }}>이미지 제거</button>
               </div>
             )}
           </div>
