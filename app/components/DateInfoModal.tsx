@@ -467,10 +467,11 @@ export default function DateInfoModal({
             )}
 
             <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
+              <div style={{ alignItems: 'left'}}>
               <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
               <button onClick={onClose}>닫기</button>
-
+              </div>
               <span style={{ flex: '0 0 12px' }} />
 
               <button onClick={openPicker} disabled={!canEdit || uploading}>
