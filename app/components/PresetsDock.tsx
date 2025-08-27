@@ -1,9 +1,17 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import PresetsPanel from './PresetsPanel';
 
 export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
-  const [collapsed, setCollapsed] = useState(false);
+  // ✅ 초기 접힘 상태
+  const [collapsed, setCollapsed] = useState(true);
+
+  // 도크 상태를 <html data-dock="open|closed">로 반영 → CSS에서 .col-main 여백 제어
+  useEffect(() => {
+    const el = document.documentElement;
+    el.setAttribute('data-dock', collapsed ? 'closed' : 'open');
+    return () => el.setAttribute('data-dock', 'closed');
+  }, [collapsed]);
 
   return (
     <aside
@@ -12,7 +20,6 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
       aria-label="프리셋 도크"
       aria-expanded={!collapsed}
     >
-      {/* 접기/펼치기 버튼 */}
       <div className="dock-toggle-wrap">
         <button
           type="button"
