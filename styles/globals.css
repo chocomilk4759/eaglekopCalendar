@@ -34,7 +34,7 @@
   --flagBlue:#4C88DB;
 
   /* docks & layout */
-  --side-min: 16px;            /* 좌/우 최소 여백 */
+  --side-min: 40px;            /* 좌/우 최소 여백 */
   --dock-width-expanded: 320px;/* 우측 프리셋 도크 펼침 폭 */
   --dock-buffer: 10px;         /* 우측 도크 버퍼 */
   --leftdock-width: 320px;     /* 좌측 계정 도크 펼침 폭 */
