@@ -470,3 +470,33 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 @media (max-width: 640px){
   .pop{ width: 92vw; }
 }
+
+/* ▷ 캘린더 셀: 하이퍼링크 아이콘(우상단) */
+.cell .link-ico{
+  position:absolute; top:8px; right:8px;
+  display:inline-flex; align-items:center; justify-content:center;
+  width:24px; height:24px; border:1px solid var(--border); border-radius:8px;
+  background: var(--card); opacity:.95;
+}
+.cell .link-ico:hover{ background: rgba(0,0,0,.03); }
+
+/* ▷ 정보 편집창: 메모/이미지 가로 정렬 */
+.edit-row{ display:flex; gap:12px; align-items:flex-start; }
+.memo-col{ flex: 1 1 360px; }
+.memo-col textarea{ width:100%; min-height:160px; border:1px solid var(--border); border-radius:8px; padding:10px; }
+.image-col{ flex: 0 0 auto; max-width: 45%; }
+.image-col img{ display:block; max-width: 320px; height:auto; border:1px solid var(--border); border-radius:8px; }
+
+/* ▷ 하단 바: 좌/우 분리 */
+.bar-split{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+.bar-left, .bar-right{ display:flex; gap:8px; align-items:center; }
+
+/* ▷ 링크 편집 소형 패널(모달 내부 카드) */
+.subsheet{
+  margin-top:12px;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:12px;
+  background: var(--card);
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+}
