@@ -103,17 +103,25 @@ button:active{ transform: translateY(.5px); }
 /* =====================================================================================
   4) PAGE GRID — 1 : 10 : 1
 ===================================================================================== */
+
 .layout-1-8-1{
   display: grid;
-  grid-template-columns: minmax(16px, var(--side-max)) 1fr minmax(16px, var(--side-max));
+  grid-template-columns: var(--side-min) 1fr var(--side-min);  /* 기본: 좌/우 16px, 중앙 확장 */
   gap: 16px;
   align-items: start;
 }
+
+html[data-dock="open"] .layout-1-8-1{
+  grid-template-columns: var(--side-min) 1fr calc(var(--dock-width-expanded) + var(--dock-buffer));
+}
+
 /* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
 .layout-1-8-1 > .col-main { min-width: 0; }
 
+.grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
 @media (max-width: 2560px){
-  .layout-1-8-1{ grid-template-columns: .7fr 12.6fr .7fr; }
+  .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
 }
 @media (max-width: 980px){
   .layout-1-8-1{ grid-template-columns: 1fr; }
