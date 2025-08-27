@@ -1,24 +1,9 @@
 'use client';
+
 import { createClient } from '@/lib/supabaseClient';
-import { useEffect, useMemo, useState } from 'react';
-
-type Item = {
-  emoji: string | null;
-  label: string;
-  text?: string;
-  /** 텍스트 없이 아이콘만 보여줄지 여부 (초기 드롭이 비어있거나, 편집 중 비우고 저장 시 true) */
-  emojiOnly?: boolean;
-};
-
-type Note = {
-  id?: number;
-  y: number; m: number; d: number;
-  content: string;
-  items: Item[];
-  color: 'red' | 'blue' | null;
-  link: null;
-  image_url: null;
-};
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { Note, Item } from '@/types/note';
+import { normalizeNote } from '@/types/note';
 
 export default function DateInfoModal({
   open, onClose, date, note: initial, canEdit, onSaved
@@ -30,7 +15,11 @@ export default function DateInfoModal({
   onSaved:(n:Note)=>void;
 }){
   const supabase = createClient();
-  const emptyNote: Note = { y:date.y, m:date.m, d:date.d, content:'', items:[], color:null };
+
+  // 빈 노트 (공통 타입 규격으로 생성)
+  const emptyNote: Note = normalizeNote({
+    y:date.y, m:date.m, d:date.d, content:'', items:[], color:null, link:null, image_url:null
+  });
 
   const [note, setNote] = useState<Note>(initial || emptyNote);
   const [memo, setMemo] = useState(note.content || '');
@@ -42,6 +31,12 @@ export default function DateInfoModal({
 
   // 드래그 상태(순서 변경)
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+
+  // 추가: 링크/이미지 편집 상태
+  const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
+  const [imageUrl, setImageUrl] = useState<string | null>(note.image_url ?? null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const title = useMemo(() =>
     `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`
@@ -56,21 +51,24 @@ export default function DateInfoModal({
     setEditingIndex(null);
     setEditingText('');
     setDragIndex(null);
+    setLinkInput(base.link ?? '');
+    setImageUrl(base.image_url ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
   // 항상 Note 반환(에러 throw)
   async function persist(upd: Partial<Note>): Promise<Note> {
-    const payload = { ...note, ...upd };
+    const payload = normalizeNote({ ...note, ...upd, y: date.y, m: date.m, d: date.d });
     const { data, error } = await supabase
       .from('notes')
       .upsert(payload, { onConflict: 'y,m,d' })
       .select()
       .single();
     if (error) throw new Error(error.message);
-    setNote(data as any);
-    onSaved(data as any);
-    return data as Note;
+    const saved = normalizeNote(data as any);
+    setNote(saved);
+    onSaved(saved);
+    return saved;
   }
 
   async function toggleFlag(color: 'red' | 'blue'){
@@ -98,13 +96,13 @@ export default function DateInfoModal({
     setMemo(initialMemo || '');
   }
 
-  // 초기화: 행 삭제(메모/아이템/플래그 모두 제거)
+  // 초기화: 행 삭제(메모/아이템/플래그/링크/이미지 모두 제거)
   async function clearAll(){
     if(!canEdit){
       setMemo('');
       return;
     }
-    const ok = window.confirm('해당 날짜의 메모/아이템/색상 표시를 모두 삭제할까요?');
+    const ok = window.confirm('해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?');
     if(!ok) return;
 
     try{
@@ -116,11 +114,13 @@ export default function DateInfoModal({
         .eq('d', date.d);
       if(error) throw new Error(error.message);
 
-      const cleared: Note = { ...emptyNote };
+      const cleared = normalizeNote({ ...emptyNote });
       setNote(cleared);
       setMemo('');
       setInitialMemo('');
       setEditingIndex(null);
+      setLinkInput('');
+      setImageUrl(null);
       alert('초기화했습니다.');
       onSaved(cleared);
     }catch(e:any){
@@ -237,6 +237,83 @@ export default function DateInfoModal({
     return `${it.emoji ? it.emoji+' ' : ''}${it.label}`;
   }
 
+  // ───────── 링크 & 이미지 유틸 ─────────
+  const normUrl = (u: string) => {
+    const s = (u || '').trim();
+    return s ? (/^https?:\/\//i.test(s) ? s : `https://${s}`) : '';
+  };
+
+  async function saveLink() {
+    if (!canEdit) return;
+    try {
+      const normalized = linkInput ? normUrl(linkInput) : '';
+      const saved = await persist({ link: normalized || null });
+      setLinkInput(saved.link ?? '');
+      alert('링크가 저장되었습니다.');
+    } catch (e:any) {
+      alert(e?.message ?? '링크 저장 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function deleteLink() {
+    if (!canEdit) return;
+    try {
+      await persist({ link: null });
+      setLinkInput('');
+    } catch (e:any) {
+      alert(e?.message ?? '링크 삭제 중 오류가 발생했습니다.');
+    }
+  }
+
+  async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
+    const img = await new Promise<HTMLImageElement>((res, rej) => {
+      const el = new Image();
+      el.onload = () => res(el);
+      el.onerror = rej;
+      el.src = URL.createObjectURL(file);
+    });
+    const r = Math.min(max / img.width, max / img.height, 1);
+    const w = Math.round(img.width * r), h = Math.round(img.height * r);
+    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
+    canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+    return await new Promise((ok) => canvas.toBlob((b) => ok(b!), 'image/webp', quality));
+  }
+
+  async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f) return;
+    if (!canEdit) { alert('권한이 없습니다.'); return; }
+    setUploading(true);
+    try {
+      const blob = await compressToWebp(f);
+      const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.webp`;
+      const { error } = await supabase.storage
+        .from('note-images')
+        .upload(path, blob, { upsert: true, contentType: 'image/webp' });
+      if (error) throw error;
+
+      const { data } = supabase.storage.from('note-images').getPublicUrl(path);
+      const saved = await persist({ image_url: data.publicUrl });
+      setImageUrl(saved.image_url);
+    } catch (err:any) {
+      alert(err?.message ?? '이미지 업로드 실패');
+    } finally {
+      setUploading(false);
+      e.currentTarget.value = '';
+    }
+  }
+
+  function openPicker(){ fileRef.current?.click(); }
+
+  async function removeImage() {
+    if (!canEdit) return;
+    try {
+      const saved = await persist({ image_url: null });
+      setImageUrl(saved.image_url);
+    } catch (e:any) {
+      alert(e?.message ?? '이미지 제거 중 오류가 발생했습니다.');
+    }
+  }
+
   if(!open) return null;
 
   return (
@@ -319,25 +396,59 @@ export default function DateInfoModal({
           </div>
         )}
 
-        {/* 메모 */}
+        {/* ===== 메모 + 링크/이미지 (비파괴: 기존 UI 유지, 우측 영역은 있을 때만) ===== */}
         {!canEdit ? (
           <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:96}}>
             {note.content || <span style={{opacity:.5}}>메모 없음</span>}
           </div>
         ) : (
-          <>
-            <textarea
-              value={memo}
-              onChange={(e)=>setMemo(e.target.value)}
-              placeholder="메모를 입력하세요"
-              style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}}
-            />
-            <div className="actions">
-              <button onClick={saveMemo}>메모 저장</button>
-              <button onClick={resetMemo}>리셋</button>
-              <button onClick={onClose}>닫기</button>
+          <div style={{ display:'flex', gap:10, alignItems:'flex-start' }}>
+            {/* 좌: 메모 + 링크 입력 + 이미지 삽입 버튼 */}
+            <div style={{ flex:'1 1 auto' }}>
+              <textarea
+                value={memo}
+                onChange={(e)=>setMemo(e.target.value)}
+                placeholder="메모를 입력하세요"
+                style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}}
+              />
+              <div className="actions" style={{ display:'flex', gap:8, marginTop:6, flexWrap:'wrap' }}>
+                <button onClick={saveMemo}>메모 저장</button>
+                <button onClick={resetMemo}>리셋</button>
+                <button onClick={onClose}>닫기</button>
+              </div>
+
+              {/* 링크 지정 줄 */}
+              <div style={{ display:'flex', gap:8, marginTop:8 }}>
+                <input
+                  placeholder="https://example.com"
+                  value={linkInput}
+                  onChange={(e)=> setLinkInput(e.target.value)}
+                  onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
+                  style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
+                />
+                <button type="button" onClick={saveLink}>링크 저장</button>
+                <button type="button" onClick={deleteLink}>링크 삭제</button>
+              </div>
+
+              {/* 이미지 삽입 버튼 */}
+              <div style={{ marginTop:8, display:'flex', gap:8, alignItems:'center' }}>
+                <button onClick={openPicker} disabled={uploading}>
+                  {uploading ? '업로드 중…' : '이미지 삽입'}
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
+              </div>
             </div>
-          </>
+
+            {/* 우: 이미지 미리보기 (있을 때만; 영역 미점유) */}
+            {imageUrl && (
+              <div style={{ flex:'0 0 240px' }}>
+                <div style={{ width:'100%', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
+                  <img src={imageUrl} alt="미리보기" style={{ width:'100%', display:'block' }} />
+                </div>
+                <button onClick={removeImage} style={{ marginTop:6 }}>이미지 제거</button>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

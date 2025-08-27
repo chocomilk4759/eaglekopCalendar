@@ -1,40 +1,11 @@
 'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
-
-type Item = {
-  emoji: string | null;
-  label: string;
-  text?: string;
-  emojiOnly?: boolean; // 텍스트가 비어있으면 아이콘만 표시
-};
-type Note = {
-  id?: number;
-  y: number;
-  m: number;
-  d: number;
-  content: string;
-  items: Item[];
-  color: 'red' | 'blue' | null; // 플래그
-  link?: string | null;
-  image_url?: string | null;
-};
-
-function normalizeNote(row: any): Note {
-  return {
-    id: row?.id ?? undefined,
-    y: row?.y ?? 0,
-    m: row?.m ?? 0,
-    d: row?.d ?? 1,
-    content: row?.content ?? '',
-    items: Array.isArray(row?.items) ? row.items as Item[] : [],   // ← 필수
-    color: (row?.color === 'red' || row?.color === 'blue') ? row.color : null, // ← 필수
-    link: row?.link ?? null,
-    image_url: row?.image_url ?? null,
-  };
-}
+import type { Note, Item } from '@/types/note';
+import { normalizeNote } from '@/types/note';
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -51,6 +22,10 @@ function prevOf({ y, m }: { y: number; m: number }) {
 function nextOf({ y, m }: { y: number; m: number }) {
   return m < 11 ? { y, m: m + 1 } : { y: y + 1, m: 0 };
 }
+function cellKey(y: number, m: number, d: number) {
+  return `${y}-${m}-${d}`;
+}
+const fmtUrl = (s: string) => (/^https?:\/\//i.test(s) ? s : `https://${s}`);
 
 export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = createClient();
@@ -79,18 +54,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const cached = monthCache.get(ymKey);
       if (cached) {
         const map: Record<string, Note> = {};
-        cached.forEach((n: any) => {
-          map[`${n.y}-${n.m}-${n.d}`] = {
-            y: n.y,
-            m: n.m,
-            d: n.d,
-            id: n.id,
-            content: n.content || '',
-            items: n.items || [],
-            color: n.color ?? null,
-            link: n.link ?? null,
-            image_url: n.image_url ?? null,
-          };
+        cached.forEach((row: any) => {
+          const n = normalizeNote(row);
+          map[cellKey(n.y, n.m, n.d)] = n;
         });
         setNotes(map);
       }
@@ -111,18 +77,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
 
         const map: Record<string, Note> = {};
-        (data || []).forEach((n: any) => {
-          map[`${n.y}-${n.m}-${n.d}`] = {
-            y: n.y,
-            m: n.m,
-            d: n.d,
-            id: n.id,
-            content: n.content || '',
-            items: n.items || [],
-            color: n.color ?? null,
-            link: n.link ?? null,
-            image_url: n.image_url ?? null,
-          };
+        (data || []).forEach((row: any) => {
+          const n = normalizeNote(row);
+          map[cellKey(n.y, n.m, n.d)] = n;
         });
         setNotes(map);
         setMonthCache((prev) => {
@@ -157,15 +114,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  function key(y: number, m: number, d: number) {
-    return `${y}-${m}-${d}`;
-  }
   function openInfo(y: number, m: number, d: number) {
     setModalDate({ y, m, d });
     setModalOpen(true);
   }
   function onSaved(note: Note) {
-    setNotes((prev) => ({ ...prev, [key(note.y, note.m, note.d)]: note }));
+    setNotes((prev) => ({ ...prev, [cellKey(note.y, note.m, note.d)]: note }));
   }
 
   // 프리셋 드롭 처리: 내용 입력이 비었으면 아이콘만 추가(emojiOnly)
@@ -194,7 +148,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       emojiOnly: trimmed.length ? false : true,
     };
 
-    const k = key(y, m, d);
+    const k = cellKey(y, m, d);
     const cur = notes[k] || { y, m, d, content: '', items: [], color: null, link: null, image_url: null };
     const next: Note = { ...cur, items: [...(cur.items || []), newItem] };
 
@@ -301,7 +255,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             >
               ▶
             </button>
-            
+
             <div className="jump">
               <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
               <button
@@ -349,16 +303,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         ))}
 
         {cells.map((c, idx) => {
-          const k = key(c.y, c.m, c.d ?? -1);
+          const k = cellKey(c.y, c.m, c.d ?? -1);
           const note = c.d ? notes[k] : null;
 
           const isToday =
             !!c.d && c.y === today.getFullYear() && c.m === today.getMonth() && c.d === today.getDate();
 
           const flagClass = note?.color ? `flag-${note.color}` : '';
-          const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${
-            c.w === 6 ? 'sat' : ''
-          } ${flagClass}`.trim();
+          const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
 
           // 메모가 있을 때만 플래그 배너(큰 흰색 텍스트) 표시. 메모가 없으면 칩을 그대로 노출.
           const showFlagBanner = !!note?.color && !!note?.content?.trim()?.length;
@@ -381,11 +333,54 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             >
               {c.d && <div className="date date-lg">{c.d}</div>}
 
+              {/* ▷ 하이퍼링크 아이콘 (우상단 / 링크 있을 때만) */}
+              {!!note?.link && (
+                <a
+                  href={fmtUrl(note.link)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={note.link || undefined}
+                  aria-label="하이퍼링크 열기"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    right: 6,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: 22,
+                    height: 22,
+                    border: '1px solid #d0d7e2',
+                    borderRadius: 999,
+                    background: '#fff',
+                    opacity: 0.9,
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+                    <path
+                      d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M13.41 10.59a2 2 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </a>
+              )}
+
               {showFlagBanner && <div className="flag-banner">{note!.content}</div>}
 
-              {showChips && (
+              {(showChips && note) && (
                 <div className="chips chips-scroll">
-                  {note!.items.map((it: Item, i: number) => (
+                  {note.items.map((it: Item, i: number) => (
                     <span key={i} className="chip">
                       {chipLabel(it)}
                     </span>
@@ -402,7 +397,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           date={modalDate}
-          note={notes[key(modalDate.y, modalDate.m, modalDate.d)] || null}
+          note={notes[cellKey(modalDate.y, modalDate.m, modalDate.d)] || null}
           canEdit={canEdit}
           onSaved={onSaved}
         />
