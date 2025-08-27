@@ -63,6 +63,7 @@ export default function DateInfoModal({
     setDragIndex(null);
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
+    setDisplayImageUrl(null);
     setLinkPanelOpen(false);
     setPresetPickerOpen(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -70,13 +71,11 @@ export default function DateInfoModal({
 
   // ========= 이미지 URL 디스플레이 폴백 =========
   useEffect(() => {
-    // 우선 저장된 값을 그대로 띄움(공개 버킷이면 그대로 보임)
-    setDisplayImageUrl(imageUrl ?? null);
+    setDisplayImageUrl(imageUrl ?? null); // 공개 버킷이면 그대로 보임
   }, [imageUrl]);
 
-  // public URL에서 storage path 추출
   function extractPathFromPublicUrl(url: string): string | null {
-    // https://PROJECT.supabase.co/storage/v1/object/public/note-images/<PATH>
+    // https://.../storage/v1/object/public/note-images/<PATH>
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
     if (!m) return null;
     const bucket = m[1];
@@ -87,13 +86,13 @@ export default function DateInfoModal({
 
   async function fallbackToSignedUrlIfNeeded() {
     if (!imageUrl) return;
-    // 1) 이미 http가 아닌 "순수 경로"면 곧바로 signed URL 생성
+    // 경로만 저장된 경우
     if (!/^https?:\/\//i.test(imageUrl)) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(imageUrl, 60 * 60);
       if (!error && data?.signedUrl) setDisplayImageUrl(data.signedUrl);
       return;
     }
-    // 2) public URL인데 접근 불가한 경우를 대비해 경로를 뽑아 signed URL 재시도
+    // 공개 URL이지만 접근 불가할 때 경로로 재시도
     const path = extractPathFromPublicUrl(imageUrl);
     if (path) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
@@ -218,7 +217,7 @@ export default function DateInfoModal({
   }
   async function deleteLink() {
     if (!canEdit) return;
-    try { const s = await persist({ link: null }); setLinkInput(''); }
+    try { await persist({ link: null }); setLinkInput(''); }
     catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
   }
 
@@ -249,10 +248,8 @@ export default function DateInfoModal({
         .upload(path, blob, { upsert: true, contentType: 'image/webp' });
       if (error) throw error;
 
-      // DB에는 경로 저장 (공개 버킷이면 그대로 getPublicUrl 사용, 비공개면 signedUrl 폴백)
-      await persist({ image_url: path });
-      setImageUrl(path); // 렌더 때 폴백 로직이 처리
-      // 즉시 보기 위해 signed URL도 만들어 둠
+      await persist({ image_url: path });        // DB에는 경로 저장
+      setImageUrl(path);                          // 렌더 폴백 로직이 처리
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
       setDisplayImageUrl(signed?.signedUrl ?? null);
     } catch (err:any) {
@@ -421,9 +418,9 @@ export default function DateInfoModal({
               아이템 편집{!canEdit ? ' (읽기 전용)' : ''}
             </span>
             <input value={editingText} onChange={(e)=>setEditingText(e.target.value)}
-                   onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
-                   placeholder="빈칸으로 저장하면 아이콘만 표시"
-                   style={{flex:1, padding:'6px 8px', borderRadius:8}} readOnly={!canEdit}/>
+                    onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
+                    placeholder="빈칸으로 저장하면 아이콘만 표시"
+                    style={{flex:1, padding:'6px 8px', borderRadius:8}} readOnly={!canEdit}/>
             <button onClick={saveChipEdit} disabled={!canEdit}>저장</button>
             <button onClick={deleteChip} disabled={!canEdit}
                     style={{borderColor:'#b12a2a', color: canEdit ? '#b12a2a' : undefined}}>
@@ -433,45 +430,34 @@ export default function DateInfoModal({
           </div>
         )}
 
-        {/* 메모 + 링크 패널 + 하단 버튼 */}
-        {!canEdit ? (
-          <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:96}}>
-            {note.content || <span style={{opacity:.5}}>메모 없음</span>}
-          </div>
-        ) : (
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+        {/* ============ [ 메모 | 이미지 ] 가로 컨테이너 ============ */}
+        <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+          {/* 좌: 메모 + 링크패널 + 하단 버튼들 */}
+          <div style={{ flex:'1 1 0', minWidth:0 }}>
             <textarea value={memo} onChange={(e)=>setMemo(e.target.value)}
                       placeholder="메모를 입력하세요"
-                      style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}} />
+                      style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}} />
 
-                      
-            {/* ▽ 링크 패널(토글) — 메모와 버튼 사이에 표시 */}
+            {/* 메모와 버튼 사이에 링크 패널(토글) */}
             {linkPanelOpen && (
-              <div
-                style={{
-                  display:'flex', gap:8, alignItems:'center',
-                  border:'1px solid var(--border)', borderRadius:10,
-                  padding:'8px 10px', background:'#fff'
-                }}
-              >
-                <input
-                  placeholder="https://example.com"
-                  value={linkInput}
-                  onChange={(e)=> setLinkInput(e.target.value)}
-                  onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
-                  style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
-                />
+              <div style={{ display:'flex', gap:8, alignItems:'center',
+                            border:'1px solid var(--border)', borderRadius:10,
+                            padding:'8px 10px', background:'#fff', marginTop:8 }}>
+                <input placeholder="https://example.com" value={linkInput}
+                       onChange={(e)=> setLinkInput(e.target.value)}
+                       onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
+                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }} />
                 <button type="button" onClick={saveLink} disabled={!canEdit}>링크 저장</button>
                 <button type="button" onClick={deleteLink} disabled={!canEdit}>링크 삭제</button>
               </div>
             )}
 
-            <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-              <div style={{ alignItems: 'left'}}>
+            {/* 하단 버튼 줄 */}
+            <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:8 }}>
               <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
               <button onClick={onClose}>닫기</button>
-              </div>
+
               <span style={{ flex: '0 0 12px' }} />
 
               <button onClick={openPicker} disabled={!canEdit || uploading}>
@@ -483,24 +469,26 @@ export default function DateInfoModal({
 
               {imageUrl && <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>}
             </div>
-
-            {/* 이미지 미리보기 (사인드 URL 폴백) */}
-            {displayImageUrl && (
-              <div style={{ width:'100%', maxWidth:480 }}>
-                <div style={{ width:'100%', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
-                  <img
-                    src={displayImageUrl}
-                    alt="미리보기"
-                    style={{ width:'100%', display:'block' }}
-                    onError={()=> { // 403/404 등에서 폴백 시도
-                      fallbackToSignedUrlIfNeeded();
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
-        )}
+
+          {/* 우: 이미지 미리보기 — 없으면 렌더하지 않음(공간 미점유) */}
+          {displayImageUrl && (
+            <div style={{ flex:'0 0 280px' }}>
+              <div style={{
+                width:'100%', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden',
+                background:'#fff'
+              }}>
+                <img
+                  src={displayImageUrl}
+                  alt="미리보기"
+                  style={{ width:'100%', height:'auto', maxHeight:360, objectFit:'contain', display:'block' }}
+                  onError={()=> { fallbackToSignedUrlIfNeeded(); }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        {/* ============ /[ 메모 | 이미지 ] ============ */}
       </div>
     </div>
   );
