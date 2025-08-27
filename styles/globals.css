@@ -39,7 +39,7 @@
   --dock-buffer: 10px;         /* 우측 도크 버퍼 */
   --leftdock-width: 320px;     /* 좌측 계정 도크 펼침 폭 */
   --leftdock-buffer: 10px;     /* 좌측 도크 버퍼 */
-  --dock-top: 144px;           /* 프리셋 도크 상단 오프셋(ThemeToggle 아래) */
+  --dock-top: 84px;           /* 프리셋 도크 상단 오프셋(ThemeToggle 아래) */
 }
 
 [data-theme="dark"]{
