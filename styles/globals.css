@@ -33,6 +33,7 @@
   --dock-top: 144px;            /* ThemeToggle 아래 */
   --dock-width-expanded: 320px; /* 프리셋 펼침 폭 */
   --dock-gap: 16px;             /* 본문과 도크 간격 */
+  --side-max: calc(var(--dock-width-expanded) + 10px); /* ✅ 추가 */
 }
 
 [data-theme="dark"]{
@@ -102,20 +103,12 @@ button:active{ transform: translateY(.5px); }
 ===================================================================================== */
 .layout-1-8-1{
   display: grid;
-  grid-template-columns: 1fr 10fr 1fr;
+  grid-template-columns: minmax(16px, var(--side-max)) 1fr minmax(16px, var(--side-max));
   gap: 16px;
   align-items: start;
 }
 /* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
 .layout-1-8-1 > .col-main { min-width: 0; }
-
-/* ✅ 도크 펼침 시에만 중앙 컬럼 오른쪽 여백을 확보 → 캘린더가 프리셋 영역을 침범하지 않음 */
-html[data-dock="open"] .layout-1-8-1 > .col-main{
-  margin-right: calc(var(--dock-width-expanded) + var(--dock-gap));
-}
-html[data-dock="closed"] .layout-1-8-1 > .col-main{
-  margin-right: 0;
-}
 
 @media (max-width: 1200px){
   .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
