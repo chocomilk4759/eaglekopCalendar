@@ -18,8 +18,6 @@ type Note = {
   content: string;
   items: Item[];
   color: 'red' | 'blue' | null; // 플래그
-  link?: string | null;
-  image_url?: string | null;
 };
 
 function daysInMonth(y: number, m: number) {
@@ -104,8 +102,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             content: n.content || '',
             items: n.items || [],
             color: n.color ?? null,
-            link: n.link ?? null,
-            image_url: n.image_url ?? null,
           };
         });
         setNotes(map);
@@ -364,25 +360,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
               }}
             >
               {c.d && <div className="date date-lg">{c.d}</div>}
-
-              {note?.link && (
-                <a
-                  className="link-ico"
-                  href={/^https?:\/\//i.test(note.link) ? note.link : `https://${note.link}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title="하이퍼링크 열기"
-                  aria-label="하이퍼링크 열기"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden>
-                    <path d="M10.59 13.41a1.99 1.99 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06"
-                          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    <path d="M13.41 10.59a1.99 1.99 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06"
-                          fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  </svg>
-                </a>
-              )}
 
               {showFlagBanner && <div className="flag-banner">{note!.content}</div>}
 
