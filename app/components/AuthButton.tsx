@@ -18,7 +18,7 @@ export default function AuthButton() {
   // 로그인 폼
   const [idInput, setIdInput] = useState('');
   const [pwInput, setPwInput] = useState('');
-  const loginDomain = process.env.NEXT_PUBLIC_LOGIN_DOMAIN || 'local';
+  const loginDomain = process.env.NEXT_PUBLIC_INTERNAL_EMAIL_DOMAIN || 'eaglekop.invalid';
 
   // 비번 변경 폼
   const [editMode, setEditMode] = useState(false);
