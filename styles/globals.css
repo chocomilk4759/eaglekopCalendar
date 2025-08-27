@@ -33,6 +33,8 @@
   --dock-top: 144px;            /* ThemeToggle 아래 */
   --dock-width-expanded: 320px; /* 프리셋 펼침 폭 */
   --dock-gap: 16px;             /* 본문과 도크 간격 */
+  --dock-buffer: 10px;
+  --side-min: 16px;
   --side-max: calc(var(--dock-width-expanded) + 10px); /* ✅ 추가 */
 }
 
@@ -111,7 +113,7 @@ button:active{ transform: translateY(.5px); }
 .layout-1-8-1 > .col-main { min-width: 0; }
 
 @media (max-width: 2560px){
-  .layout-1-8-1{ grid-template-columns: .7fr 10.6fr .7fr; }
+  .layout-1-8-1{ grid-template-columns: .7fr 12.6fr .7fr; }
 }
 @media (max-width: 980px){
   .layout-1-8-1{ grid-template-columns: 1fr; }
