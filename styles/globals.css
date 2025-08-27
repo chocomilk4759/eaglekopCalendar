@@ -30,6 +30,8 @@
   --flagRed:#E74C4C;
   --flagBlue:#4C88DB;
 
+  --page-max: 2560px;
+
   --dock-top: 144px;            /* ThemeToggle 아래 */
   --dock-width-expanded: 320px; /* 프리셋 펼침 폭 */
   --dock-gap: 16px;             /* 본문과 도크 간격 */
@@ -85,7 +87,12 @@ button:hover{ background: rgba(0,0,0,.03); }
 button:active{ transform: translateY(.5px); }
 
 /* 페이지 컨테이너 */
-.container{ max-width: 1440px; margin: 0 auto; padding: 24px; }
+.container{
+  max-width: none;
+  width: 100%;
+  margin: 0 auto;
+  padding: 24px;
+}
 
 /* =====================================================================================
   3) FIXED HEADER
@@ -106,13 +113,19 @@ button:active{ transform: translateY(.5px); }
 
 .layout-1-8-1{
   display: grid;
-  grid-template-columns: minmax(16px, var(--side-max)) 1fr minmax(16px, var(--side-max));
+  grid-template-columns: var(--side-min) 1fr var(--side-min);
   gap: 16px;
   align-items: start;
 }
 
+html[data-dock="open"] .layout-1-8-1{
+  grid-template-columns: var(--side-min) 1fr calc(var(--dock-width-expanded) + var(--dock-buffer));
+}
+
 /* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
 .layout-1-8-1 > .col-main { min-width: 0; }
+
+.grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
 
 @media (max-width: 2560px){
   .layout-1-8-1{ grid-template-columns: .7fr 12.6fr .7fr; }
