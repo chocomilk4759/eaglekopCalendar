@@ -36,6 +36,8 @@
   --dock-width-expanded: 320px; /* 프리셋 펼침 폭 */
   --dock-gap: 16px;             /* 본문과 도크 간격 */
   --dock-buffer: 10px;
+  --leftdock-width: 320px;           /* 실제 좌측 도크의 가로폭에 맞춰 조정 */
+  --leftdock-buffer: 10px;
   --side-min: 16px;
   --side-max: calc(var(--dock-width-expanded) + 10px); /* ✅ 추가 */
 }
@@ -121,13 +123,22 @@ button:active{ transform: translateY(.5px); }
 html[data-dock="open"] .layout-1-8-1{
   grid-template-columns: var(--side-min) 1fr calc(var(--dock-width-expanded) + var(--dock-buffer));
 }
+html[data-leftdock="open"] .layout-1-8-1{
+  grid-template-columns: calc(var(--leftdock-width) + var(--leftdock-buffer)) 1fr var(--side-min);
+}
+html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
+  grid-template-columns:
+    calc(var(--leftdock-width) + var(--leftdock-buffer))
+    1fr
+    calc(var(--dock-width-expanded) + var(--dock-buffer));
+}
 
 /* 중앙 컬럼은 반드시 줄어들 수 있어야 함(1:10:1 유지용) */
 .layout-1-8-1 > .col-main { min-width: 0; }
 
 .grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
 
-@media (max-width: 2560px){
+@media (max-width: 1200px){
   .layout-1-8-1{ grid-template-columns: .7fr 12.6fr .7fr; }
 }
 @media (max-width: 980px){
