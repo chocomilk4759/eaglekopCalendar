@@ -518,6 +518,30 @@ export default function DateInfoModal({
           </div>
         )}
 
+        {/* ▽ 칩 편집 영역: 이제 canEdit와 무관하게 "표시"는 됨 (버튼/입력만 제어) */}
+        {editingIndex!==null && (
+          <div style={{
+            display:'flex', gap:8, alignItems:'center',
+            padding:'8px 10px', border:'1px solid var(--border)',
+            borderRadius:10, margin:'10px 0 4px', background:'#fff'
+          }}>
+            <span style={{fontSize:12, opacity:.7}}>
+              아이템 편집{!canEdit ? ' (읽기 전용)' : ''}
+            </span>
+            <input
+              value={editingText}
+              onChange={(e)=>setEditingText(e.target.value)}
+              onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
+              placeholder="빈칸으로 저장하면 아이콘만 표시"
+              style={{flex:1, padding:'6px 8px', borderRadius:8}}
+              readOnly={!canEdit}
+            />
+            <button onClick={saveChipEdit} disabled={!canEdit}>저장</button>
+            <button onClick={deleteChip} disabled={!canEdit} style={{borderColor:'#b12a2a', color: canEdit ? '#b12a2a' : undefined}}>삭제</button>
+            <button onClick={cancelChipEdit}>닫기</button>
+          </div>
+        )}
+
         {/* ===== 메모 + (링크 패널) + 하단 버튼들 ===== */}
         {!canEdit ? (
           <div style={{whiteSpace:'pre-wrap', border:'1px dashed var(--border)', borderRadius:8, padding:10, minHeight:96}}>
@@ -555,13 +579,7 @@ export default function DateInfoModal({
             )}
 
             {/* 하단 버튼 줄: 메모/리셋/닫기 + (이미지 삽입) (링크 토글) */}
-            <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-              <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
-              <button onClick={resetMemo}>리셋</button>
-              <button onClick={onClose}>닫기</button>
-
-              <span style={{ flex: '0 0 12px' }} />
-
+            <div className="actions" style={{ dispaly:'flex', flexWrap:'wrap', alignItems:'left'}}>
               <button onClick={openPicker} disabled={!canEdit || uploading}>
                 {uploading ? '업로드 중…' : '이미지 삽입'}
               </button>
@@ -580,6 +598,12 @@ export default function DateInfoModal({
                 <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>
               )}
             </div>
+            
+            <div className="actions" style={{ display:'flex', flexWrap:'wrap', alignItems:'right' }}>
+              <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
+              <button onClick={resetMemo}>리셋</button>
+              <button onClick={onClose}>닫기</button>
+            </div>
 
             {/* (읽기 전용 미리보기는 하단에 유지) */}
             {imageUrl && (
@@ -589,30 +613,6 @@ export default function DateInfoModal({
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* ▽ 칩 편집 영역: 이제 canEdit와 무관하게 "표시"는 됨 (버튼/입력만 제어) */}
-        {editingIndex!==null && (
-          <div style={{
-            display:'flex', gap:8, alignItems:'center',
-            padding:'8px 10px', border:'1px solid var(--border)',
-            borderRadius:10, margin:'10px 0 4px', background:'#fff'
-          }}>
-            <span style={{fontSize:12, opacity:.7}}>
-              아이템 편집{!canEdit ? ' (읽기 전용)' : ''}
-            </span>
-            <input
-              value={editingText}
-              onChange={(e)=>setEditingText(e.target.value)}
-              onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
-              placeholder="빈칸으로 저장하면 아이콘만 표시"
-              style={{flex:1, padding:'6px 8px', borderRadius:8}}
-              readOnly={!canEdit}
-            />
-            <button onClick={saveChipEdit} disabled={!canEdit}>저장</button>
-            <button onClick={deleteChip} disabled={!canEdit} style={{borderColor:'#b12a2a', color: canEdit ? '#b12a2a' : undefined}}>삭제</button>
-            <button onClick={cancelChipEdit}>닫기</button>
           </div>
         )}
       </div>
