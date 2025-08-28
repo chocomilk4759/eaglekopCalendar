@@ -186,7 +186,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 .cell{
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 10px;
+  padding: 4px;
   height: clamp(120px, 12vw, 200px);
   position: relative;
   background: var(--card);
@@ -235,7 +235,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 .chip{
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 6px 10px;
+  padding: 4px 6px;
   font-size: 13px;
   background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,242,242,.95));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(0,0,0,.06);
@@ -259,7 +259,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 }
 .cell .chip{
   border-radius: 10px;     /* pill → square */
-  padding: 8px 10px;
+  padding: 4px 6px;
   margin: 6px;            /* 모서리만 벌어진 느낌 */
   background: var(--card);
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
