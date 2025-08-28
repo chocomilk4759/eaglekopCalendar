@@ -339,7 +339,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 color: 'var(--accent)',
               }}
             >
-              {todayLabel}
+              {/* {todayLabel} */}
             </div>
           </div>
 
