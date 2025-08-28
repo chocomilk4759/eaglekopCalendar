@@ -98,7 +98,7 @@ export default function ModifyChipInfoModal({
               flex: '0 0 36px', cursor: (mode==='add' && canEdit) ? 'pointer':'not-allowed'
             }}
           >
-          {localPreset.emoji ?? '•'}
+          <span className="emoji-glyph">{localPreset.emoji ?? '•'}</span>
           </button>
           {iconOpen && mode==='add' && (
             <select

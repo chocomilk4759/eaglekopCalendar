@@ -800,3 +800,38 @@ html[data-compact="1"] .presets-dock.collapsed{ display:flex !important; }
   border: 1px solid var(--border) !important;
   color: inherit !important;
 }
+
+/* ===== Emoji/Icon absolute centering for chips & icon button ===== */
+:root{
+  /* 플랫폼별 미세 보정치(윈도우에서 -0.06em 권장, 필요시 조절) */
+  --emoji-nudge-y: -0.06em;
+  --emoji-box: 1.25em; /* 칩 안 이모지 박스 크기 */
+}
+
+/* 칩 이모지: 정확한 정중앙 */
+.chip-emoji{
+  display: inline-grid !important;
+  place-items: center !important;
+  width: var(--emoji-box);
+  height: var(--emoji-box);
+  line-height: 1;           /* baseline 영향 제거 */
+  transform: translateY(var(--emoji-nudge-y));
+}
+
+/* 아이콘 버튼 내부 글리프(ModifyChipInfoModal)도 동일 적용 */
+.icon-btn .emoji-glyph{
+  display: inline-grid;
+  place-items: center;
+  width: 1em; height: 1em;
+  line-height: 1;
+  transform: translateY(var(--emoji-nudge-y));
+}
+
+/* SVG/IMG 사용 시에도 정확히 중앙 */
+.chip-emoji > svg, .chip-emoji > img,
+.icon-btn .emoji-glyph > svg, .icon-btn .emoji-glyph > img{
+  display:block; width:100%; height:100%;
+}
+
+/* 칩 내부 간격을 약간만 유지(아이콘이 눌려 보이지 않게) */
+.calendar-grid .chip{ gap: 4px; }

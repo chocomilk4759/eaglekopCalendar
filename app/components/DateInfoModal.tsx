@@ -530,7 +530,6 @@ export default function DateInfoModal({
             <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:8 }}>
               <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
-              <button onClick={onClose}>닫기</button>
 
               <span style={{ flex: '0 0 12px' }} />
 
@@ -542,6 +541,11 @@ export default function DateInfoModal({
               <button type="button" onClick={()=> setLinkPanelOpen(v=>!v)} aria-expanded={linkPanelOpen}>링크</button>
 
               {imageUrl && <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>}
+
+              <span style={{ flex: '0 0 12px' }} />
+
+              <button onClick={onClose}>닫기</button>
+
             </div>
           </div>
 
