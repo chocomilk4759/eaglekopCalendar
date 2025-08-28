@@ -381,7 +381,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
               <div className="cell-inner" role="group" aria-label="calendar cell">
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
-                  <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`>{c.d ?? ''}</div>
+                  <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
                   <div className={`cell-title ${c.w===0?'sun': (c.w===6?'sat':'')}`}>
                     {cellTitleOf(note || null, c.w, !canShowSeven)}
                   </div>
