@@ -6,17 +6,16 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
   // ✅ 초기 접힘 상태
   const [collapsed, setCollapsed] = useState(true);
 
-  // 화면이 compact(= column 레이아웃)으로 전환되면 강제로 접힘 유지
+  // 폭이 좁아지는 순간(아이콘 숨김 구간) 자동 접힘
   useEffect(() => {
-    const html = document.documentElement;
-    const apply = () => {
-      const compact = html.getAttribute('data-compact') === '1';
-      if (compact) setCollapsed(true);
+    const mq = window.matchMedia('(max-width: 1199.98px)');
+    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
+      const matches = 'matches' in e ? e.matches : e.matches;
+      if (matches) setCollapsed(true);
     };
-    apply();
-    const obs = new MutationObserver(apply);
-    obs.observe(html, { attributes: true, attributeFilter: ['data-compact'] });
-    return () => obs.disconnect();
+    handler(mq);
+    mq.addEventListener('change', handler as any);
+    return () => mq.removeEventListener('change', handler as any);
   }, []);
 
   return (

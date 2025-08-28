@@ -28,6 +28,7 @@
   --emoji-nudge-y: -0.06em;
   --emoji-box: 1.25em;
   
+  --cell-h: 180px;   /* 이미 존재 */
   --cell-min-h: 160px;   /* 이미 존재 */
   --cell-max-h: 240px;   /* 원하는 값으로 조정 */
 }
@@ -103,7 +104,7 @@ button:active{ transform: translateY(.5px); }
 
 .calendar-grid .cell{
   position:relative; background:var(--card); border:1px solid var(--border);
-  border-radius:12px; padding:10px; min-width:140px; min-height:var(--cell-min-h); max-height: var(--cell-max-h);
+  border-radius:12px; padding:10px; min-width:140px; min-height:var(--cell-h); max-height: var(--cell-h);
   display:flex; flex-direction:column; overflow:hidden;
 }
 .cell.today{ outline:2px solid var(--flagBlue); outline-offset:2px; }
@@ -193,33 +194,56 @@ button:active{ transform: translateY(.5px); }
 .calendar-grid .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
 
 /* emoji absolute centering */
-.chip-emoji{
+/* .chip-emoji{
   display:inline-grid; place-items:center; width:var(--emoji-box); height:var(--emoji-box);
   line-height:1; transform: translateY(var(--emoji-nudge-y));
 }
-.icon-btn .emoji-glyph{
-  display:inline-grid; place-items:center; width:1em; height:1em; line-height:1;
-  transform: translateY(var(--emoji-nudge-y));
-}
 .chip-emoji > svg, .chip-emoji > img {
+  display:block; width:100%; height:100%;
+} */
+
+/* 칩 안 이모지도 동일 방식으로 절대 중앙 */
+.chip-emoji{
+  position: relative !important;
+  display: inline-block !important;
+  width: var(--emoji-box); height: var(--emoji-box);
+  line-height: 1;
+}
+.chip-emoji > svg,
+.chip-emoji > img{
+  position: absolute; top:50%; left:50%;
+  transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
   display:block; width:100%; height:100%;
 }
 
-.icon-btn{
-  display: grid !important;
-  place-items: center !important;
-  line-height: 1 !important;
-}
-.icon-btn .emoji-glyph{
-  display: inline-grid !important;
-  place-items: center !important;
-  width: var(--emoji-box);
-  height: var(--emoji-box);
-  line-height: 1;
+/* .icon-btn .emoji-glyph{
+  display:inline-grid; place-items:center; width:1em; height:1em; line-height:1;
   transform: translateY(var(--emoji-nudge-y));
+} */
+.icon-btn{ position: relative !important; }
+.icon-btn .emoji-glyph{
+  position: absolute !important;
+  top: 50%; left: 50%;
+  width: var(--emoji-box);      /* 1.25em 기본 — 필요시 조정 */
+  height: var(--emoji-box);
+  line-height: 1;               /* 베이스라인 영향 제거 */
+  transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
+  display: block;               /* 글리프/이미지 모두 안정 */
 }
 .icon-btn .emoji-glyph > svg,
-.icon-btn .emoji-glyph > img{ display:block; width:100%; height:100%; }
+.icon-btn .emoji-glyph > img{ 
+  display:block; width:100%; height:100%;
+}
+
+/* 텍스트 이모지(IMG/SVG가 아닌 경우)도 컨테이너를 중앙 앵커로 사용 */
+.chip-emoji:not(:has(svg, img)){
+  position: relative;
+}
+.chip-emoji:not(:has(svg, img))::before{
+  content: attr(data-emoji); /* 필요시 chip-emoji에 data-emoji 세팅 */
+  position:absolute; top:50%; left:50%;
+  transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
+}
 
 /* 6) PRESETS DOCK ------------------------------------------------------------- */
 .presets-dock{
@@ -260,16 +284,12 @@ button:active{ transform: translateY(.5px); }
 }
 
 .presets-dock .preset-chip{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  margin: 6px 8px;
-  border: 1px dashed var(--border);      /* 외곽 라인 */
-  border-radius: 10px;
-  background: var(--card);
-  min-width: 180px;                       /* 아이콘·텍스트 노출 보장 */
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px; margin:6px 8px;
+  border:1px dashed var(--border); border-radius:10px;
+  background:var(--card);
+  min-width:180px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 
 /* 7) AUTH POPOVER -------------------------------------------------------------- */
@@ -332,11 +352,16 @@ button:active{ transform: translateY(.5px); }
   .chips-scroll{ scrollbar-width:thin; }
 }
 
-/* 11) LAYOUT RULES ------------------------------------------------------------- */
-/* 열이 여유로워(row 레이아웃, 아이콘 보이는 상황) → 캘린더 좌우 패딩 */
-html[data-compact="0"] .col-main { padding-left: 60px; padding-right: 60px; }
-/* column 레이아웃이면 패딩 제거 + 아이콘 숨김 */
-html[data-compact="1"] .col-main { padding-left: 0; padding-right: 0; }
-/* row -> column 변환(data-compact="1") 시: 인증 버튼과 우측 도크만 숨김 */
-html[data-compact="1"] .header-fixed-left .left { display: none !important; }  /* AuthButton */
-html[data-compact="1"] .presets-dock { display: none !important; }            /* PresetsDock */
+/* === Wide (아이콘 보임) === */
+@media (min-width: 1200px){
+  .header-fixed .left{ display:block; }     /* AuthButton */
+  .presets-dock{ display:flex; }            /* PresetsDock */
+  .col-main{ padding-left:60px; padding-right:60px; }  /* 좌우 패딩 */
+}
+
+/* === Narrow (아이콘 숨김) === */
+@media (max-width: 1199.98px){
+  .header-fixed .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
+  .presets-dock{ display:none !important; }
+  .col-main{ padding-left:0; padding-right:0; }
+}
