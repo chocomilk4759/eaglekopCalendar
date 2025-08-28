@@ -75,7 +75,7 @@ button:active{ transform: translateY(.5px); }
 .header-fixed-top .left, .header-fixed-top .right{
   position:absolute; top:0; pointer-events:auto;
 }
-.header-fixed-top .left{ right:12px; top:48px; }
+.header-fixed-top .left{ right:60px; }
 .header-fixed-top .right{ right:12px; }
 
 /* header (right wrapper for presets) */
@@ -354,19 +354,38 @@ button:active{ transform: translateY(.5px); }
 
 /* === Wide (아이콘 보임) === */
 @media (min-width: 1200px){
-  .header-fixed-top .left{ display:block; }     /* AuthButton */
+ /* .header-fixed-top .left{ display:block; }     /* AuthButton */
   .presets-dock{ display:flex; }            /* PresetsDock */
   .col-main{ padding-left:60px; padding-right:60px; }  /* 좌우 패딩 */
 }
 
 /* === Narrow (아이콘 숨김) === */
 @media (max-width: 1199.98px){
-  .header-fixed-top .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
+ /* .header-fixed-top .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
   .presets-dock{ display:none !important; }
   .col-main{ padding-left:0; padding-right:0; }
 }
 
+/* Presets 추가 폼: 우측 정렬 */
+.preset-add-icon{
+  align-self: flex-end;                 /* ＋ 버튼을 항상 오른쪽에 */
+}
+
 .preset-add-form{
-  left:0;
-  right:'auto';
+  margin-left: auto;                    /* 컨테이너 자체를 오른쪽으로 밀착 */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;                /* 폼 내부 요소들(아이콘/텍스트/버튼)도 우측 정렬 */
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.preset-add-form input{
+  width: 220px;                         /* 입력창 폭(원하면 수치 조절) */
+}
+
+.preset-add-actions{
+  display: flex;
+  gap: 6px;
+  align-self: flex-end;                 /* 취소/추가 버튼 묶음도 우측 정렬 */
 }
