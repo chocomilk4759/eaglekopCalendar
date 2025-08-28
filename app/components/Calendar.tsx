@@ -66,18 +66,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         const width = el.clientWidth;
         const colsNow = Math.floor((width + gap) / (140 + gap));
         const decision: 'seven'|'compact' = colsNow >= 7 ? 'seven' : 'compact';
-
-        // 히스테리시스: 이전과 다르면 1회 보류, 같은 결론이 연속 2회면 확정
-        if (decision !== pendingRef.current) {
-          pendingRef.current = decision;
-          return;
-        }
-        if (decision !== lastDecisionRef.current) {
-          lastDecisionRef.current = decision;
-          const isSeven = decision === 'seven';
-          setCanShowSeven(isSeven);
-          document.documentElement.setAttribute('data-compact', isSeven ? '0' : '1');
-        }
       }, 120);
     });
     ro.observe(el);
