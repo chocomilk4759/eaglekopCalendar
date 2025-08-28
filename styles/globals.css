@@ -68,25 +68,25 @@ button:active{ transform: translateY(.5px); }
 .container{ width:100%; margin:0; padding:24px; max-width:none; }
 
 /* 3) FIXED HEADER (Auth left / Theme right) ----------------------------------- */
-.header-fixed-left{
+.header-fixed-top{
   position:fixed; top:12px; left:0; right:0; width:100%;
   pointer-events:none; z-index:9999;
 }
-.header-fixed-left .left, .header-fixed-left .right{
+.header-fixed-top .left, .header-fixed-top .right{
   position:absolute; top:0; pointer-events:auto;
 }
-.header-fixed-left .left{ left:12px; }
-.header-fixed-left .right{ right:12px; }
+.header-fixed-top .left{ right:36px; }
+.header-fixed-top .right{ right:12px; }
 
 /* header (right wrapper for presets) */
-.header-fixed-right{
+.header-fixed-bottom{
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 9998;
   pointer-events: none; /* 래퍼는 이벤트 통과 */
 }
-.header-fixed-right > *{
+.header-fixed-bottom > *{
   pointer-events: auto; /* 내용물은 클릭 가능 */
 }
 
@@ -354,14 +354,14 @@ button:active{ transform: translateY(.5px); }
 
 /* === Wide (아이콘 보임) === */
 @media (min-width: 1200px){
-  .header-fixed-left .left{ display:block; }     /* AuthButton */
+  .header-fixed-top .left{ display:block; }     /* AuthButton */
   .presets-dock{ display:flex; }            /* PresetsDock */
   .col-main{ padding-left:60px; padding-right:60px; }  /* 좌우 패딩 */
 }
 
 /* === Narrow (아이콘 숨김) === */
 @media (max-width: 1199.98px){
-  .header-fixed-left .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
+  .header-fixed-top .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
   .presets-dock{ display:none !important; }
   .col-main{ padding-left:0; padding-right:0; }
 }

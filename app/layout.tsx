@@ -21,13 +21,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         {/* 고정 헤더: 좌측 인증 / 우측 테마 */}
-        <div className="header-fixed-left">
+        <div className="header-fixed-top">
           <div className="left"><AuthButton /></div>
           <div className="right"><ThemeToggle /></div>
         </div>
 
         {/* ✅ 프리셋 도크(전역 우상단 고정) */}
-        <div className="header-fixed-right">
+        <div className="header-fixed-bottom">
           <PresetsDockMount />
         </div>
         {children}
