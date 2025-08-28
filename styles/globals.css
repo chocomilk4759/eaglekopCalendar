@@ -90,6 +90,18 @@ button:active{ transform: translateY(.5px); }
   pointer-events: auto; /* 내용물은 클릭 가능 */
 }
 
+/* header (right wrapper for presets) */
+.header-fixed-left .left{
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9998;
+  pointer-events: none; /* 래퍼는 이벤트 통과 */
+}
+.header-fixed-left .left > *{
+  pointer-events: auto; /* 내용물은 클릭 가능 */
+}
+
 /* 4) CALENDAR (grid / cells / flags) ------------------------------------------ */
 .grid{ display:grid; gap:14px; }
 .calendar-grid.auto{
