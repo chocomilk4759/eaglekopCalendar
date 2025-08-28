@@ -381,7 +381,7 @@ button:active{ transform: translateY(.5px); }
 }
 
 .preset-add-form input{
-  width: 220px;                         /* 입력창 폭(원하면 수치 조절) */
+  width: 200px;                         /* 입력창 폭(원하면 수치 조절) */
 }
 
 .preset-add-actions{
