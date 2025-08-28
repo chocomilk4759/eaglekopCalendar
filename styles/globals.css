@@ -75,7 +75,7 @@ button:active{ transform: translateY(.5px); }
 .header-fixed-top .left, .header-fixed-top .right{
   position:absolute; top:0; pointer-events:auto;
 }
-.header-fixed-top .left{ right:12px; top:36px; }
+.header-fixed-top .left{ right:12px; top:48px; }
 .header-fixed-top .right{ right:12px; }
 
 /* header (right wrapper for presets) */
