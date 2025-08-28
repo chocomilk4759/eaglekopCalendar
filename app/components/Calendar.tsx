@@ -218,14 +218,15 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     return `${it.emoji ? it.emoji + ' ' : ''}${it.label}`;
   }
 
-  // 셀 상단 중앙 타이틀: 첫 번째 칩의 text(없으면 label)
-  // 7칸 미만(=canShowSeven=false)일 때는 요일을 함께 표기
+  // 셀 상단 중앙 타이틀:
+  // - note.title 이 설정되어 있으면 그 값을 사용
+  // - 설정하지 않으면 '', 7칸 미만일 때는 요일만 노출
+  // - 7칸 미만 + title 존재 → "요일:타이틀"
   function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean) {
-    const base = note?.items?.[0];
-    const title = base ? (base.text?.length ? base.text : (base.label || '')) : '';
-    if (!showWeekday) return title;
+    const rawTitle = (((note as any)?.title) ?? '').trim();  // title 컬럼 사용
+    if (!showWeekday) return rawTitle;
     const day = DAY_NAMES[weekday];
-    return title ? `${day} ${title}` : day;
+    return rawTitle ? `${day}:${rawTitle}` : day;
   }
 
   return (
@@ -344,9 +345,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           const flagClass = note?.color ? `flag-${note.color}` : '';
           const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
 
-          // 메모가 있을 때만 플래그 배너(큰 흰색 텍스트) 표시. 메모가 없으면 칩을 그대로 노출.
-          const showFlagBanner = !!note?.color && !!note?.content?.trim()?.length;
-          const showChips = (note?.items?.length || 0) > 0 && !showFlagBanner;
+          // 메모(내용)는 배경색(color) 지정된 경우에만 노출. 아니면 칩을 노출.
+          const showMemo = !!note?.color && !!note?.content?.trim()?.length;
+          const showChips = (note?.items?.length || 0) > 0 && !showMemo;
 
           return (
             <div
@@ -363,11 +364,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 }
               }}
             >
-                            <div className="cell-inner" role="group" aria-label="calendar cell">
+              <div className="cell-inner" role="group" aria-label="calendar cell">
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className="cell-date">{c.d ?? ''}</div>
-                  <div className="cell-title">
+                  <div className={`cell-title ${c.w===0?'sun': (c.w===6?'sat':'')}`}>
                     {cellTitleOf(note || null, c.w, !canShowSeven)}
                   </div>
                   <div className="cell-link">
@@ -391,9 +392,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                   </div>
                 </div>
 
-                {/* ── 콘텐츠: note.content 중앙정렬(없으면 칩 중앙정렬) ── */}
+                {/* ── 콘텐츠: 메모(배경색 지정된 경우) 중앙정렬, 아니면 칩 중앙정렬 ── */}
                 <div className="cell-content">
-                  {note?.content?.trim()?.length ? (
+                  {showMemo ? (
                     <div className="cell-content-text">{note!.content}</div>
                   ) : (showChips && note) ? (
                     <div className="chips">

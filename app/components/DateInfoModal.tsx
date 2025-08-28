@@ -31,6 +31,7 @@ export default function DateInfoModal({
   const [note, setNote] = useState<Note>(initial || emptyNote);
   const [memo, setMemo] = useState(note.content || '');
   const [initialMemo, setInitialMemo] = useState(note.content || '');
+  const [titleInput, setTitleInput] = useState<string>((note as any)?.title ?? '');
 
   // 칩 편집/드래그
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -68,6 +69,7 @@ export default function DateInfoModal({
     setNote(base);
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
+    setTitleInput(((base as any)?.title ?? '') as string);
     setEditingIndex(null);
     setEditingText('');
     setDragIndex(null);
@@ -121,7 +123,7 @@ export default function DateInfoModal({
   }
 
   // 항상 Note 반환(에러 throw)
-  async function persist(upd: Partial<Note>): Promise<Note> {
+  async function persist(upd: Partial<Note> & Record<string, any>): Promise<Note> {
     const payload = normalizeNote({ ...note, ...upd, y: date.y, m: date.m, d: date.d });
     const { data, error } = await supabase
       .from('notes')
@@ -148,7 +150,10 @@ export default function DateInfoModal({
   async function saveMemo(){
     if (!canEdit) return;
     try{
-      const saved = await persist({ content: memo });
+      const saved = await persist({
+        content: memo,
+        title: titleInput.trim() ? titleInput.trim() : null
+      });
       setInitialMemo(saved.content || '');
       alert('메모가 저장되었습니다.');
     }catch(e:any){
@@ -381,15 +386,15 @@ export default function DateInfoModal({
         {/* 날짜 + 초기화 + 플래그 */}
         <div className="date-head">
           <h3 style={{margin:'8px 0'}}>{title}</h3>
-
-          <button
-            onClick={clearAll}
-            title="초기화"
-            aria-label="초기화"
-            style={{ marginLeft:'auto', fontSize:12, padding:'6px 8px', borderRadius:8 }}
-          >
-            초기화
-          </button>
+          {/* 셀 상단 중앙 타이틀 에디트(초기화 버튼 왼쪽) */}
+          <input
+            type="text"
+            value={titleInput}
+            onChange={(e)=>setTitleInput(e.target.value)}
+            placeholder="셀 타이틀"
+            style={{ marginLeft: 12, padding:'6px 8px', borderRadius:8, minWidth:180 }}
+            aria-label="셀 상단 타이틀"
+          />
 
           <div className="flag-buttons" aria-label="날짜 강조 색상">
             <button className={`flag-btn red ${note.color==='red'?'active':''}`}

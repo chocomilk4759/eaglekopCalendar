@@ -57,8 +57,8 @@ export default function PresetsPanel({
           <button className="preset-add-icon" aria-label="프리셋 추가" onClick={()=>setShowAdd(s=>!s)}>＋</button>
           {showAdd && (
             <div className="preset-add-form" onKeyDown={(e)=>{ if(e.key==='Enter') addPreset(); }}>
-              <input placeholder="아이콘(선택)" value={emoji} onChange={e=>setEmoji(e.target.value)} />
-              <input placeholder="텍스트(필수)" value={label} onChange={e=>setLabel(e.target.value)} />
+              <input placeholder="아이콘" value={emoji} onChange={e=>setEmoji(e.target.value)} />
+              <input placeholder="텍스트" value={label} onChange={e=>setLabel(e.target.value)} />
               <div className="preset-add-actions">
                 <button onClick={()=>{ setShowAdd(false); setEmoji(''); setLabel(''); }}>취소</button>
                 <button onClick={addPreset}>추가</button>

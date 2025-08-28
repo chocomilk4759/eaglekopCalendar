@@ -279,37 +279,6 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
   color: #fff;
 }
 
-
-/* =====================================================================================
-  5.5) TOP RIBBON
-===================================================================================== */
-.top-ribbon{
-  display:flex; align-items:center; gap:16px;
-  padding: 10px 12px;
-  margin: 6px 0 14px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 6px 16px rgba(0,0,0,.06);
-}
-.ribbon-text{ font-weight: 700; opacity: .9; white-space: nowrap; }
-.ribbon-date{ color: var(--muted); font-weight: 700; }
-
-.top-ribbon-buttons{
-  display:flex; gap:10px; overflow:hidden; padding: 4px;
-}
-.top-btn{ border:none; background: transparent; padding:0; border-radius: 12px; flex: 0 0 auto; }
-.top-btn img{
-  display:block;
-  height: 64px; width:auto;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,.08);
-}
-@media (max-width: 640px){
-  .top-btn img{ height: 56px; }
-}
-
-
 /* =====================================================================================
   6) PRESETS DOCK — 고정(오버레이), 접기/펼치기 + Dock 전용 사각 칩 + 추가 폼 우측 정렬
 ===================================================================================== */
@@ -678,3 +647,39 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
 }
 .calendar-grid .cell-content .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
 
+
+/* =====================================================================================
+  5.5) TOP RIBBON
+===================================================================================== */
+.top-ribbon{
+  display:flex; align-items:center; gap:16px;
+  padding: 10px 12px;
+  margin: 6px 0 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+}
+.ribbon-text{ font-weight: 700; opacity: .9; white-space: nowrap; }
+.ribbon-date{ color: var(--muted); font-weight: 700; }
+
+.top-ribbon-buttons{
+  display:flex; gap:10px; overflow:hidden; padding: 4px;
+}
+.top-btn{ border:none; background: transparent; padding:0; border-radius: 12px; flex: 0 0 auto; }
+.top-btn img{
+  display:block;
+  height: 64px; width:auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+@media (max-width: 640px){
+  .top-btn img{ height: 56px; }
+}
+
+/* ===== Title color follows weekday color ===== */
+.calendar-grid .cell-title.sun { color: var(--sun); }
+.calendar-grid .cell-title.sat { color: var(--sat); }
+/* compact 모드에서 Auth/PresetsDock 숨김은 기존 규칙으로 작동:
+   html[data-compact="1"] .header-fixed,
+   html[data-compact="1"] .presets-dock { display:none !important; } */
