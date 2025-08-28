@@ -389,3 +389,18 @@ button:active{ transform: translateY(.5px); }
   gap: 6px;
   align-self: flex-end;                 /* 취소/추가 버튼 묶음도 우측 정렬 */
 }
+
+/* TopRibbon가 축소 복귀 후 크기 유지되도록 래퍼에서 강제 */
+.top-ribbon-reset {
+  line-height: 0;
+}
+.top-ribbon-reset img,
+.top-ribbon-reset a,
+.top-ribbon-reset button {
+  height: 64px;          /* Calendar에서 준 containerHeight와 동일 */
+  max-height: 64px;
+  flex: 0 0 auto;
+}
+.top-ribbon-reset img {
+  width: auto;
+}

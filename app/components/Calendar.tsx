@@ -32,7 +32,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = createClient();
 
   const today = useMemo(() => new Date(), []);
-  const todayLabel = ` `;// `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`; !날짜 잠깐 없애기
+  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}__`;
 
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -344,8 +344,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           </div>
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <TopRibbon buttons={ribbonButtons} /*containerHeight={64}*/ gap={10} />
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
+            <TopRibbon
+              buttons={ribbonButtons}
+              containerHeight={64}          // ★ 고정 높이 전달(컴포넌트가 지원)
+              gap={10}
+              key={canShowSeven ? 'wide' : 'narrow'}  // ★ 상태가 바뀔 때 리마운트
+            />
           </div>
         </div>
       </div>
