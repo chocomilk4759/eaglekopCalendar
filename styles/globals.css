@@ -683,3 +683,38 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
 /* compact 모드에서 Auth/PresetsDock 숨김은 기존 규칙으로 작동:
    html[data-compact="1"] .header-fixed,
    html[data-compact="1"] .presets-dock { display:none !important; } */
+/* ==== CALENDAR: content 정렬(top-left) + 휴/플래그 표시 보강 ==== */
+
+/* 기본: content는 좌/상 정렬 */
+.calendar-grid .cell-content{
+  align-items: flex-start !important;   /* vertical top */
+  justify-content: flex-start !important; /* horizontal left */
+  text-align: left !important;
+}
+
+/* content가 칩일 때도 좌/상 정렬 */
+.calendar-grid .cell-content .chips{
+  justify-content: flex-start !important;
+  align-content: flex-start !important;
+}
+
+/* 플래그(배경색) 활성화 시 메모 텍스트는 흰색 + 크게 */
+.cell.flag-red .cell-content-text,
+.cell.flag-blue .cell-content-text{
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(18px, 2.6vw, 30px);
+}
+
+/* 휴 모드(캘린더 표시): 중앙에 '휴방' 크게 */
+.cell .cell-rest{
+  display: flex; align-items: center; justify-content: center;
+  width: 100%; height: 100%;
+  color: #fff; font-weight: 800; letter-spacing: .2px;
+  font-size: clamp(20px, 2.8vw, 32px);
+}
+
+/* 7칸 미만(compact)일 때 프리셋 도크를 '접힘' 상태로 강제 */
+html[data-compact="1"] .presets-dock{ display: none !important; }
+html[data-compact="1"] .presets-dock.collapsed{ display: none !important; }
+html[data-compact="1"] .header-fixed{ display: none !important; } /* AuthButton 영역도 숨김 */

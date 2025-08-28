@@ -32,6 +32,10 @@ export default function DateInfoModal({
   const [memo, setMemo] = useState(note.content || '');
   const [initialMemo, setInitialMemo] = useState(note.content || '');
   const [titleInput, setTitleInput] = useState<string>((note as any)?.title ?? '');
+  const isRest = useMemo(
+    () => note.color === 'red' && (note.content?.trim() === '휴방'),
+    [note]
+  );
 
   // 칩 편집/드래그
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
@@ -144,6 +148,21 @@ export default function DateInfoModal({
       await persist({ color: next });
     }catch(e:any){
       alert(e?.message ?? '플래그 저장 중 오류가 발생했습니다.');
+    }
+  }
+
+  // 휴 토글: ON → color:red + content:'휴방' (아이템/메모는 보관하되 표시만 숨김)
+  //          OFF → content:'' (색상은 유지, 필요 시 사용자가 별도로 해제)
+  async function toggleRest(){
+    if(!canEdit) return;
+    try{
+      if (isRest) {
+        await persist({ content: '' });
+      } else {
+        await persist({ color: 'red', content: '휴방' });
+      }
+    }catch(e:any){
+      alert(e?.message ?? '휴 상태 변경 중 오류');
     }
   }
 
@@ -397,6 +416,9 @@ export default function DateInfoModal({
           />
 
           <div className="flag-buttons" aria-label="날짜 강조 색상">
+            <button className={`flag-btn red ${isRest?'active':''}`}
+              onClick={toggleRest} title="휴(휴방)" aria-label="휴(휴방)" style={{ width: 28, height: 18, borderRadius: 6, fontSize: 12, color:'#fff' }}
+            >휴</button>
             <button className={`flag-btn red ${note.color==='red'?'active':''}`}
                     onClick={()=>toggleFlag('red')} title="빨간날" aria-label="빨간날로 표시" />
             <button className={`flag-btn blue ${note.color==='blue'?'active':''}`}
@@ -404,8 +426,8 @@ export default function DateInfoModal({
           </div>
         </div>
 
-        {/* 아이템 목록 + (+) 버튼 */}
-        {(note.items?.length || 0) === 0 ? (
+        {/* 아이템 목록 + (+) 버튼 (휴 모드면 표시하지 않음) */}
+        {!isRest && ((note.items?.length || 0) === 0 ? (
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
             <button
@@ -443,7 +465,7 @@ export default function DateInfoModal({
               title="아이템 추가" aria-label="아이템 추가"
             >＋</button>
           </div>
-        )}
+        ))}
 
         {/* [+] → 콤보박스 → 선택 시 수정 모달(아이콘 고정 & 텍스트 입력) */}
         {comboOpen && presets && (
@@ -474,10 +496,11 @@ export default function DateInfoModal({
         <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
           {/* 좌: 메모 + 링크패널 + 하단 버튼들 */}
           <div style={{ flex:'1 1 0', minWidth:0 }}>
+            {!isRest && (
             <textarea value={memo} onChange={(e)=>setMemo(e.target.value)}
                       placeholder="메모를 입력하세요"
                       style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}} />
-
+            )}
             {/* 메모와 버튼 사이에 링크 패널(토글) */}
             {linkPanelOpen && (
               <div style={{ display:'flex', gap:8, alignItems:'center',

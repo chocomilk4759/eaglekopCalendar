@@ -68,6 +68,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   useEffect(() => {
     const html = document.documentElement;
     html.setAttribute('data-compact', canShowSeven ? '0' : '1');
+    // 도크 접기 강제(요청: 접기 상태로 변경 후 visible/공간 제거)
+    const dock = document.querySelector('.presets-dock');
+    if (dock) {
+      if (!canShowSeven) dock.classList.add('collapsed');
+      else dock.classList.remove('collapsed');
+    }
     return () => html.removeAttribute('data-compact');
   }, [canShowSeven]);
 
@@ -345,8 +351,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           const flagClass = note?.color ? `flag-${note.color}` : '';
           const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
 
-          // 메모(내용)는 배경색(color) 지정된 경우에만 노출. 아니면 칩을 노출.
-          const showMemo = !!note?.color && !!note?.content?.trim()?.length;
+          // 휴: color=red 이고 content가 '휴방'이면 휴 모드
+          const isRest = !!note && note.color === 'red' && (note.content?.trim() === '휴방');
+          // 메모(내용)는 배경색(color) 지정 + 휴가 아닐 때만 노출
+          const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
 
           return (
@@ -392,9 +400,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                   </div>
                 </div>
 
-                {/* ── 콘텐츠: 메모(배경색 지정된 경우) 중앙정렬, 아니면 칩 중앙정렬 ── */}
+                {/* ── 콘텐츠: 휴(중앙 '휴방') > 플래그 메모(흰색 크게) > 칩 ── */}
                 <div className="cell-content">
-                  {showMemo ? (
+                  {isRest ? (
+                    <div className="cell-rest">휴방</div>
+                  ) : showMemo ? (
                     <div className="cell-content-text">{note!.content}</div>
                   ) : (showChips && note) ? (
                     <div className="chips">
