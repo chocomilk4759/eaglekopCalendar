@@ -47,7 +47,7 @@ export default function ModifyChipInfoModal({
 
   // ADD 모드 + 편집 권한이면 콤보 옵션을 미리 준비(어떤 진입 경로든 동일 동작)
   useEffect(() => {
-    if (open && mode === 'add' && canEdit) { void ensureOptions(); }
+    if (open && canEdit) { void ensureOptions(); }
   }, [open, mode, canEdit]);  
 
   async function ensureOptions(){

@@ -123,8 +123,10 @@ button:active{ transform: translateY(.5px); }
 }
 .calendar-grid .cell-date{ font-size:14px; opacity:.8; text-align:left; }
 .calendar-grid .cell-title{ text-align:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.calendar-grid .cell-title.sun{ color:var(--sun); }
-.calendar-grid .cell-title.sat{ color:var(--sat); }
+.calendar-grid .cell-date.sun { color: var(--sun) !important; }
+.calendar-grid .cell-date.sat { color: var(--sat) !important; }
+.calendar-grid .cell-title.sun { color: var(--sun) !important; }
+.calendar-grid .cell-title.sat { color: var(--sat) !important; }
 .calendar-grid .cell-link{ text-align:right; }
 
 /* link icon (top-right) */
@@ -305,3 +307,12 @@ button:active{ transform: translateY(.5px); }
 html[data-tight="1"] .header-fixed,
 html[data-tight="1"] .presets-dock{ display:none !important; }
 /* no automatic hiding on data-compact anymore */
+
+/* 아이콘이 보이는 레이아웃: data-compact="0" (row 레이아웃) */
+html[data-compact="0"] .calendar-grid { padding-left: 60px; padding-right: 60px; }
+/* column 레이아웃이면 패딩 제거 */
+html[data-compact="1"] .calendar-grid { padding-left: 0; padding-right: 0; }
+
+/* column 레이아웃이면 Auth / PresetsDock 숨김 */
+html[data-compact="1"] .header-fixed,
+html[data-compact="1"] .presets-dock { display: none !important; }
