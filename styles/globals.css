@@ -90,18 +90,6 @@ button:active{ transform: translateY(.5px); }
   pointer-events: auto; /* 내용물은 클릭 가능 */
 }
 
-/* header (right wrapper for presets) */
-.header-fixed-left .left{
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 9998;
-  pointer-events: none; /* 래퍼는 이벤트 통과 */
-}
-.header-fixed-left .left > *{
-  pointer-events: auto; /* 내용물은 클릭 가능 */
-}
-
 /* 4) CALENDAR (grid / cells / flags) ------------------------------------------ */
 .grid{ display:grid; gap:14px; }
 .calendar-grid.auto{
@@ -366,14 +354,14 @@ button:active{ transform: translateY(.5px); }
 
 /* === Wide (아이콘 보임) === */
 @media (min-width: 1200px){
-  .header-fixed .left{ display:block; }     /* AuthButton */
+  .header-fixed-left .left{ display:block; }     /* AuthButton */
   .presets-dock{ display:flex; }            /* PresetsDock */
   .col-main{ padding-left:60px; padding-right:60px; }  /* 좌우 패딩 */
 }
 
 /* === Narrow (아이콘 숨김) === */
 @media (max-width: 1199.98px){
-  .header-fixed .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
+  .header-fixed-left .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
   .presets-dock{ display:none !important; }
   .col-main{ padding-left:0; padding-right:0; }
 }
