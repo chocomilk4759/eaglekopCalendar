@@ -40,6 +40,16 @@ export default function ModifyChipInfoModal({
     }
   }, [open, initialText, preset]);
 
+  // 모달이 닫히면 콤보도 닫기
+  useEffect(() => {
+    if (!open) setIconOpen(false);
+  }, [open]);
+
+  // ADD 모드 + 편집 권한이면 콤보 옵션을 미리 준비(어떤 진입 경로든 동일 동작)
+  useEffect(() => {
+    if (open && mode === 'add' && canEdit) { void ensureOptions(); }
+  }, [open, mode, canEdit]);  
+
   async function ensureOptions(){
     if (options.length) return;
     const { data, error } = await supabase.from('presets').select('emoji,label');

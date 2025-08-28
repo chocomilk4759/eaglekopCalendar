@@ -48,6 +48,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // 그리드 칼럼 수 관찰 → 7칸 가능 여부
   const gridRef = useRef<HTMLDivElement>(null);
   const [canShowSeven, setCanShowSeven] = useState(true);
+  const [cols, setCols] = useState(7);
 
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
   useEffect(() => {
@@ -57,31 +58,24 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
       const width = el.clientWidth;
-      const cols = Math.floor((width + gap) / (140 + gap));
-      setCanShowSeven(cols >= 7);
+      const colsNow = Math.floor((width + gap) / (140 + gap));
+      setCols(colsNow);
+      setCanShowSeven(colsNow >= 7);
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  // 7칸 불가 시 전역 압축 플래그 → CSS에서 Auth/PresetsDock 숨김
+  // 7칸 불가 여부(data-compact)와 4칸 이하(data-tight)를 전역 속성으로만 전달
   useEffect(() => {
     const html = document.documentElement;
     html.setAttribute('data-compact', canShowSeven ? '0' : '1');
-    // 7칸 미만이면 좌/우 도크 전역 상태를 강제로 'closed'
-    if (!canShowSeven) {
-      html.setAttribute('data-dock', 'closed');
-      html.setAttribute('data-leftdock', 'closed');
-      const dock = document.querySelector('.presets-dock');
-      if (dock) dock.classList.add('collapsed'); // 보이더라도 펼치지 않음
-    } else {
-      // 7칸이 가능해져도 자동으로 펼치지 않음(사용자 선택 유지)
-      // 여기서는 'collapsed'를 제거하지 않습니다.
-    }
+    html.setAttribute('data-tight', (cols <= 4) ? '1' : '0');
     return () => {
       html.removeAttribute('data-compact');
+      html.removeAttribute('data-tight');
     };
-  }, [canShowSeven]);
+  }, [canShowSeven, cols]);
 
   // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
   useEffect(() => {

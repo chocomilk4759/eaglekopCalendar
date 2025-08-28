@@ -50,15 +50,6 @@ export default function AuthButton() {
   }, [supabase]);
 
   // ─────────────────────────────────────────────────────────────
-  // 2) 좌측 도크 열림 상태 → <html data-leftdock="…">
-  // ─────────────────────────────────────────────────────────────
-  useEffect(() => {
-    const html = document.documentElement;
-    html.setAttribute('data-leftdock', open ? 'open' : 'closed');
-    return () => html.setAttribute('data-leftdock', 'closed');
-  }, [open]);
-
-  // ─────────────────────────────────────────────────────────────
   // 3) 핸들러들
   // ─────────────────────────────────────────────────────────────
   const handleLogin = useCallback(async () => {

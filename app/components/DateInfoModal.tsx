@@ -157,7 +157,7 @@ export default function DateInfoModal({
     if(!canEdit) return;
     try{
       if (isRest) {
-        await persist({ content: '' });
+        await persist({ content: '', color: null });
       } else {
         await persist({ color: 'red', content: '휴방' });
       }

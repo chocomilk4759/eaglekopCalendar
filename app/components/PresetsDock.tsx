@@ -6,19 +6,6 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
   // ✅ 초기 접힘 상태
   const [collapsed, setCollapsed] = useState(true);
 
-  // 도크 상태를 <html data-dock="open|closed">로 반영 → CSS에서 .col-main 여백 제어
-  useEffect(() => {
-    const el = document.documentElement;
-    // compact(=7칸 미만)에서는 무조건 closed 유지
-    const compact = el.getAttribute('data-compact') === '1';
-    if (compact) {
-      el.setAttribute('data-dock', 'closed');
-      return () => el.setAttribute('data-dock', 'closed');
-    }
-    el.setAttribute('data-dock', collapsed ? 'closed' : 'open');
-    return () => el.setAttribute('data-dock', 'closed');
-  }, [collapsed]);
-
   return (
     <aside
       className={`presets-dock ${collapsed ? 'collapsed' : ''}`}

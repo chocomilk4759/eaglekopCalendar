@@ -835,3 +835,13 @@ html[data-compact="1"] .presets-dock.collapsed{ display:flex !important; }
 
 /* 칩 내부 간격을 약간만 유지(아이콘이 눌려 보이지 않게) */
 .calendar-grid .chip{ gap: 4px; }
+
+/* === 새 정책: 4칸 이하에서만 상단 Auth·우측 PresetsDock 숨김 === */
+html[data-tight="1"] .header-fixed,
+html[data-tight="1"] .presets-dock{
+  display: none !important;
+}
+
+/* (구 규칙 무효화) data-compact=1 이어도 숨기지 않음 */
+html[data-compact="1"] .header-fixed{ display: initial !important; }
+html[data-compact="1"] .presets-dock{ display: initial !important; }
