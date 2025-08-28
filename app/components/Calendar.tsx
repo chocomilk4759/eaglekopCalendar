@@ -84,16 +84,18 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     return () => { ro.disconnect(); window.clearTimeout(tRef.current); };
   }, []);
 
-  // 7칸 불가 여부(data-compact)와 4칸 이하(data-tight)를 전역 속성으로만 전달
+  // 7칸 불가 여부(data-compact)를 전역 속성으로만 전달
   useEffect(() => {
     const html = document.documentElement;
-    html.setAttribute('data-compact', canShowSeven ? '0' : '1');
-    html.setAttribute('data-tight', (cols <= 4) ? '1' : '0');
+    const v = canShowSeven ? '0' : '1';
+    // 불필요한 attribute 연속 갱신 방지
+    if (html.getAttribute('data-compact') !== v) {
+      html.setAttribute('data-compact', v);
+    }
     return () => {
       html.removeAttribute('data-compact');
-      html.removeAttribute('data-tight');
     };
-  }, [canShowSeven, cols]);
+  }, [canShowSeven]);
 
   // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
   useEffect(() => {
