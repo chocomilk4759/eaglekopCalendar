@@ -153,10 +153,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const next: Note = { ...cur, items: [...(cur.items || []), newItem] };
 
     const { data, error } = await supabase.from('notes').upsert(next, { onConflict: 'y,m,d' }).select().single();
-    if (error) {
-      alert(error.message);
-      return;
-    }
+    if (error) { console.error('dropPreset upsert error:', error.message); return; }
     onSaved(data as any);
     openInfo(y, m, d);
   }
@@ -380,9 +377,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
               {(showChips && note) && (
                 <div className="chips chips-scroll">
-                  {note.items.map((it: Item, i: number) => (
+                  {note!.items.map((it: Item, i: number) => (
                     <span key={i} className="chip">
-                      {chipLabel(it)}
+                      <span className="chip-emoji">{it.emoji ?? ''}</span>
+                      <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                     </span>
                   ))}
                 </div>

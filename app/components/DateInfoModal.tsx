@@ -409,7 +409,8 @@ export default function DateInfoModal({
                       fontSize:12, background:'#fff',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
-                {it.text?.length ? it.text : (it.emojiOnly ? (it.emoji ?? it.label) : `${it.emoji?it.emoji+' ':''}${it.label}`)}
+              <span className="chip-emoji">{it.emoji ?? ''}</span>
+              <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
             ))}
             <button
