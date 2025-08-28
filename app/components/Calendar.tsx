@@ -32,7 +32,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = createClient();
 
   const today = useMemo(() => new Date(), []);
-  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}__`;
+  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}_______`;
 
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -56,20 +56,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
   useEffect(() => {
-    const el = gridRef.current!;
+    const el = gridRef.current;
+    if (!el) return;
     const ro = new ResizeObserver(() => {
-      // 디바운스
-      window.clearTimeout(tRef.current);
-      tRef.current = window.setTimeout(() => {
-        const cs = getComputedStyle(el);
-        const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
-        const width = el.clientWidth;
-        const colsNow = Math.floor((width + gap) / (140 + gap));
-        const decision: 'seven'|'compact' = colsNow >= 7 ? 'seven' : 'compact';
-      }, 120);
+      const cs = getComputedStyle(el);
+      const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
+      const width = el.clientWidth;
+      const cols = Math.floor((width + gap) / (140 + gap));
+      setCanShowSeven(cols >= 7);
     });
     ro.observe(el);
-    return () => { ro.disconnect(); window.clearTimeout(tRef.current); };
+    return () => ro.disconnect();
   }, []);
 
   // 7칸 불가 여부(data-compact)를 전역 속성으로만 전달
