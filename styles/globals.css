@@ -22,7 +22,7 @@
   /* presets dock position */
   /*--dock-width-expanded: 320px;*/
   --dock-width-expanded: 240px;
-  --dock-top: 84px;
+  --dock-top: 104px;
 
   /* emoji nudge (platform fine-tune) */
   --emoji-nudge-y: -0.06em;
@@ -75,7 +75,7 @@ button:active{ transform: translateY(.5px); }
 .header-fixed-top .left, .header-fixed-top .right{
   position:absolute; top:0; pointer-events:auto;
 }
-.header-fixed-top .left{ right:36px; }
+.header-fixed-top .left{ right:12px; top:60px; }
 .header-fixed-top .right{ right:12px; }
 
 /* header (right wrapper for presets) */
