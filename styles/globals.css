@@ -718,3 +718,20 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
 html[data-compact="1"] .presets-dock{ display: none !important; }
 html[data-compact="1"] .presets-dock.collapsed{ display: none !important; }
 html[data-compact="1"] .header-fixed{ display: none !important; } /* AuthButton 영역도 숨김 */
+
+/* ===== DateInfoModal: 휴 버튼(흰 배경 + X), 활성화 시 빨강 배경 ===== */
+.rest-btn{
+  width: 28px; height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.rest-btn:hover{ background: rgba(0,0,0,.03); }
+.rest-btn.active{
+  background: var(--flagRed);
+  border-color: var(--flagRed);
+  color: #fff; /* X 아이콘 컬러 반전 */
+}
+
