@@ -547,8 +547,8 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 
 /* 2) 셀: 최소 크기 + 가로 스크롤 숨김 */
 .calendar-grid .cell{
-  min-width: 160px;
-  min-height: 160px;
+  min-width: 150px;
+  min-height: 200px;
   overflow: hidden; /* 수평 스크롤바 감춤 */
   position: relative;
 }
