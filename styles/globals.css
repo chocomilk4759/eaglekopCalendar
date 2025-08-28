@@ -186,7 +186,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 .cell{
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 4px;
+  padding: 10px;
   height: clamp(120px, 12vw, 200px);
   position: relative;
   background: var(--card);
@@ -235,7 +235,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 .chip{
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 4px 6px;
+  padding: 6px 10px;
   font-size: 13px;
   background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,242,242,.95));
   box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(0,0,0,.06);
@@ -259,7 +259,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 }
 .cell .chip{
   border-radius: 10px;     /* pill → square */
-  padding: 4px 6px;
+  padding: 8px 10px;
   margin: 6px;            /* 모서리만 벌어진 느낌 */
   background: var(--card);
   box-shadow: 0 1px 2px rgba(0,0,0,.06);
@@ -616,3 +616,19 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
 
 /* placeholder 제거는 TS에서 처리하지만, 안전망으로 빈 날짜 셀을 숨길 수 있는 클래스 */
 .cell.is-placeholder{ display:none; }
+
+/* ============ CALENDAR cell chips: compact padding ============ */
+.calendar-grid .chips{ gap: 4px; }                 /* 칩 간 간격도 살짝 축소 */
+.calendar-grid .chip{
+  padding: 4px 8px;                                /* 기존 8px 10px → 4px 8px */
+  border-radius: 8px;                              /* 칩 둥글기도 살짝 줄임(선택) */
+  gap: 4px;                                        /* 이모지-텍스트 간 간격 축소 */
+  line-height: 1.25;
+}
+.calendar-grid .chip-emoji{ margin-right: 0; }     /* 내부 여백 줄였으니 여분 마진 제거 */
+.calendar-grid .chip-text{ white-space: normal; }  /* 줄바꿈 유지 */
+
+/* 모바일에서 더 타이트하게(선택) */
+@media (max-width: 640px){
+  .calendar-grid .chip{ padding: 3px 6px; gap: 3px; border-radius: 7px; }
+}
