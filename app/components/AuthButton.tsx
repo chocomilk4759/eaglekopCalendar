@@ -153,7 +153,7 @@ export default function AuthButton() {
       <div
         id="auth-dock"
         className={`pop ${open ? 'open' : ''}`}
-        style={{ left: 0, right: 'auto' }}
+        style={{ left: 'auto', right: 0 }}
         role="dialog"
         aria-modal="true"
         aria-label="계정 설정"
