@@ -26,6 +26,9 @@
   /* emoji nudge (platform fine-tune) */
   --emoji-nudge-y: -0.06em;
   --emoji-box: 1.25em;
+  
+  --cell-min-h: 200px;   /* 이미 존재 */
+  --cell-max-h: 320px;   /* 원하는 값으로 조정 */
 }
 [data-theme="dark"]{
   --bg:#0e0f12;
@@ -63,15 +66,27 @@ button:active{ transform: translateY(.5px); }
 .container{ width:100%; margin:0; padding:24px; max-width:none; }
 
 /* 3) FIXED HEADER (Auth left / Theme right) ----------------------------------- */
-.header-fixed{
+.header-fixed-left{
   position:fixed; top:12px; left:0; right:0; width:100%;
   pointer-events:none; z-index:9999;
 }
-.header-fixed .left, .header-fixed .right{
+.header-fixed-left .left, .header-fixed-left .right{
   position:absolute; top:0; pointer-events:auto;
 }
-.header-fixed .left{ left:12px; }
-.header-fixed .right{ right:12px; }
+.header-fixed-left .left{ left:12px; }
+.header-fixed-left .right{ right:12px; }
+
+/* header (right wrapper for presets) */
+.header-fixed-right{
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 9998;
+  pointer-events: none; /* 래퍼는 이벤트 통과 */
+}
+.header-fixed-right > *{
+  pointer-events: auto; /* 내용물은 클릭 가능 */
+}
 
 /* 4) CALENDAR (grid / cells / flags) ------------------------------------------ */
 .grid{ display:grid; gap:14px; }
@@ -87,7 +102,8 @@ button:active{ transform: translateY(.5px); }
 
 .calendar-grid .cell{
   position:relative; background:var(--card); border:1px solid var(--border);
-  border-radius:12px; padding:10px; min-width:140px; min-height:200px; overflow:hidden;
+  border-radius:12px; padding:10px; min-width:140px; min-height:var(--cell-min-h); max-height: var(--cell-max-h);
+  display:flex; flex-direction:column; overflow:hidden;
 }
 .cell.today{ outline:2px solid var(--flagBlue); outline-offset:2px; }
 .cell.sun .cell-date{ color:var(--sun); }
@@ -104,7 +120,7 @@ button:active{ transform: translateY(.5px); }
 }
 .cell.flag-red .cell-date, .cell.flag-blue .cell-date{ color:#fff !important; opacity:1; }
 /* ⬇️ 배경 있을 때 제목도 흰색 */
-.cell.flag-red .cell-title, .cell.flag-blue .cell-title{ color:#fff !important; }
+.cell.flag-red .cell-title, .cell.flag-blue .cell-title{ color:#fff !important; overflow: auto; }
 
 /* top bar: date | title | link */
 .calendar-grid .cell-inner{ display:flex; flex-direction:column; height:100%; }
@@ -133,10 +149,10 @@ button:active{ transform: translateY(.5px); }
 /* content */
 .calendar-grid .cell-content{
   flex:1; display:flex; align-items:flex-start; justify-content:flex-start;
-  text-align:left; padding:6px; overflow:hidden;
+  text-align:left; padding:6px; overflow:auto;
 }
 .calendar-grid .cell-content.has-text{
-  align-items:center !important; justify-content:center !important; text-align:center !important;
+  align-items:center !important; justify-content:center !important; text-align:center !important; overflow: auto;
 }
 .calendar-grid .cell-content.has-text .cell-content-text,
 .calendar-grid .cell-content.has-text .cell-rest{
@@ -284,5 +300,7 @@ button:active{ transform: translateY(.5px); }
 html[data-compact="0"] .col-main { padding-left: 60px; padding-right: 60px; }
 /* column 레이아웃이면 패딩 제거 + 아이콘 숨김 */
 html[data-compact="1"] .col-main { padding-left: 0; padding-right: 0; }
-html[data-compact="1"] .header-fixed,
-html[data-compact="1"] .presets-dock { display: none !important; }
+/* row -> column 변환(data-compact="1") 시: 인증 버튼과 우측 도크만 숨김 */
+html[data-compact="1"] .header-fixed-left .left { display: none !important; }  /* AuthButton */
+html[data-compact="1"] .presets-dock { display: none !important; }            /* PresetsDock */
+

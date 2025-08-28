@@ -1,0 +1,1 @@
+INSERT INTO "public"."user_roles" ("id", "user_id", "email", "role", "created_at") VALUES ('1', null, 'eaglekop@eaglekop.invalid', 'editor', '2025-08-27 13:54:13.206023+00'), ('2', null, 'chocomilk4759@eaglekop.invalid', 'editor', '2025-08-28 01:25:43.223013+00');
