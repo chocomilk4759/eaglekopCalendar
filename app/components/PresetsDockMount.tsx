@@ -1,9 +1,10 @@
 'use client';
+
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
-import Calendar from './components/Calendar';
+import PresetsDock from './PresetsDock';
 
-export default function Page(){
+export default function PresetsDockMount(){
   const supabase = createClient();
   const [canEdit,setCanEdit]=useState(false);
 
@@ -13,15 +14,5 @@ export default function Page(){
     return ()=> sub.subscription?.unsubscribe();
   },[]);
 
-  return (
-    <main className="container">
-      <div className="layout-1-8-1">
-        <div className="layout-blank" aria-hidden />
-        <div className="col-main">
-          <Calendar canEdit={canEdit} />
-        </div>
-        <div className="layout-blank" aria-hidden />
-      </div>
-    </main>
-  );
+  return <PresetsDock canEdit={canEdit} />;
 }

@@ -1,15 +1,5 @@
 /* =====================================================================================
   EAGLEKOP CALENDAR — GLOBAL STYLES (cleaned)
-  - Theme tokens (light/dark)
-  - Base reset & typography
-  - Fixed header (Auth / Theme)
-  - Calendar grid (auto/7 columns), cells & flags
-  - Chips (pill base + cell override), emoji centering
-  - Presets Dock (fixed right; collapsible; add form)
-  - Auth popover
-  - Date info modal (+ rest/flag buttons)
-  - ModifyChipInfoModal helpers
-  - Responsive rules (incl. data-tight policy)
 ===================================================================================== */
 
 /* 1) THEME TOKENS -------------------------------------------------------------- */
@@ -86,10 +76,10 @@ button:active{ transform: translateY(.5px); }
 /* 4) CALENDAR (grid / cells / flags) ------------------------------------------ */
 .grid{ display:grid; gap:14px; }
 .calendar-grid.auto{
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* never exceeds 7 by layout */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
 .calendar-grid.seven{
-  grid-template-columns: repeat(7, minmax(140px, 1fr));        /* exact 7 when space allows */
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
 }
 .day-name{ font-size:13px; opacity:.7; text-align:center; }
 .day-name.sun{ color:var(--sun); }
@@ -113,6 +103,8 @@ button:active{ transform: translateY(.5px); }
   border-color: color-mix(in srgb, var(--flagBlue) 85%, #000 15%);
 }
 .cell.flag-red .cell-date, .cell.flag-blue .cell-date{ color:#fff !important; opacity:1; }
+/* ⬇️ 배경 있을 때 제목도 흰색 */
+.cell.flag-red .cell-title, .cell.flag-blue .cell-title{ color:#fff !important; }
 
 /* top bar: date | title | link */
 .calendar-grid .cell-inner{ display:flex; flex-direction:column; height:100%; }
@@ -138,7 +130,7 @@ button:active{ transform: translateY(.5px); }
 }
 .calendar-grid .cell .link-ico:hover{ background:rgba(0,0,0,.03); }
 
-/* content: default top-left; text-only center (visually centered accounting top bar) */
+/* content */
 .calendar-grid .cell-content{
   flex:1; display:flex; align-items:flex-start; justify-content:flex-start;
   text-align:left; padding:6px; overflow:hidden;
@@ -148,7 +140,7 @@ button:active{ transform: translateY(.5px); }
 }
 .calendar-grid .cell-content.has-text .cell-content-text,
 .calendar-grid .cell-content.has-text .cell-rest{
-  transform: translateY(calc(-1 * var(--cell-top-h) / 2)); /* exact center vs top bar */
+  transform: translateY(calc(-1 * var(--cell-top-h) / 2));
 }
 .cell .cell-rest{
   display:flex; align-items:center; justify-content:center; width:100%; height:100%;
@@ -160,7 +152,7 @@ button:active{ transform: translateY(.5px); }
 }
 .calendar-grid .cell-content-text{ white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
 
-/* 5) CHIPS (pill base + cell override) ---------------------------------------- */
+/* 5) CHIPS -------------------------------------------------------------------- */
 .chips{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
 .chip{
   max-width:100%;
@@ -175,7 +167,6 @@ button:active{ transform: translateY(.5px); }
 }
 .chip-text{ min-width:0; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
 
-/* cell chips: square-ish, tighter paddings, safe wrapping */
 .calendar-grid .chips{ gap:4px; }
 .calendar-grid .chip{
   padding:4px 8px; border-radius:8px; gap:4px; line-height:1.25; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06);
@@ -184,7 +175,7 @@ button:active{ transform: translateY(.5px); }
 [data-theme="dark"] .calendar-grid .chip{ background:#171a20; box-shadow:0 1px 2px rgba(0,0,0,.4); }
 .calendar-grid .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
 
-/* emoji absolute centering (chips & icon button) */
+/* emoji absolute centering */
 .chip-emoji{
   display:inline-grid; place-items:center; width:var(--emoji-box); height:var(--emoji-box);
   line-height:1; transform: translateY(var(--emoji-nudge-y));
@@ -197,7 +188,7 @@ button:active{ transform: translateY(.5px); }
   display:block; width:100%; height:100%;
 }
 
-/* 6) PRESETS DOCK (fixed overlay; collapsible) -------------------------------- */
+/* 6) PRESETS DOCK ------------------------------------------------------------- */
 .presets-dock{
   position:fixed; right:12px; top:var(--dock-top);
   z-index:9990; width:var(--dock-width-expanded); max-height:calc(100vh - 72px);
@@ -216,28 +207,17 @@ button:active{ transform: translateY(.5px); }
 .presets-dock.collapsed .preset-vertical-list{ display:none; }
 .presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
 
-/* dock chips + add form (right aligned) */
-.presets-dock .preset-chip{
-  border-radius:10px; padding:8px 10px; margin:6px; background:var(--card); border:1px solid var(--border);
-  box-shadow:0 1px 2px rgba(0,0,0,.06); white-space:nowrap; max-width:100%; overflow:hidden; text-overflow:ellipsis;
+/* 칩 최소 크기 보장(아이콘+텍스트 전부 보이게) */
+.presets-dock:not(.collapsed) .preset-chip,
+.presets-dock:not(.collapsed) .chip{
+  min-width: 180px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-[data-theme="dark"] .presets-dock .preset-chip{ background:#171a20; border-color:#2a2d36; box-shadow:0 1px 2px rgba(0,0,0,.4); }
-.preset-add-icon{
-  display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:999px;
-  border:1px solid var(--border); background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06); font-size:18px; line-height:1;
-}
-.preset-add-form{
-  align-self:flex-end; width:auto; display:flex; flex-direction:column; gap:8px; align-items:flex-end;
-  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:10px; box-shadow:0 4px 12px rgba(0,0,0,.08);
-}
-.preset-add-form input[type="text"], .preset-add-form select{ width:240px; max-width:100%; }
-.preset-add-actions{ display:flex; gap:8px; justify-content:flex-end; align-self:flex-end; }
-.preset-chip .trash{
-  margin-left:6px; border-radius:6px; border:1px solid #b12a2a; background:#ffefef; color:#b12a2a; padding:2px 8px; font-size:12px;
-}
-.preset-chip .trash:hover{ background:#ffd9d9; }
-[data-theme="dark"] .preset-chip .trash{ background:#3a1212; border-color:#ff7a7a; color:#ff9a9a; }
-[data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
 
 /* 7) AUTH POPOVER -------------------------------------------------------------- */
 .pop{
@@ -262,7 +242,6 @@ button:active{ transform: translateY(.5px); }
 .flag-btn.blue{ background:var(--flagBlue); border-color:var(--flagBlue); }
 .flag-btn.active{ box-shadow:0 0 0 2px #fff inset; }
 
-/* rest button (white btn with X, active=red) */
 .rest-btn{
   width:28px; height:28px; border:1px solid var(--border); border-radius:8px; background:#fff; color:#222;
   display:inline-flex; align-items:center; justify-content:center;
@@ -279,7 +258,7 @@ button:active{ transform: translateY(.5px); }
 .icon-chooser .icon-combo{
   position:absolute; left:0; top:40px; z-index:10020;
   padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card);
-  cursor: default !important; /* hover cursor stays default */
+  cursor: default !important;
 }
 
 /* 10) RESPONSIVE --------------------------------------------------------------- */
@@ -291,7 +270,7 @@ button:active{ transform: translateY(.5px); }
   .pop{ width:92vw; }
 }
 
-/* mobile: always show horizontal scrollbar for chips (if any scroll area used) */
+/* mobile: chips scroll */
 @media (max-width:767px){
   .chips-scroll{ overflow-x:scroll !important; scrollbar-gutter:stable both-edges; }
   .chips-scroll::-webkit-scrollbar{ height:6px; }
@@ -300,19 +279,10 @@ button:active{ transform: translateY(.5px); }
   .chips-scroll{ scrollbar-width:thin; }
 }
 
-/* 11) DATA POLICY (compact vs tight) ------------------------------------------ */
-/* Calendar.tsx sets:
-   - html[data-compact="0|1"] : whether 7 columns fit (for weekday titles etc.)
-   - html[data-tight="1"]     : when columns <= 4 → hide Auth & PresetsDock  */
-html[data-tight="1"] .header-fixed,
-html[data-tight="1"] .presets-dock{ display:none !important; }
-/* no automatic hiding on data-compact anymore */
-
-/* 아이콘이 보이는 레이아웃: data-compact="0" (row 레이아웃) */
-html[data-compact="0"] .calendar-grid { padding-left: 60px; padding-right: 60px; }
-/* column 레이아웃이면 패딩 제거 */
-html[data-compact="1"] .calendar-grid { padding-left: 0; padding-right: 0; }
-
-/* column 레이아웃이면 Auth / PresetsDock 숨김 */
+/* 11) LAYOUT RULES ------------------------------------------------------------- */
+/* 열이 여유로워(row 레이아웃, 아이콘 보이는 상황) → 캘린더 좌우 패딩 */
+html[data-compact="0"] .col-main { padding-left: 60px; padding-right: 60px; }
+/* column 레이아웃이면 패딩 제거 + 아이콘 숨김 */
+html[data-compact="1"] .col-main { padding-left: 0; padding-right: 0; }
 html[data-compact="1"] .header-fixed,
 html[data-compact="1"] .presets-dock { display: none !important; }

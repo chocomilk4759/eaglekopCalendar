@@ -23,7 +23,6 @@ export default function DateInfoModal({
 }){
   const supabase = createClient();
 
-  // 빈 노트
   const emptyNote: Note = normalizeNote({
     y:date.y, m:date.m, d:date.d, content:'', items:[], color:null, link:null, image_url:null
   });
@@ -37,25 +36,21 @@ export default function DateInfoModal({
     [note]
   );
 
-  // 칩 편집/드래그
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editingText, setEditingText] = useState<string>('');
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
-  // 링크/이미지 상태
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
   const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false);
-  const [imageUrl, setImageUrl] = useState<string | null>(note.image_url ?? null); // 저장된 값(경로 or URL)
-  const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);     // 실제 <img>에 쓰는 URL
+  const [imageUrl, setImageUrl] = useState<string | null>(note.image_url ?? null);
+  const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  // 프리셋
   const [presetPickerOpen, setPresetPickerOpen] = useState(false);
   const [presets, setPresets] = useState<Preset[] | null>(null);
   const loadingPresetsRef = useRef(false);
 
-  // [+] → 콤보박스 → 선택 시 수정모달
   const [comboOpen, setComboOpen] = useState(false);
   const [chipModalOpen, setChipModalOpen] = useState(false);
   const [chipModalMode, setChipModalMode] = useState<ModifyChipMode>('add');
@@ -85,23 +80,18 @@ export default function DateInfoModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
-  // ========= 이미지 URL 디스플레이 폴백 =========
-  useEffect(() => {
-    setDisplayImageUrl(imageUrl ?? null); // 공개 버킷이면 그대로 보임
-  }, [imageUrl]);
+  useEffect(() => { setDisplayImageUrl(imageUrl ?? null); }, [imageUrl]);
 
-  // 캘린더 드롭에서 넘어온 프리셋이 있으면 한 번만 ADD 모달을 연다
   useEffect(() => {
     if (!open || !addChipPreset) return;
     setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
     setChipModalMode('add');
     setChipEditIndex(null);
     setChipModalOpen(true);
-    onConsumedAddPreset?.(); // 1회성 소모
+    onConsumedAddPreset?.();
   }, [open, addChipPreset]);
 
   function extractPathFromPublicUrl(url: string): string | null {
-    // https://.../storage/v1/object/public/note-images/<PATH>
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
     if (!m) return null;
     const bucket = m[1];
@@ -112,13 +102,11 @@ export default function DateInfoModal({
 
   async function fallbackToSignedUrlIfNeeded() {
     if (!imageUrl) return;
-    // 경로만 저장된 경우
     if (!/^https?:\/\//i.test(imageUrl)) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(imageUrl, 60 * 60);
       if (!error && data?.signedUrl) setDisplayImageUrl(data.signedUrl);
       return;
     }
-    // 공개 URL이지만 접근 불가할 때 경로로 재시도
     const path = extractPathFromPublicUrl(imageUrl);
     if (path) {
       const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
@@ -126,7 +114,6 @@ export default function DateInfoModal({
     }
   }
 
-  // 항상 Note 반환(에러 throw)
   async function persist(upd: Partial<Note> & Record<string, any>): Promise<Note> {
     const payload = normalizeNote({ ...note, ...upd, y: date.y, m: date.m, d: date.d });
     const { data, error } = await supabase
@@ -144,15 +131,10 @@ export default function DateInfoModal({
   async function toggleFlag(color: 'red' | 'blue'){
     if(!canEdit) return;
     const next: 'red'|'blue'|null = note.color===color ? null : color;
-    try{
-      await persist({ color: next });
-    }catch(e:any){
-      alert(e?.message ?? '플래그 저장 중 오류가 발생했습니다.');
-    }
+    try{ await persist({ color: next }); }
+    catch(e:any){ alert(e?.message ?? '플래그 저장 중 오류가 발생했습니다.'); }
   }
 
-  // 휴 토글: ON → color:red + content:'휴방' (아이템/메모는 보관하되 표시만 숨김)
-  //          OFF → content:'' (색상은 유지, 필요 시 사용자가 별도로 해제)
   async function toggleRest(){
     if(!canEdit) return;
     try{
@@ -200,10 +182,8 @@ export default function DateInfoModal({
     }catch(e:any){ alert(e?.message ?? '초기화 중 오류가 발생했습니다.'); }
   }
 
-  // 칩 편집/순서 변경 (표시는 canEdit와 무관)
   function onDoubleClickChip(idx:number){
     const cur = note.items?.[idx]; if(!cur) return;
-    // 아이콘/라벨은 고정, 텍스트만 수정
     setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
     setChipModalMode('edit');
     setChipEditIndex(idx);
@@ -227,30 +207,35 @@ export default function DateInfoModal({
       emojiOnly: !text
     };
     const items = [...(note.items || []), newItem];
-    try{
-      const saved = await persist({ items });
-      // 필요 시 토스트 등을 띄우고…
-    }catch(e:any){
-      alert(e?.message ?? '아이템 추가 중 오류');
-    }
+    try{ await persist({ items }); }
+    catch(e:any){ alert(e?.message ?? '아이템 추가 중 오류'); }
     setChipModalOpen(false);
   }
 
-  async function applyEditChip(text: string){
+  async function applyEditChip(text: string, overridePreset?: ChipPreset){
     if(!canEdit || chipEditIndex==null) return;
     const items = [...(note.items || [])];
     const cur = items[chipEditIndex]; if(!cur) return;
-    items[chipEditIndex] = { ...cur, text: text || undefined, emojiOnly: !text };
-    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
+    items[chipEditIndex] = {
+      ...cur,
+      text: text || undefined,
+      emojiOnly: !text,
+      emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji
+    };
+    try{ await persist({ items }); }
+    catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
     setChipModalOpen(false);
   }
+
   async function deleteChip(){
     if(!canEdit || chipEditIndex==null) return;
     const ok = window.confirm('해당 아이템을 삭제할까요?'); if(!ok) return;
     const items = [...(note.items || [])]; items.splice(chipEditIndex, 1);
-    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 삭제 중 오류'); }
+    try{ await persist({ items }); }
+    catch(e:any){ alert(e?.message ?? '아이템 삭제 중 오류'); }
     setChipModalOpen(false);
   }
+
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return; setDragIndex(idx);
     e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', String(idx));
@@ -274,7 +259,6 @@ export default function DateInfoModal({
     catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
   }
 
-  // 링크
   const normUrl = (u: string) => {
     const s = (u || '').trim();
     return s ? (/^https?:\/\//i.test(s) ? s : `https://${s}`) : '';
@@ -294,7 +278,6 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
   }
 
-  // 이미지 업로드: DB에는 "경로"를 저장(공개/비공개 모두 호환)
   async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
       const el = new Image(); el.onload = () => res(el); el.onerror = rej;
@@ -321,8 +304,8 @@ export default function DateInfoModal({
         .upload(path, blob, { upsert: true, contentType: 'image/webp' });
       if (error) throw error;
 
-      await persist({ image_url: path });        // DB에는 경로 저장
-      setImageUrl(path);                          // 렌더 폴백 로직이 처리
+      await persist({ image_url: path });
+      setImageUrl(path);
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
       setDisplayImageUrl(signed?.signedUrl ?? null);
     } catch (err:any) {
@@ -346,7 +329,6 @@ export default function DateInfoModal({
     }
   }
 
-  // 프리셋
   async function ensurePresets() {
     if (presets || loadingPresetsRef.current) return;
     loadingPresetsRef.current = true;
@@ -356,38 +338,24 @@ export default function DateInfoModal({
         setPresets(data.map((r:any)=>({ emoji: r.emoji ?? null, label: String(r.label ?? '') })));
       } else {
         setPresets([
-          { emoji: '📢', label: '공지' },
-          { emoji: '🔔', label: '알림' },
-          { emoji: '⚽', label: '축구' },
-          { emoji: '⚾', label: '야구' },
-          { emoji: '🏁', label: 'F1' },
-          { emoji: '🥎', label: '촌지' },
-          { emoji: '🏆', label: '대회' },
-          { emoji: '🎮', label: '게임' },
-          { emoji: '📺', label: '함께' },
-          { emoji: '🤼‍♂️', label: '합방' },
-          { emoji: '👄', label: '저챗' },
-          { emoji: '🍚', label: '광고' },
-          { emoji: '🎤', label: '노래' },
-          { emoji: '💙', label: '컨텐츠' },
+          { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
+          { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
+          { emoji: '🏁', label: 'F1' },  { emoji: '🥎', label: '촌지' },
+          { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
+          { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
+          { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
+          { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
         ]);
       }
     } catch {
       setPresets([
-          { emoji: '📢', label: '공지' },
-          { emoji: '🔔', label: '알림' },
-          { emoji: '⚽', label: '축구' },
-          { emoji: '⚾', label: '야구' },
-          { emoji: '🏁', label: 'F1' },
-          { emoji: '🥎', label: '촌지' },
-          { emoji: '🏆', label: '대회' },
-          { emoji: '🎮', label: '게임' },
-          { emoji: '📺', label: '함께' },
-          { emoji: '🤼‍♂️', label: '합방' },
-          { emoji: '👄', label: '저챗' },
-          { emoji: '🍚', label: '광고' },
-          { emoji: '🎤', label: '노래' },
-          { emoji: '💙', label: '컨텐츠' },
+        { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
+        { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
+        { emoji: '🏁', label: 'F1' },  { emoji: '🥎', label: '촌지' },
+        { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
+        { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
+        { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
+        { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
       ]);
     } finally { loadingPresetsRef.current = false; }
   }
@@ -408,7 +376,6 @@ export default function DateInfoModal({
         {/* 날짜 + 초기화 + 플래그 */}
         <div className="date-head">
           <h3 style={{margin:'8px 0'}}>{title}</h3>
-          {/* 셀 상단 중앙 타이틀 에디트(초기화 버튼 왼쪽) */}
           <input
             type="text"
             value={titleInput}
@@ -419,7 +386,6 @@ export default function DateInfoModal({
           />
 
           <div className="flag-buttons" aria-label="날짜 강조 색상">
-            {/* 휴 버튼: 흰 배경 + X 아이콘, 활성화 시 빨간 배경 + 흰 X */}
             <button
               className={`rest-btn ${isRest ? 'active' : ''}`}
               onClick={toggleRest}
@@ -437,7 +403,7 @@ export default function DateInfoModal({
           </div>
         </div>
 
-        {/* 아이템 목록 + (+) 버튼 (휴 모드면 표시하지 않음) */}
+        {/* 아이템 목록 + (+) 버튼 */}
         {!isRest && ((note.items?.length || 0) === 0 ? (
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
@@ -465,8 +431,8 @@ export default function DateInfoModal({
                       fontSize:12, background:'var(--card)', color:'inherit',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
-              <span className="chip-emoji">{it.emoji ?? ''}</span>
-              <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
+                <span className="chip-emoji">{it.emoji ?? ''}</span>
+                <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
             ))}
             <button
@@ -478,7 +444,6 @@ export default function DateInfoModal({
           </div>
         ))}
 
-        {/* [+] → 콤보박스 → 선택 시 수정 모달(아이콘 고정 & 텍스트 입력) */}
         {comboOpen && presets && (
           <div style={{ margin:'6px 0 4px' }}>
             <select
@@ -503,16 +468,14 @@ export default function DateInfoModal({
           </div>
         )}
 
-        {/* ============ [ 메모 | 이미지 ] 가로 컨테이너 ============ */}
+        {/* [ 메모 | 이미지 ] */}
         <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
-          {/* 좌: 메모 + 링크패널 + 하단 버튼들 */}
           <div style={{ flex:'1 1 0', minWidth:0 }}>
             {!isRest && (
             <textarea value={memo} onChange={(e)=>setMemo(e.target.value)}
                       placeholder="메모를 입력하세요"
                       style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}} />
             )}
-            {/* 메모와 버튼 사이에 링크 패널(토글) */}
             {linkPanelOpen && (
               <div style={{ display:'flex', gap:8, alignItems:'center',
                             border:'1px solid var(--border)', borderRadius:10,
@@ -526,7 +489,6 @@ export default function DateInfoModal({
               </div>
             )}
 
-            {/* 하단 버튼 줄 */}
             <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:8 }}>
               <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
@@ -549,7 +511,6 @@ export default function DateInfoModal({
             </div>
           </div>
 
-          {/* 우: 이미지 미리보기 — 없으면 렌더하지 않음(공간 미점유) */}
           {displayImageUrl && (
             <div style={{ flex:'0 0 280px' }}>
               <div style={{
@@ -566,15 +527,13 @@ export default function DateInfoModal({
             </div>
           )}
         </div>
-        {/* ============ /[ 메모 | 이미지 ] ============ */}
 
-        {/* 칩 수정 모달 (아이콘 고정, 텍스트만) */}
         <ModifyChipInfoModal
           open={chipModalOpen}
           mode={chipModalMode}
           preset={chipModalPreset}
           initialText={chipModalMode==='edit' && chipEditIndex!=null ? (note.items[chipEditIndex]?.text ?? '') : ''}
-          onSave={(t, p)=> chipModalMode==='add' ? applyAddChip(t, p) : applyEditChip(t)}
+          onSave={(t, p)=> chipModalMode==='add' ? applyAddChip(t, p) : applyEditChip(t, p)}
           onDelete={chipModalMode==='edit' ? deleteChip : undefined}
           onClose={()=> setChipModalOpen(false)}
           canEdit={canEdit}

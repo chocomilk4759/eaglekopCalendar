@@ -1,7 +1,8 @@
-import '../styles/globals.css'; // 경로가 다르면 './globals.css' 또는 './styles/globals.css'로 조정
+import '../styles/globals.css';
 import type { Metadata } from 'next';
 import AuthButton from './components/AuthButton';
 import ThemeToggle from './components/ThemeToggle';
+import PresetsDockMount from './components/PresetsDockMount';
 
 export const metadata: Metadata = {
   title: 'Eaglekop Calendar',
@@ -11,7 +12,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <head>
-        {/* 초기 로드 시 깜빡임 없이 테마 적용 */}
         <script
           dangerouslySetInnerHTML={{
             __html:
@@ -25,6 +25,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <div className="left"><AuthButton /></div>
           <div className="right"><ThemeToggle /></div>
         </div>
+
+        {/* ✅ 프리셋 도크(전역 우상단 고정) */}
+        <PresetsDockMount />
+
         {children}
       </body>
     </html>
