@@ -98,8 +98,8 @@ export default function ModifyChipInfoModal({
             type="button"
             className="icon-btn"
             aria-label="아이콘 변경"
-            title={(mode === 'add' && canEdit) ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
-            onClick={async ()=>{ if(mode==='add' && canEdit){ await ensureOptions(); setIconOpen(v=>!v); } }}
+            title={(canEdit) ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
+            onClick={async ()=>{ if(canEdit){ await ensureOptions(); setIconOpen(v=>!v); } }}
             disabled={mode !== 'add' || !canEdit}
             style={{
               width: 36, height: 36, borderRadius: 18,
