@@ -56,18 +56,32 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
   useEffect(() => {
-    const el = gridRef.current;
-    if (!el) return;
+    const el = gridRef.current!;
     const ro = new ResizeObserver(() => {
-      const cs = getComputedStyle(el);
-      const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
-      const width = el.clientWidth;
-      const colsNow = Math.floor((width + gap) / (140 + gap));
-      setCols(colsNow);
-      setCanShowSeven(colsNow >= 7);
+      // 디바운스
+      window.clearTimeout(tRef.current);
+      tRef.current = window.setTimeout(() => {
+        const cs = getComputedStyle(el);
+        const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
+        const width = el.clientWidth;
+        const colsNow = Math.floor((width + gap) / (140 + gap));
+        const decision: 'seven'|'compact' = colsNow >= 7 ? 'seven' : 'compact';
+
+        // 히스테리시스: 이전과 다르면 1회 보류, 같은 결론이 연속 2회면 확정
+        if (decision !== pendingRef.current) {
+          pendingRef.current = decision;
+          return;
+        }
+        if (decision !== lastDecisionRef.current) {
+          lastDecisionRef.current = decision;
+          const isSeven = decision === 'seven';
+          setCanShowSeven(isSeven);
+          document.documentElement.setAttribute('data-compact', isSeven ? '0' : '1');
+        }
+      }, 120);
     });
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => { ro.disconnect(); window.clearTimeout(tRef.current); };
   }, []);
 
   // 7칸 불가 여부(data-compact)와 4칸 이하(data-tight)를 전역 속성으로만 전달
