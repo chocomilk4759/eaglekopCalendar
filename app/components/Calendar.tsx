@@ -244,6 +244,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     <>
       {/* ==================== 상단 컨테이너 (horizontal) ==================== */}
       <div
+        className="calendar-top"
         style={{
           display: 'flex',
           flexDirection: canShowSeven ? 'row' : 'column',
@@ -324,7 +325,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 color: 'var(--accent)',
               }}
             >
-              <span style={{visibility:'hidden'}}>{todayLabel}</span>
+              <span className="calendar-top-date" style={{visibility:'hidden'}}>{todayLabel}</span>
             </div>
           </div>
 

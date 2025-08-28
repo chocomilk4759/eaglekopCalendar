@@ -404,3 +404,13 @@ button:active{ transform: translateY(.5px); }
 .top-ribbon-reset img {
   width: auto;
 }
+
+/* 상단 컨테이너: 모바일에서 여백 +40px (총 46px) */
+@media (max-width: 768px){
+  .calendar-top{
+    margin-top: calc(46px + env(safe-area-inset-top, 0px)) !important;
+  }
+  .calendar-top-date{
+    visibility: visible;
+  }
+}
