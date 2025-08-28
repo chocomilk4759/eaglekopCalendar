@@ -56,7 +56,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
       const width = el.clientWidth;
-      const cols = Math.floor((width + gap) / (160 + gap));
+      const cols = Math.floor((width + gap) / (140 + gap));
       setCanShowSeven(cols >= 7);
     });
     ro.observe(el);
@@ -169,13 +169,21 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const start = startWeekday(ym.y, ym.m);
   const cells = useMemo(() => {
     const list: { y: number; m: number; d: number | null; w: number }[] = [];
-    const total = Math.ceil((start + dim) / 7) * 7;
-    for (let i = 0; i < total; i++) {
-      const d = i - start + 1;
-      list.push({ y: ym.y, m: ym.m, d: d >= 1 && d <= dim ? d : null, w: i % 7 });
+    if (canShowSeven) {
+      // 정확히 7열이 가능할 때: 주 단위로 정렬하기 위해 placeholder 포함
+      const total = Math.ceil((start + dim) / 7) * 7;
+      for (let i = 0; i < total; i++) {
+        const d = i - start + 1;
+        list.push({ y: ym.y, m: ym.m, d: d >= 1 && d <= dim ? d : null, w: i % 7 });
+      }
+    } else {
+      // 7열 미만: 실제 날짜만 렌더(placeholder 제거 → 빈 칸이 공간을 차지하지 않음)
+      for (let d = 1; d <= dim; d++) {
+        list.push({ y: ym.y, m: ym.m, d, w: (start + d - 1) % 7 });
+      }
     }
     return list;
-  }, [ym, dim, start]);
+  }, [ym, dim, start, canShowSeven]);
 
   const monthLabel = `${ym.y}.${pad(ym.m + 1)}`;
 
@@ -308,7 +316,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       {/* 요일/달력 그리드 (로딩 시 미세 페이드) */}
       <div
         ref={gridRef}
-        className="grid calendar-grid"
+        className={`grid calendar-grid ${canShowSeven ? 'seven' : 'auto'}`}
         style={{ opacity: loading ? 0.96 : 1, transition: 'opacity .12s linear' }}
       >
         {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (

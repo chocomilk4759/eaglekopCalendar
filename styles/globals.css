@@ -538,16 +538,16 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
 .preset-toggle.textual:hover{ background: rgba(0,0,0,.03); }
 
 /* =====================[ CALENDAR: APPEND-ONLY OVERRIDES ]===================== */
-/* 1) 캘린더 그리드: 화면 폭에 맞춰 칼럼 자동 조절 (셀 최소 160px) */
+/* 1) 캘린더 그리드: 화면 폭에 맞춰 칼럼 자동 조절 (셀 최소 140px) */
 .calendar-grid{
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* 핵심 */
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* 핵심 */
   gap: 14px;
 }
 
 /* 2) 셀: 최소 크기 + 가로 스크롤 숨김 */
 .calendar-grid .cell{
-  min-width: 150px;
+  min-width: 140px;
   min-height: 200px;
   overflow: hidden; /* 수평 스크롤바 감춤 */
   position: relative;
@@ -598,3 +598,21 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
   background: var(--card); opacity: .95;
 }
 .calendar-grid .cell .link-ico:hover{ background: rgba(0,0,0,.03); }
+/* =====================[ CALENDAR: row-size control ]===================== */
+
+/* 가변열(뷰포트에 맞춰 1~6열) — 셀 최소 140px, 7열은 절대 넘지 않음(일부 폭에서 <7열) */
+.calendar-grid.auto{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+/* 7열 모드 — 화면이 충분히 넓을 때 정확히 7열로 고정(7 초과 금지) */
+.calendar-grid.seven{
+  display: grid;
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+/* placeholder 제거는 TS에서 처리하지만, 안전망으로 빈 날짜 셀을 숨길 수 있는 클래스 */
+.cell.is-placeholder{ display:none; }
