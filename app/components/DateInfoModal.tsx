@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabaseClient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
+import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 
 type Preset = { emoji: string | null; label: string };
 
@@ -47,6 +48,13 @@ export default function DateInfoModal({
   const [presets, setPresets] = useState<Preset[] | null>(null);
   const loadingPresetsRef = useRef(false);
 
+  // [+] → 콤보박스 → 선택 시 수정모달
+  const [comboOpen, setComboOpen] = useState(false);
+  const [chipModalOpen, setChipModalOpen] = useState(false);
+  const [chipModalMode, setChipModalMode] = useState<ModifyChipMode>('add');
+  const [chipModalPreset, setChipModalPreset] = useState<ChipPreset>({ emoji: null, label: '' });
+  const [chipEditIndex, setChipEditIndex] = useState<number | null>(null);
+  
   const title = useMemo(
     () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
     [date]
@@ -159,24 +167,46 @@ export default function DateInfoModal({
   // 칩 편집/순서 변경 (표시는 canEdit와 무관)
   function onDoubleClickChip(idx:number){
     const cur = note.items?.[idx]; if(!cur) return;
-    setEditingIndex(idx); setEditingText(cur.text ?? '');
+    // 아이콘/라벨은 고정, 텍스트만 수정
+    setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
+    setChipModalMode('edit');
+    setChipEditIndex(idx);
+    setChipModalOpen(true);
   }
-  async function saveChipEdit(){
-    if(editingIndex===null || !canEdit) return;
+
+  function openChipModalForAdd(p: Preset){
+    setChipModalPreset({ emoji: p.emoji ?? null, label: p.label });
+    setChipModalMode('add');
+    setChipEditIndex(null);
+    setChipModalOpen(true);
+  }
+  
+  async function applyAddChip(text: string){
+    if(!canEdit) return;
+    const newItem: Item = {
+      emoji: chipModalPreset.emoji ?? null,
+      label: chipModalPreset.label,
+      text: text || undefined,
+      emojiOnly: !text
+    };
+    const items = [...(note.items || []), newItem];
+    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 추가 중 오류'); }
+    setChipModalOpen(false);
+  }
+  async function applyEditChip(text: string){
+    if(!canEdit || chipEditIndex==null) return;
     const items = [...(note.items || [])];
-    const cur = items[editingIndex]; if(!cur) return;
-    const t = editingText.trim();
-    items[editingIndex] = { ...cur, text: t.length ? t : undefined, emojiOnly: !t.length };
-    try{ await persist({ items }); setEditingIndex(null); setEditingText(''); }
-    catch(e:any){ alert(e?.message ?? '아이템 저장 중 오류'); }
+    const cur = items[chipEditIndex]; if(!cur) return;
+    items[chipEditIndex] = { ...cur, text: text || undefined, emojiOnly: !text };
+    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
+    setChipModalOpen(false);
   }
-  function cancelChipEdit(){ setEditingIndex(null); setEditingText(''); }
   async function deleteChip(){
-    if(editingIndex===null || !canEdit) return;
+    if(!canEdit || chipEditIndex==null) return;
     const ok = window.confirm('해당 아이템을 삭제할까요?'); if(!ok) return;
-    const items = [...(note.items || [])]; items.splice(editingIndex, 1);
-    try{ await persist({ items }); setEditingIndex(null); setEditingText(''); }
-    catch(e:any){ alert(e?.message ?? '아이템 삭제 중 오류'); }
+    const items = [...(note.items || [])]; items.splice(chipEditIndex, 1);
+    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 삭제 중 오류'); }
+    setChipModalOpen(false);
   }
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return; setDragIndex(idx);
@@ -356,7 +386,7 @@ export default function DateInfoModal({
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
             <button
-              onClick={async ()=>{ await ensurePresets(); setPresetPickerOpen(v=>!v); }}
+              onClick={async ()=>{ await ensurePresets(); setComboOpen(v=>!v); }}
               style={{ marginLeft:8, border:'1px dashed var(--border)', borderRadius:999, padding:'2px 10px' }}
               title="아이템 추가" aria-label="아이템 추가"
             >＋</button>
@@ -374,7 +404,7 @@ export default function DateInfoModal({
                     onDragOver={onDragOverChip}
                     onDrop={(e)=>onDropChip(e, idx)}
                     style={{
-                      display:'inline-flex', alignItems:'center',
+                      display:'inline-flex', alignItems:'center', justifyContent:'center',
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
                       fontSize:12, background:'#fff',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
@@ -383,7 +413,7 @@ export default function DateInfoModal({
               </span>
             ))}
             <button
-              onClick={async ()=>{ await ensurePresets(); setPresetPickerOpen(v=>!v); }}
+              onClick={async ()=>{ await ensurePresets(); setComboOpen(v=>!v); }}
               style={{ border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
                        background:'#fff', cursor:'pointer', fontSize:12 }}
               title="아이템 추가" aria-label="아이템 추가"
@@ -391,42 +421,28 @@ export default function DateInfoModal({
           </div>
         )}
 
-        {/* 프리셋 선택 박스 */}
-        {presetPickerOpen && presets && (
-          <div style={{ border:'1px solid var(--border)', borderRadius:10, padding:8, margin:'6px 0 4px', background:'#fff' }}>
-            <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(120px, 1fr))', gap:6}}>
+        {/* [+] → 콤보박스 → 선택 시 수정 모달(아이콘 고정 & 텍스트 입력) */}
+        {comboOpen && presets && (
+          <div style={{ margin:'6px 0 4px' }}>
+            <select
+              onChange={(e) => {
+                const idx = Number(e.target.value);
+                if (!Number.isNaN(idx) && presets[idx]) {
+                  const p = presets[idx];
+                  setComboOpen(false);
+                  openChipModalForAdd(p);
+                  e.currentTarget.selectedIndex = 0;
+                }
+              }}
+              defaultValue=""
+              aria-label="프리셋 선택"
+              style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)' }}
+            >
+              <option value="" disabled>프리셋 선택…</option>
               {presets.map((p, i)=>(
-                <button key={i} onClick={()=> addPresetItem(p)} disabled={!canEdit}
-                        style={{ display:'flex', alignItems:'center', gap:8,
-                                 border:'1px solid var(--border)', borderRadius:8,
-                                 padding:'6px 8px', textAlign:'left', background:'#fff',
-                                 opacity: canEdit ? 1 : .6, cursor: canEdit ? 'pointer' : 'not-allowed' }}>
-                  <span>{p.emoji ?? ''}</span>
-                  <span style={{fontSize:12}}>{p.label}</span>
-                </button>
+                <option key={`${p.label}-${i}`} value={i}>{`${p.emoji ?? ''} ${p.label}`}</option>
               ))}
-            </div>
-          </div>
-        )}
-
-        {/* 칩 편집 패널 (읽기 모드에서도 표시만) */}
-        {editingIndex!==null && (
-          <div style={{ display:'flex', gap:8, alignItems:'center',
-                        padding:'8px 10px', border:'1px solid var(--border)',
-                        borderRadius:10, margin:'10px 0 4px', background:'#fff' }}>
-            <span style={{fontSize:12, opacity:.7}}>
-              아이템 편집{!canEdit ? ' (읽기 전용)' : ''}
-            </span>
-            <input value={editingText} onChange={(e)=>setEditingText(e.target.value)}
-                    onKeyDown={(e)=>{ if(e.key==='Enter' && canEdit) saveChipEdit(); }}
-                    placeholder="빈칸으로 저장하면 아이콘만 표시"
-                    style={{flex:1, padding:'6px 8px', borderRadius:8}} readOnly={!canEdit}/>
-            <button onClick={saveChipEdit} disabled={!canEdit}>저장</button>
-            <button onClick={deleteChip} disabled={!canEdit}
-                    style={{borderColor:'#b12a2a', color: canEdit ? '#b12a2a' : undefined}}>
-              삭제
-            </button>
-            <button onClick={cancelChipEdit}>닫기</button>
+            </select>
           </div>
         )}
 
@@ -489,6 +505,17 @@ export default function DateInfoModal({
           )}
         </div>
         {/* ============ /[ 메모 | 이미지 ] ============ */}
+
+        {/* 칩 수정 모달 (아이콘 고정, 텍스트만) */}
+        <ModifyChipInfoModal
+          open={chipModalOpen}
+          mode={chipModalMode}
+          preset={chipModalPreset}
+          initialText={chipModalMode==='edit' && chipEditIndex!=null ? (note.items[chipEditIndex]?.text ?? '') : ''}
+          onSave={(t)=> chipModalMode==='add' ? applyAddChip(t) : applyEditChip(t)}
+          onDelete={chipModalMode==='edit' ? deleteChip : undefined}
+          onClose={()=> setChipModalOpen(false)}
+        />
       </div>
     </div>
   );
