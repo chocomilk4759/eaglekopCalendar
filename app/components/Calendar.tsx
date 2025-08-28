@@ -325,7 +325,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 color: 'var(--accent)',
               }}
             >
-              <span className="calendar-top-date" style={{visibility:'hidden'}}>{todayLabel}</span>
+              <span style={{visibility:'hidden'}}>{todayLabel}</span>
             </div>
           </div>
 

@@ -410,7 +410,4 @@ button:active{ transform: translateY(.5px); }
   .calendar-top{
     margin-top: calc(46px + env(safe-area-inset-top, 0px)) !important;
   }
-  .calendar-top-date{
-    visibility: visible;
-  }
 }
