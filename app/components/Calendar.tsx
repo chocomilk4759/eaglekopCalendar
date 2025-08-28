@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
@@ -44,6 +44,31 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
   const ymKey = `${ym.y}-${ym.m}`;
   const [loading, setLoading] = useState(false);
+  // 그리드 칼럼 수 관찰 → 7칸 가능 여부
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [canShowSeven, setCanShowSeven] = useState(true);
+
+  // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
+  useEffect(() => {
+    const el = gridRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => {
+      const cs = getComputedStyle(el);
+      const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
+      const width = el.clientWidth;
+      const cols = Math.floor((width + gap) / (160 + gap));
+      setCanShowSeven(cols >= 7);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // 7칸 불가 시 전역 압축 플래그 → CSS에서 Auth/PresetsDock 숨김
+  useEffect(() => {
+    const html = document.documentElement;
+    html.setAttribute('data-compact', canShowSeven ? '0' : '1');
+    return () => html.removeAttribute('data-compact');
+  }, [canShowSeven]);
 
   // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
   useEffect(() => {
@@ -190,6 +215,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       <div
         style={{
           display: 'flex',
+          flexDirection: canShowSeven ? 'row' : 'column',
           justifyContent: 'space-between',
           alignItems: 'stretch',
           gap: 16,
@@ -197,7 +223,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }}
       >
         {/* -------- 좌측 컨테이너 (vertical) -------- */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minWidth: 360, flex: '1 1 60%' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: canShowSeven ? 'column' : 'row',
+            gap: 10,
+            minWidth: 360,
+            flex: '1 1 60%'
+          }}>
           {/* 좌측 상단: 아이콘 + 텍스트 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <img
@@ -273,11 +306,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       {/* ==================== /상단 컨테이너 ==================== */}
 
       {/* 요일/달력 그리드 (로딩 시 미세 페이드) */}
-      <div className="grid grid-lg" style={{ opacity: loading ? 0.96 : 1, transition: 'opacity .12s linear' }}>
-        {['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
-          <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>
-            {n}
-          </div>
+      <div
+        ref={gridRef}
+        className="grid calendar-grid"
+        style={{ opacity: loading ? 0.96 : 1, transition: 'opacity .12s linear' }}
+      >
+        {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
+          <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
         ))}
 
         {cells.map((c, idx) => {
