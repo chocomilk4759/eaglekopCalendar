@@ -1,169 +1,538 @@
-/* ============================================================================
-   EAGLEKOP CALENDAR — CLEAN GLOBALS
-   - Theme tokens
-   - Base reset & typography
-   - Layout grid
-   - Calendar grid & cells (min 160x160, auto-fit columns)
-   - Chips (wrap text; no horizontal scrollbar in cell)
-   - Top ribbon
-   - Presets dock / Auth header (hide in compact)
-   - Modal basics
-   - Utilities & responsive
-============================================================================ */
+/* =====================================================================================
+  EAGLEKOP CALENDAR — GLOBAL STYLES (globals.css)
+  - Theme tokens (light/dark)
+  - Base resets & typography
+  - Fixed header (Auth / Theme)
+  - Responsive Page Grid with dynamic left/right reserved columns
+  - Calendar (fixed cell height, TODAY outline, weekend colors, flag/red-blue)
+  - Chips (base pill + calendar-cell square override, drag scroll UX)
+  - Top Ribbon
+  - Presets Dock (fixed right; collapsible; add-form right align; square chip)
+  - Auth popover
+  - Date info modal
+  - Utilities & responsive tweaks
+===================================================================================== */
 
-/* ========== 1) THEME TOKENS ========== */
+
+/* =====================================================================================
+  1) THEME TOKENS
+===================================================================================== */
 :root{
-  --bg:#fff; --fg:#111; --muted:#666; --border:#e5e5e5; --card:#fff; --accent:#222;
-  --sun:#d00; --sat:#05c;
-  --flagRed:#E74C4C; --flagBlue:#4C88DB;
+  --bg:#ffffff;
+  --fg:#111111;
+  --muted:#666666;
+  --border:#e5e5e5;
+  --card:#ffffff;
+  --accent:#222222;
 
-  /* layout */
-  --dock-width:320px; --dock-gap:10px; --leftdock-width:320px; --leftdock-gap:10px;
+  /* weekend colors */
+  --sun:#d00;     /* Sunday */
+  --sat:#05c;     /* Saturday */
+
+  /* flag colors */
+  --flagRed:#E74C4C;
+  --flagBlue:#4C88DB;
+
+  /* docks & layout */
+  --side-min: 40px;            /* 좌/우 최소 여백 */
+  --dock-width-expanded: 320px;/* 우측 프리셋 도크 펼침 폭 */
+  --dock-buffer: 10px;         /* 우측 도크 버퍼 */
+  --leftdock-width: 320px;     /* 좌측 계정 도크 펼침 폭 */
+  --leftdock-buffer: 10px;     /* 좌측 도크 버퍼 */
+  --dock-top: 84px;           /* 프리셋 도크 상단 오프셋(ThemeToggle 아래) */
 }
+
 [data-theme="dark"]{
-  --bg:#0e0f12; --fg:#e9eaee; --muted:#a1a6b3; --border:#2a2d36; --card:#14161b; --accent:#f1f2f4;
-  --sun:#ff6b6b; --sat:#6ab0ff;
+  --bg:#0e0f12;
+  --fg:#e9eaee;
+  --muted:#a1a6b3;
+  --border:#2a2d36;
+  --card:#14161b;
+  --accent:#f1f2f4;
+
+  --sun:#ff6b6b;
+  --sat:#6ab0ff;
+
+  --flagRed:#E74C4C;
+  --flagBlue:#4C88DB;
 }
 
-/* ========== 2) BASE RESET ========== */
+
+/* =====================================================================================
+  2) BASE RESET & TYPOGRAPHY
+===================================================================================== */
 *,
 *::before,
-*::after{ box-sizing:border-box; }
-html, body{ height:100%; }
+*::after { box-sizing: border-box; }
+html, body { height: 100%; }
+
 body{
-  margin:0; background:var(--bg); color:var(--fg);
-  font-family: system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-a{ color:inherit; text-decoration:none; }
+
+a{ color: inherit; text-decoration: none; }
+
 button, input, textarea, select{
-  color:inherit; background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 10px; font:inherit;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
 }
-button{ cursor:pointer; transition:background .12s ease, box-shadow .12s ease, transform .06s ease; }
-button:hover{ background:rgba(0,0,0,.03); }
-button:active{ transform:translateY(.5px); }
-.container{ width:100%; margin:0; padding:24px; }
+button{ cursor: pointer; transition: background .12s ease, box-shadow .12s ease, transform .06s ease; }
+button:hover{ background: rgba(0,0,0,.03); }
+button:active{ transform: translateY(.5px); }
 
-/* ========== 3) LAYOUT GRID (좌/우 도크 고려) ========== */
+/* page container: 전폭 사용 */
+.container{
+  max-width: none;   /* 제한 해제 (필요 시 var(--page-max)로 교체해 캡 가능) */
+  width: 100%;
+  margin: 0;
+  padding: 24px;
+}
+
+
+/* =====================================================================================
+  3) FIXED HEADER (Auth left / Theme right)
+===================================================================================== */
+.header-fixed{
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+.header-fixed .left,
+.header-fixed .right{
+  position: absolute;
+  top: 0;
+  pointer-events: auto;
+}
+.header-fixed .left{ left: 12px; }
+.header-fixed .right{ right: 12px; }
+
+
+/* =====================================================================================
+  4) PAGE GRID — 좌/우 예약폭을 상태에 따라 동적으로 반영
+===================================================================================== */
+/* 기본: 좌/우 최소 여백만(16px), 중앙이 전폭 확장 */
 .layout-1-8-1{
-  display:grid; grid-template-columns: 40px 1fr 40px; gap:16px; align-items:start;
+  display: grid;
+  grid-template-columns: var(--side-min) 1fr var(--side-min);
+  gap: 16px;
+  align-items: start;
 }
-.layout-1-8-1>.col-main{ min-width:0; }
+/* 중앙 컬럼은 반드시 줄어들 수 있어야 함 */
+.layout-1-8-1 > .col-main { min-width: 0; }
 
-/* 우측 프리셋 도크/좌측 인증 도크가 열리면 컬럼 보정 (참고용) */
+/* 우측 프리셋 도크 펼침 시: 오른쪽만 예약 */
 html[data-dock="open"] .layout-1-8-1{
-  grid-template-columns: 40px 1fr calc(var(--dock-width) + var(--dock-gap));
+  grid-template-columns: var(--side-min) 1fr calc(var(--dock-width-expanded) + var(--dock-buffer));
 }
+
+/* 좌측 계정 도크 펼침 시: 왼쪽만 예약 */
 html[data-leftdock="open"] .layout-1-8-1{
-  grid-template-columns: calc(var(--leftdock-width) + var(--leftdock-gap)) 1fr 40px;
+  grid-template-columns: calc(var(--leftdock-width) + var(--leftdock-buffer)) 1fr var(--side-min);
 }
+
+/* 양쪽 모두 펼침 시: 양쪽 예약 */
 html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
-  grid-template-columns: calc(var(--leftdock-width) + var(--leftdock-gap)) 1fr calc(var(--dock-width) + var(--dock-gap));
+  grid-template-columns:
+    calc(var(--leftdock-width) + var(--leftdock-buffer))
+    1fr
+    calc(var(--dock-width-expanded) + var(--dock-buffer));
 }
 
-/* ========== 4) CALENDAR GRID ========== */
-/* 7열이 가능하면 그리드가 정확히 7칸, 아니면 auto-fit으로 칼럼 수 자동 조절 */
-.calendar-grid{
-  display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* 핵심: 셀 최소폭 160px */
-  gap:14px;
+@media (max-width: 980px){
+  .layout-1-8-1{ grid-template-columns: 1fr; } /* 모바일에서는 한 컬럼 */
 }
 
-/* 요일 헤더 */
-.day-name{ font-size:13px; opacity:.7; text-align:center; }
-.day-name.sun{ color:var(--sun); }
-.day-name.sat{ color:var(--sat); }
 
-/* 셀: 최소 160x160, 내부 콘텐츠 오버플로우 제어 */
+/* =====================================================================================
+  5) CALENDAR
+===================================================================================== */
+.cal-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+/* 7열: 중앙 폭 100%를 정확히 7등분 */
+.grid{
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+.grid-lg{ gap: 14px; }
+
+.day-name{
+  font-size: 13px;
+  opacity: .7;
+  text-align: center;
+}
+.day-name.sun{ color: var(--sun); }
+.day-name.sat{ color: var(--sat); }
+
+/* 셀(높이만 clamp — 가로는 그리드가 책임) */
 .cell{
-  position:relative;
-  background:var(--card);
-  border:1px solid var(--border); border-radius:12px;
-  padding:10px;
-  min-width:160px; min-height:160px;       /* 요구사항 */
-  overflow:hidden;                          /* 가로 스크롤 가림 */
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  height: clamp(120px, 12vw, 200px);
+  position: relative;
+  background: var(--card);
+  overflow: hidden;     /* 내부 스크롤 영역(칩)은 따로 스크롤 */
 }
-.cell.today{ outline:2px solid var(--flagBlue); outline-offset:2px; }
-.date-lg{ font-size:15px; }
-.cell .date{ font-size:14px; opacity:.7; }
-.cell.sun .date{ color:var(--sun); }
-.cell.sat .date{ color:var(--sat); }
+.date-lg{ font-size: 15px; }
+.cell .date{ font-size: 14px; opacity: .7; }
+.cell.sun .date{ color: var(--sun); }
+.cell.sat .date{ color: var(--sat); }
 
-/* 플래그 배경 */
-.cell.flag-red{ background:var(--flagRed); border-color: color-mix(in srgb, var(--flagRed) 85%, #000 15%); }
-.cell.flag-blue{ background:var(--flagBlue); border-color: color-mix(in srgb, var(--flagBlue) 85%, #000 15%); }
-.cell.flag-red .date, .cell.flag-blue .date{ color:#fff; opacity:1; }
-.cell .flag-banner{ display:none; }
-.cell.flag-red .flag-banner, .cell.flag-blue .flag-banner{
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-  padding:12px; text-align:center; font-weight:800; font-size:clamp(18px,2.6vw,30px); color:#fff; pointer-events:none;
+/* 오늘 강조 */
+.cell.today{ outline: 2px solid var(--flagBlue); outline-offset: 2px; }
+
+/* 플래그 배경 + 날짜 흰색 */
+.cell.flag-red{
+  background: var(--flagRed);
+  border-color: color-mix(in srgb, var(--flagRed) 85%, #000 15%);
+}
+.cell.flag-blue{
+  background: var(--flagBlue);
+  border-color: color-mix(in srgb, var(--flagBlue) 85%, #000 15%);
+}
+.cell.flag-red .date,
+.cell.flag-blue .date{ color:#fff !important; opacity:1; }
+
+/* 플래그 배너(메모 있을 때 큰 흰색 텍스트) */
+.cell .flag-banner{ display: none; }
+.cell.flag-red .flag-banner,
+.cell.flag-blue .flag-banner{
+  position: absolute; inset: 0;
+  display:flex; align-items:center; justify-content:center;
+  padding: 12px; text-align: center;
+  font-weight: 800; font-size: clamp(18px, 2.6vw, 30px);
+  letter-spacing: .2px; color:#fff; pointer-events:none;
 }
 
-/* 링크 아이콘(우상단) */
+/* 칩 리스트(전역 기본 — pill) */
+.chips{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
+.chips-scroll{
+  max-height: calc(100% - 34px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+/* 기본 칩 — pill */
+.chip{
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,242,242,.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(0,0,0,.06);
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+[data-theme="dark"] .chip{
+  background: linear-gradient(180deg, #1b1d23, #14161b);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.4);
+}
+.chip-emoji{ flex:0 0 auto; }
+.chip-text{ min-width:0; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
+/* ⬇️ 캘린더 셀 내부 칩: 사각형 + 모서리 여백 + 드래그 스크롤 UX */
+.cell .chips{ gap: 0; }   /* 간격은 칩의 margin으로만 처리 */
+.cell .chips-scroll{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.cell .chip{
+  border-radius: 10px;     /* pill → square */
+  padding: 8px 10px;
+  margin: 6px;            /* 모서리만 벌어진 느낌 */
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  pointer-events: none;   /* 칩 위에서도 드래그로 스크롤 가능 */
+  user-select: none;
+}
+[data-theme="dark"] .cell .chip{
+  background: #171a20;
+  box-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+
+/* 플래그 상태에서 칩 대비 강화 */
+.cell.flag-red .chips .chip,
+.cell.flag-blue .chips .chip{
+  background: rgba(255,255,255,.16);
+  border-color: rgba(255,255,255,.35);
+  color: #fff;
+}
+
+
+/* =====================================================================================
+  5.5) TOP RIBBON
+===================================================================================== */
+.top-ribbon{
+  display:flex; align-items:center; gap:16px;
+  padding: 10px 12px;
+  margin: 6px 0 14px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+}
+.ribbon-text{ font-weight: 700; opacity: .9; white-space: nowrap; }
+.ribbon-date{ color: var(--muted); font-weight: 700; }
+
+.top-ribbon-buttons{
+  display:flex; gap:10px; overflow:hidden; padding: 4px;
+}
+.top-btn{ border:none; background: transparent; padding:0; border-radius: 12px; flex: 0 0 auto; }
+.top-btn img{
+  display:block;
+  height: 64px; width:auto;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+@media (max-width: 640px){
+  .top-btn img{ height: 56px; }
+}
+
+
+/* =====================================================================================
+  6) PRESETS DOCK — 고정(오버레이), 접기/펼치기 + Dock 전용 사각 칩 + 추가 폼 우측 정렬
+===================================================================================== */
+.presets-dock{
+  position: fixed;
+  right: 12px;
+  top: var(--dock-top);
+  z-index: 9990;
+  width: var(--dock-width-expanded);
+  max-height: calc(100vh - 72px);
+  display: flex; flex-direction: column; gap: 8px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 6px 16px rgba(0,0,0,.06);
+  transition: width .18s ease;
+}
+.dock-toggle-wrap{ display:flex; justify-content:flex-end; align-items:center; height: 28px; }
+.dock-toggle{
+  width: 28px; height: 28px;
+  display:inline-flex; align-items:center; justify-content:center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-weight: 700;
+}
+.dock-toggle:hover{ background: rgba(0,0,0,.03); }
+
+.dock-head{ font-size: 12px; opacity: .7; text-align: right; padding: 0 4px; }
+.preset-vertical-list{
+  overflow:auto; padding-right:2px;
+  display:flex; flex-direction:column; align-items:flex-end;
+  gap: 0; /* 아이템 간격은 칩 margin으로만 */
+}
+
+/* Dock 안의 프리셋 칩은 사각형 */
+.presets-dock .preset-chip{
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin: 6px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+  white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+}
+[data-theme="dark"] .presets-dock .preset-chip{
+  background: #171a20;
+  border-color: #2a2d36;
+  box-shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+
+/* 접힘 */
+.presets-dock.collapsed{ width: 52px; }
+.presets-dock.collapsed .dock-head,
+.presets-dock.collapsed .preset-vertical-list{ display: none; }
+.presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
+
+/* + 아이콘 / 추가 폼 / 액션 */
+.preset-add-icon{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:34px; height:34px; border-radius:999px;
+  border:1px solid var(--border); background:var(--card);
+  box-shadow:0 1px 2px rgba(0,0,0,.06); font-size:18px; line-height:1;
+}
+.preset-add-form{
+  width:100%; display:grid; gap:6px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px;
+  padding:10px; box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+.preset-add-actions{ display:flex; gap:8px; justify-content:flex-end; }
+
+/* 우측 정렬 오버라이드 */
+.presets-dock .preset-add-form{
+  width: auto; align-self: flex-end;
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-end;
+}
+.presets-dock .preset-add-form input[type="text"],
+.presets-dock .preset-add-form textarea,
+.presets-dock .preset-add-form select{
+  width: 240px; max-width: 100%;
+}
+.presets-dock .preset-add-actions{
+  align-self: flex-end; justify-content: flex-end; width: auto;
+}
+
+/* (선택) Dock 칩 내부 제거 버튼 */
+.preset-chip .trash{
+  margin-left:6px; border-radius:6px;
+  border:1px solid #b12a2a; background:#ffefef; color:#b12a2a;
+  padding:2px 8px; font-size:12px;
+}
+.preset-chip .trash:hover{ background:#ffd9d9; }
+[data-theme="dark"] .preset-chip .trash{ background:#3a1212; border-color:#ff7a7a; color:#ff9a9a; }
+[data-theme="dark"] .preset-chip .trash:hover{ background:#4a1a1a; }
+
+
+/* =====================================================================================
+  7) AUTH POPOVER
+===================================================================================== */
+.pop{
+  position: absolute; top:44px; right:0;
+  width:320px; max-width:calc(100vw - 24px);
+  background: var(--card); border:1px solid var(--border); border-radius:12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.1); padding:12px;
+  opacity:0; transform: scale(.96); transform-origin: top right;
+  pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
+}
+.pop.open{ opacity:1; transform: scale(1); pointer-events:auto; }
+.overlay{ position:fixed; inset:0; background:transparent; z-index:9997; }
+
+
+/* =====================================================================================
+  8) DATE INFO MODAL
+===================================================================================== */
+.modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
+.modal .sheet{
+  width:min(720px,95vw);
+  background:var(--card); border:1px solid var(--border); border-radius:16px;
+  padding:16px; box-shadow:0 18px 48px rgba(0,0,0,.22);
+}
+.modal .bar{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+
+/* date header + flag buttons */
+.modal .date-head{ display:flex; align-items:center; gap:10px; }
+.flag-buttons{ display:flex; gap:8px; margin-left:auto; }
+.flag-btn{ width:18px; height:18px; border-radius:6px; border:1px solid var(--border); }
+.flag-btn.red{ background: var(--flagRed); border-color: var(--flagRed); }
+.flag-btn.blue{ background: var(--flagBlue); border-color: var(--flagBlue); }
+.flag-btn.active{ box-shadow: 0 0 0 2px #fff inset; }
+
+/* memo area */
+.modal textarea{ resize: none; }
+
+/* actions row */
+.actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
+
+
+/* =====================================================================================
+  9) MISC
+===================================================================================== */
+.jump{ display:inline-flex; gap:8px; align-items:center; margin-left:12px; }
+.jump input[type="date"]{ padding:6px 8px; border-radius:8px; font-size:14px; }
+
+.text-muted{ color: var(--muted); }
+.text-center{ text-align: center; }
+.round{ border-radius: 999px; }
+.hidden{ display: none !important; }
+
+/* preset header helpers (토글 '>' / 플러스 '+') */
+.preset-header .preset-toggle,
+.preset-header .preset-plus{
+  width: 30px; height: 30px; border-radius: 8px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); background: var(--card);
+  padding: 0; line-height: 1;
+}
+.preset-header .preset-toggle .icon,
+.preset-header .preset-plus .icon{
+  display: inline-block;
+  transform: translateY(0);
+}
+
+/* =====================================================================================
+  10) RESPONSIVE
+===================================================================================== */
+@media (max-width: 980px){
+  .container{ padding: 16px; }
+  .layout-1-8-1{ grid-template-columns: 1fr; }
+  .grid{ grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+  .presets-dock{
+    position: static; width: auto; max-height: none; right:auto; top:auto; margin-top:8px;
+  }
+}
+@media (max-width: 640px){
+  .pop{ width: 92vw; }
+}
+
+/* 캘린더 셀: 하이퍼링크 아이콘(우상단) */
 .cell .link-ico{
   position:absolute; top:8px; right:8px;
   display:inline-flex; align-items:center; justify-content:center;
   width:24px; height:24px; border:1px solid var(--border); border-radius:8px;
-  background:var(--card); opacity:.95;
+  background: var(--card); opacity:.95;
 }
-.cell .link-ico:hover{ background:rgba(0,0,0,.03); }
-
-/* ========== 5) CHIPS (줄바꿈 / 가로 스크롤 숨김) ========== */
-.chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:6px; }
-.chips-scroll{ max-height: calc(100% - 34px); overflow-y:auto; overflow-x:hidden; padding-right:2px; } /* 수평 스크롤 숨김 */
-
-.chip{
-  border:1px solid var(--border); border-radius:10px;
-  padding:8px 10px; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06);
-  display:inline-flex; align-items:center; gap:6px;
-  max-width:100%;
-}
-[data-theme="dark"] .chip{ background:#171a20; box-shadow:0 1px 2px rgba(0,0,0,.4); border-color:#2a2d36; }
-
-.chip-emoji{ flex:0 0 auto; }
-.chip-text{
-  min-width:0;
-  white-space:normal;            /* ← 줄바꿈 허용 */
-  word-break:break-word;
-  overflow-wrap:anywhere;
+.cell .link-ico:hover{ background: rgba(0,0,0,.03); }
+/* 모바일: 칩 가로 스크롤바 항상 노출 */
+@media (max-width: 767px){
+  .chips-scroll{
+    overflow-x: scroll !important;
+    scrollbar-gutter: stable both-edges;
+  }
+  .chips-scroll::-webkit-scrollbar{ height: 6px; }
+  .chips-scroll::-webkit-scrollbar-thumb{ background: rgba(0,0,0,.3); border-radius: 3px; }
+  .chips-scroll::-webkit-scrollbar-track{ background: rgba(0,0,0,.05); }
+  .chips-scroll{ scrollbar-width: thin; }
 }
 
-/* 플래그 대비 */
-.cell.flag-red .chip, .cell.flag-blue .chip{
-  background:rgba(255,255,255,.16); border-color:rgba(255,255,255,.35); color:#fff;
+ /* 프리셋 팔레트 그리드가 있다면 최소폭 보장 + 칩 수축 허용 */
+ .preset-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 6px;
+ }
+/* 디자인 요구: 프리셋 배경/외곽선 제거 + 텍스트 안전 수축 */
+.preset-chip{
+  border: none; background: transparent;
+  border-radius: 999px; padding: 6px 10px;
+  min-width: 0; max-width: 100%;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
 }
+.preset-chip-emoji{ flex: 0 0 auto; }
+.preset-chip-label{ min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* ========== 6) TOP RIBBON(간단) ========== */
-.top-ribbon{ display:flex; align-items:center; gap:16px; padding:10px 12px; margin:6px 0 14px; background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 6px 16px rgba(0,0,0,.06); }
-.ribbon-text{ font-weight:700; opacity:.9; white-space:nowrap; }
-.ribbon-date{ color:var(--muted); font-weight:700; }
-.top-ribbon-buttons{ display:flex; gap:10px; overflow:hidden; padding:4px; }
-.top-btn{ border:none; background:transparent; padding:0; border-radius:12px; flex:0 0 auto; }
-.top-btn img{ display:block; height:64px; width:auto; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,.08); }
-@media (max-width:640px){ .top-btn img{ height:56px; } }
-
-/* ========== 7) PRESETS DOCK & AUTH HEADER (compact 모드에서 숨김) ========== */
-.presets-dock{ position:fixed; right:12px; top:84px; z-index:9990; width:var(--dock-width); max-height:calc(100vh - 72px); display:flex; flex-direction:column; gap:8px; overflow:hidden; background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px; box-shadow:0 6px 16px rgba(0,0,0,.06); }
-.presets-dock.collapsed{ width:52px; }
-/* compact: 7칸 불가 시 숨김(공간도 차지 X) */
-html[data-compact="1"] .presets-dock{ display:none !important; }
-html[data-compact="1"] .header-fixed{ display:none !important; }  /* AuthButton 배치 영역 통째로 숨김 */
-
-/* ========== 8) MODAL 기본 ========== */
-.modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
-.modal .sheet{ width:min(720px,95vw); background:var(--card); border:1px solid var(--border); border-radius:16px; padding:16px; box-shadow:0 18px 48px rgba(0,0,0,.22); }
-.modal .bar{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-
-/* ========== 9) UTILS & RESPONSIVE ========== */
-.text-muted{ color:var(--muted); }
-.text-center{ text-align:center; }
-.round{ border-radius:999px; }
-.hidden{ display:none !important; }
-
-@media (max-width:980px){
-  .container{ padding:16px; }
-  .layout-1-8-1{ grid-template-columns:1fr; }   /* 세로 스택 */
+.preset-toggle.textual{
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 8px;
+  padding: 6px 10px;
 }
-@media (max-width:640px){
-  .modal .sheet{ width:92vw; }
-}
+.preset-toggle.textual:hover{ background: rgba(0,0,0,.03); }
