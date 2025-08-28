@@ -68,13 +68,19 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   useEffect(() => {
     const html = document.documentElement;
     html.setAttribute('data-compact', canShowSeven ? '0' : '1');
-    // 도크 접기 강제(요청: 접기 상태로 변경 후 visible/공간 제거)
-    const dock = document.querySelector('.presets-dock');
-    if (dock) {
-      if (!canShowSeven) dock.classList.add('collapsed');
-      else dock.classList.remove('collapsed');
+    // 7칸 미만이면 좌/우 도크 전역 상태를 강제로 'closed'
+    if (!canShowSeven) {
+      html.setAttribute('data-dock', 'closed');
+      html.setAttribute('data-leftdock', 'closed');
+      const dock = document.querySelector('.presets-dock');
+      if (dock) dock.classList.add('collapsed'); // 보이더라도 펼치지 않음
+    } else {
+      // 7칸이 가능해져도 자동으로 펼치지 않음(사용자 선택 유지)
+      // 여기서는 'collapsed'를 제거하지 않습니다.
     }
-    return () => html.removeAttribute('data-compact');
+    return () => {
+      html.removeAttribute('data-compact');
+    };
   }, [canShowSeven]);
 
   // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
@@ -401,7 +407,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 </div>
 
                 {/* ── 콘텐츠: 휴(중앙 '휴방') > 플래그 메모(흰색 크게) > 칩 ── */}
-                <div className="cell-content">
+                <div className={`cell-content ${(isRest || showMemo) ? 'has-text' : ''}`}>
                   {isRest ? (
                     <div className="cell-rest">휴방</div>
                   ) : showMemo ? (

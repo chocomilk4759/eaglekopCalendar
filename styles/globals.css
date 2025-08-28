@@ -735,3 +735,38 @@ html[data-compact="1"] .header-fixed{ display: none !important; } /* AuthButton 
   color: #fff; /* X 아이콘 컬러 반전 */
 }
 
+/* ====== 상단바 높이 변수화(셀 정확 중앙 배치용) ====== */
+.calendar-grid .cell-top{
+  --cell-top-h: 28px;                  /* 상단바 높이(필요 시 조정) */
+  min-height: var(--cell-top-h);
+}
+
+/* 기본: content는 좌상 정렬(이전 규칙 유지) — 텍스트일 때만 가운데 */
+.calendar-grid .cell-content.has-text{
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+/* 상단바만큼 위로 당겨 셀 전체 기준 '정확한 중앙' */
+.calendar-grid .cell-content.has-text .cell-content-text,
+.calendar-grid .cell-content.has-text .cell-rest{
+  transform: translateY(calc(-1 * var(--cell-top-h) / 2));
+}
+
+/* ====== 칩 이모지 오버플로우 방지 ====== */
+.calendar-grid .chip{
+  line-height: 1.2;                     /* 텍스트/이모지 공존 시 크롭 방지 */
+}
+.calendar-grid .chip-emoji{
+  display: inline-grid;
+  place-items: center;
+  width: 1.25em;                        /* 박스화 → 오버플로우 방지 */
+  height: 1.25em;
+  line-height: 1;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+/* 안전망: 칩 전체 폭을 넘지 않도록 */
+.calendar-grid .chip{ max-width: 100%; }
+.calendar-grid .chip *{ max-width: 100%; }
+
