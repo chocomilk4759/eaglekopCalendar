@@ -1,9 +1,10 @@
-// app/types/note.ts
+// /types/note.ts
+
 export type Item = {
-  emoji: string | null;     // 이모지(또는 null)
-  label: string;            // 프리셋 라벨(아이콘명)
-  text?: string;            // 사용자 편집 텍스트(없으면 emojiOnly=true)
-  emojiOnly?: boolean;      // 텍스트가 없으면 true
+  emoji: string | null;
+  label: string;
+  text?: string;
+  emojiOnly?: boolean; // 텍스트가 비어있으면 아이콘만 표시
 };
 
 export type Note = {
@@ -11,46 +12,31 @@ export type Note = {
   y: number;
   m: number;
   d: number;
-  content: string;                     // 메모
+  content: string;
   items: Item[];
-  color: 'red' | 'blue' | null;        // 배경 플래그
-  link?: string | null;                // 외부 링크
-  image_url?: string | null;           // 스토리지 경로 또는 URL
-  title?: string | null;               // ⬅️ 셀 상단 중앙 타이틀 (NEW)
+  color: 'red' | 'blue' | null; // 기존 플래그 유지
+  link: string | null;          // 통일: 필수 + string|null
+  image_url: string | null;     // 통일: 필수 + string|null
+  title?: string | null;  
 };
 
-// DB·네트워크 넘기기 전에 안전한 형태로 정규화
-export function normalizeNote(n: any): Note {
-  // 필수 정수 필드
-  const y = Number(n?.y ?? 0);
-  const m = Number(n?.m ?? 0);
-  const d = Number(n?.d ?? 0);
-
-  // items 정규화
-  const rawItems = Array.isArray(n?.items) ? n.items : [];
-  const items: Item[] = rawItems.map((it: any) => ({
-    emoji: it?.emoji ?? null,
-    label: String(it?.label ?? ''),
-    text: (typeof it?.text === 'string' && it.text.length ? it.text : undefined),
-    emojiOnly: !!it?.emojiOnly || !(typeof it?.text === 'string' && it.text.length),
-  }));
-
-  // color 정규화
-  const color = (n?.color === 'red' || n?.color === 'blue') ? n.color : null;
-
-  // link / image_url / title 정규화
-  const link = (typeof n?.link === 'string' && n.link.trim().length) ? n.link.trim() : null;
-  const image_url = (typeof n?.image_url === 'string' && n.image_url.trim().length) ? n.image_url.trim() : null;
-  const title = (typeof n?.title === 'string' && n.title.trim().length) ? n.title.trim() : null;
-
+/**
+ * 임의 row/partial 데이터를 안전한 Note로 변환.
+ * - 필수 필드 디폴트 채움
+ * - undefined를 모두 제거 (null로 강제)
+ * - color는 red/blue 외 값이면 null
+ */
+export function normalizeNote(row: Partial<Note> & Record<string, any>): Note {
   return {
-    id: (typeof n?.id === 'number') ? n.id : undefined,
-    y, m, d,
-    content: (typeof n?.content === 'string') ? n.content : '',
-    items,
-    color,
-    link,
-    image_url,
-    title,   // ⬅️ 유지
+    id: row.id ?? undefined,
+    y: row.y ?? 0,
+    m: row.m ?? 0,
+    d: row.d ?? 1,
+    content: row.content ?? '',
+    items: (Array.isArray(row.items) ? row.items : []) as Item[],
+    color: row.color === 'red' || row.color === 'blue' ? row.color : null,
+    link: row.link ?? null,
+    image_url: row.image_url ?? null,
+    title: row.title ?? null,
   };
 }
