@@ -536,3 +536,65 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
   padding: 6px 10px;
 }
 .preset-toggle.textual:hover{ background: rgba(0,0,0,.03); }
+
+/* =====================[ CALENDAR: APPEND-ONLY OVERRIDES ]===================== */
+/* 1) 캘린더 그리드: 화면 폭에 맞춰 칼럼 자동 조절 (셀 최소 160px) */
+.calendar-grid{
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); /* 핵심 */
+  gap: 14px;
+}
+
+/* 2) 셀: 최소 크기 + 가로 스크롤 숨김 */
+.calendar-grid .cell{
+  min-width: 160px;
+  min-height: 160px;
+  overflow: hidden; /* 수평 스크롤바 감춤 */
+  position: relative;
+}
+
+/* 3) 칩 텍스트: 줄바꿈 허용 (박스 밖으로 튀어나감 방지) */
+.calendar-grid .chip{
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.calendar-grid .chip-text{
+  min-width: 0;
+  white-space: normal;     /* 줄바꿈 허용 */
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+/* (안전망) chip-text 클래스를 못 붙였어도 칩 안의 기본 텍스트는 감싸지도록 */
+.calendar-grid .chip,
+.calendar-grid .chip *{
+  white-space: normal;
+}
+
+/* 4) 셀 내부 칩 컨테이너: 가로 스크롤바 비노출 */
+.calendar-grid .chips-scroll{
+  overflow-x: hidden !important;  /* 수평 스크롤 숨김 */
+  /* 필요 시 세로 스크롤은 허용: */
+  overflow-y: auto;
+  padding-right: 2px;             /* 스크롤바 겹침 방지용 소량 여백 */
+}
+
+/* 5) 7칸 불가(compact)일 때 UI 토글 (Calendar.tsx에서 html[data-compact="1"] 세팅) */
+html[data-compact="1"] .day-name{ display: none !important; }        /* 요일 숨김 */
+html[data-compact="1"] .header-fixed{ display: none !important; }    /* AuthButton 영역 숨김(영역 미점유) */
+html[data-compact="1"] .presets-dock{ display: none !important; }    /* PresetsDock 숨김(영역 미점유) */
+
+/* 상단 좌/우 컨테이너를 세로 스택으로 전환 (Calendar.tsx의 top-container 클래스 대상) */
+html[data-compact="1"] .top-container{ flex-direction: column !important; }
+
+/* 6) 링크 아이콘(있는 경우) 충돌 방지: 우상단 고정 */
+.calendar-grid .cell .link-ico{
+  position: absolute;
+  top: 8px; right: 8px;
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); opacity: .95;
+}
+.calendar-grid .cell .link-ico:hover{ background: rgba(0,0,0,.03); }
