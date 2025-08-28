@@ -8,14 +8,28 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
 
   // 폭이 좁아지는 순간(아이콘 숨김 구간) 자동 접힘
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+
     const mq = window.matchMedia('(max-width: 1199.98px)');
-    const handler = (e: MediaQueryListEvent | MediaQueryList) => {
-      const matches = 'matches' in e ? e.matches : e.matches;
-      if (matches) setCollapsed(true);
+
+    const apply = () => {
+      if (mq.matches) setCollapsed(true);
     };
-    handler(mq);
-    mq.addEventListener('change', handler as any);
-    return () => mq.removeEventListener('change', handler as any);
+
+    apply();
+
+    // 최신 브라우저
+    if (mq.addEventListener) {
+      mq.addEventListener('change', apply);
+      return () => mq.removeEventListener('change', apply);
+    }
+    // 구 Safari 대응
+    // @ts-ignore
+    mq.addListener(apply);
+    return () => {
+      // @ts-ignore
+      mq.removeListener(apply);
+    };
   }, []);
 
   return (
