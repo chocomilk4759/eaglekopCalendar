@@ -32,7 +32,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = createClient();
 
   const today = useMemo(() => new Date(), []);
-  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+  const todayLabel = ` `;// `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`; !날짜 잠깐 없애기
 
   const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
   const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
@@ -339,7 +339,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 color: 'var(--accent)',
               }}
             >
-              {/* {todayLabel} */}
+              {todayLabel}
             </div>
           </div>
 
