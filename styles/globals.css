@@ -498,6 +498,7 @@ html[data-leftdock="open"][data-dock="open"] .layout-1-8-1{
   background: var(--card); opacity:.95;
 }
 .cell .link-ico:hover{ background: rgba(0,0,0,.03); }
+
 /* 모바일: 칩 가로 스크롤바 항상 노출 */
 @media (max-width: 767px){
   .chips-scroll{
@@ -632,3 +633,48 @@ html[data-compact="1"] .top-container{ flex-direction: column !important; }
 @media (max-width: 640px){
   .calendar-grid .chip{ padding: 3px 6px; gap: 3px; border-radius: 7px; }
 }
+
+/* ===== CALENDAR CELL: date | {cell_title} | link / content center ===== */
+.calendar-grid .cell-inner{ display:flex; flex-direction:column; height:100%; }
+
+/* 상단바 */
+.calendar-grid .cell-top{
+  display:grid;
+  grid-template-columns:auto 1fr auto; /* 날짜 | 타이틀 | 링크 */
+  align-items:center;
+  column-gap:8px;
+  min-height:28px;
+}
+
+/* 날짜: 좌측 정렬 */
+.calendar-grid .cell-date{ font-size:14px; opacity:.8; text-align:left; }
+
+/* 타이틀: 중앙 정렬 + 길면 말줄임 */
+.calendar-grid .cell-title{
+  text-align:center; font-weight:600;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+
+/* 링크: 우측 정렬(기존 .link-ico 규칙 재사용) */
+.calendar-grid .cell-link{ text-align:right; }
+.calendar-grid .cell-link .link-ico{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:22px; height:22px; border-radius:999px; opacity:.9;
+}
+
+/* 콘텐츠: 수평/수직 중앙정렬 */
+.calendar-grid .cell-content{
+  flex:1; display:flex; align-items:center; justify-content:center;
+  padding:6px; text-align:center; overflow:hidden;
+}
+.calendar-grid .cell-content-text{
+  white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere;
+}
+
+/* 칩이 콘텐츠일 때도 가운데 배치 */
+.calendar-grid .cell-content .chips{
+  display:flex; flex-wrap:wrap; gap:6px; justify-content:center; align-content:center; max-height:100%;
+  overflow:auto;
+}
+.calendar-grid .cell-content .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
+

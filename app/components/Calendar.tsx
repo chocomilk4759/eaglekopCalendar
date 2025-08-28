@@ -15,6 +15,7 @@ function startWeekday(y: number, m: number) {
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const DAY_NAMES = ['일','월','화','수','목','금','토'];
 
 function prevOf({ y, m }: { y: number; m: number }) {
   return m ? { y, m: m - 1 } : { y: y - 1, m: 11 };
@@ -217,6 +218,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     return `${it.emoji ? it.emoji + ' ' : ''}${it.label}`;
   }
 
+  // 셀 상단 중앙 타이틀: 첫 번째 칩의 text(없으면 label)
+  // 7칸 미만(=canShowSeven=false)일 때는 요일을 함께 표기
+  function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean) {
+    const base = note?.items?.[0];
+    const title = base ? (base.text?.length ? base.text : (base.label || '')) : '';
+    if (!showWeekday) return title;
+    const day = DAY_NAMES[weekday];
+    return title ? `${day} ${title}` : day;
+  }
+
   return (
     <>
       {/* ==================== 상단 컨테이너 (horizontal) ==================== */}
@@ -352,63 +363,50 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 }
               }}
             >
-              {c.d && <div className="date date-lg">{c.d}</div>}
-
-              {/* ▷ 하이퍼링크 아이콘 (우상단 / 링크 있을 때만) */}
-              {!!note?.link && (
-                <a
-                  href={fmtUrl(note.link)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  title={note.link || undefined}
-                  aria-label="하이퍼링크 열기"
-                  onClick={(e) => e.stopPropagation()}
-                  style={{
-                    position: 'absolute',
-                    top: 6,
-                    right: 6,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: 22,
-                    height: 22,
-                    border: '1px solid #d0d7e2',
-                    borderRadius: 999,
-                    background: '#fff',
-                    opacity: 0.9,
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-                    <path
-                      d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M13.41 10.59a2 2 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </a>
-              )}
-
-              {showFlagBanner && <div className="flag-banner">{note!.content}</div>}
-
-              {(showChips && note) && (
-                <div className="chips chips-scroll">
-                  {note!.items.map((it: Item, i: number) => (
-                    <span key={i} className="chip">
-                      <span className="chip-emoji">{it.emoji ?? ''}</span>
-                      <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
-                    </span>
-                  ))}
+                            <div className="cell-inner" role="group" aria-label="calendar cell">
+                {/* ── 상단: 날짜 | {cell_title} | link ── */}
+                <div className="cell-top">
+                  <div className="cell-date">{c.d ?? ''}</div>
+                  <div className="cell-title">
+                    {cellTitleOf(note || null, c.w, !canShowSeven)}
+                  </div>
+                  <div className="cell-link">
+                    {!!note?.link && (
+                      <a
+                        href={fmtUrl(note.link)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={note.link || undefined}
+                        aria-label="하이퍼링크 열기"
+                        onClick={(e) => e.stopPropagation()}
+                        className="link-ico"
+                        style={{ position: 'static' }}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
+                          <path d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M13.41 10.59a2 2 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </a>
+                    )}
+                  </div>
                 </div>
-              )}
+
+                {/* ── 콘텐츠: note.content 중앙정렬(없으면 칩 중앙정렬) ── */}
+                <div className="cell-content">
+                  {note?.content?.trim()?.length ? (
+                    <div className="cell-content-text">{note!.content}</div>
+                  ) : (showChips && note) ? (
+                    <div className="chips">
+                      {note!.items.map((it: Item, i: number) => (
+                        <span key={i} className="chip">
+                          <span className="chip-emoji">{it.emoji ?? ''}</span>
+                          <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
             </div>
           );
         })}
