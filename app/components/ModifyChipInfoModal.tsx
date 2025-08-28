@@ -14,6 +14,7 @@ export default function ModifyChipInfoModal({
   onSave,
   onDelete,
   onClose,
+  canEdit = false,
 }:{
   open: boolean;
   mode: ModifyChipMode;          // 'add' → 저장/취소, 'edit' → 저장/삭제/닫기
@@ -22,6 +23,7 @@ export default function ModifyChipInfoModal({
   onSave: (text: string, selectedPreset?: ChipPreset) => void;
   onDelete?: () => void;         // edit 전용
   onClose: () => void;
+  canEdit?: boolean;             // 에디터만 아이콘 콤보 사용
 }) {
   const [text, setText] = useState(initialText);
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
@@ -80,25 +82,27 @@ export default function ModifyChipInfoModal({
     <div className="modal" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* 아이콘 버튼(ADD 모드에서만 콤보 열기) */}
+          {/* 아이콘 버튼(ADD+editor 에서만 콤보 열기) */}
+          <div className="icon-chooser">
           <button
             type="button"
             className="icon-btn"
             aria-label="아이콘 변경"
-            title={mode === 'add' ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
-            onClick={async ()=>{ if(mode==='add'){ await ensureOptions(); setIconOpen(v=>!v); } }}
-            disabled={mode !== 'add'}
+            title={(mode === 'add' && canEdit) ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
+            onClick={async ()=>{ if(mode==='add' && canEdit){ await ensureOptions(); setIconOpen(v=>!v); } }}
+            disabled={mode !== 'add' || !canEdit}
             style={{
               width: 36, height: 36, borderRadius: 18,
               display: 'grid', placeItems: 'center',
               border: '1px solid var(--border)', background: '#fff', fontSize: 18,
-              flex: '0 0 36px', cursor: mode==='add' ? 'pointer':'not-allowed'
+              flex: '0 0 36px', cursor: (mode==='add' && canEdit) ? 'pointer':'not-allowed'
             }}
           >
-            {localPreset.emoji ?? '•'}
+          {localPreset.emoji ?? '•'}
           </button>
           {iconOpen && mode==='add' && (
             <select
+              className="icon-combo"
               onChange={(e)=>{
                 const idx = Number(e.target.value);
                 if (!Number.isNaN(idx) && options[idx]) {
@@ -108,7 +112,7 @@ export default function ModifyChipInfoModal({
               }}
               defaultValue=""
               aria-label="아이콘 선택"
-              style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)' }}
+              style={{ cursor:'default' }}
             >
               <option value="" disabled>아이콘 선택…</option>
               {options.map((p, i)=>(
@@ -118,7 +122,7 @@ export default function ModifyChipInfoModal({
               ))}
             </select>
           )}
-
+          </div>
           {/* 텍스트만 수정 */}
           <input
             ref={inputRef}

@@ -448,7 +448,7 @@ export default function DateInfoModal({
             >＋</button>
           </div>
         ) : (
-          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:8}}
+          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}
                onDragOver={(e)=>{ if(canEdit){ e.preventDefault(); }}}
                onDrop={onDropContainer}>
             {note.items.map((it:Item, idx:number)=>(
@@ -462,7 +462,7 @@ export default function DateInfoModal({
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center',
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
-                      fontSize:12, background:'#fff',
+                      fontSize:12, background:'var(--card)', color:'inherit',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
               <span className="chip-emoji">{it.emoji ?? ''}</span>
@@ -472,7 +472,7 @@ export default function DateInfoModal({
             <button
               onClick={async ()=>{ await ensurePresets(); setComboOpen(v=>!v); }}
               style={{ border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
-                       background:'#fff', cursor:'pointer', fontSize:12 }}
+                       background:'var(--card)', cursor:'pointer', fontSize:12 }}
               title="아이템 추가" aria-label="아이템 추가"
             >＋</button>
           </div>
@@ -573,6 +573,7 @@ export default function DateInfoModal({
           onSave={(t, p)=> chipModalMode==='add' ? applyAddChip(t, p) : applyEditChip(t)}
           onDelete={chipModalMode==='edit' ? deleteChip : undefined}
           onClose={()=> setChipModalOpen(false)}
+          canEdit={canEdit}
         />
       </div>
     </div>

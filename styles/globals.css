@@ -770,3 +770,33 @@ html[data-compact="1"] .header-fixed{ display: none !important; } /* AuthButton 
 .calendar-grid .chip{ max-width: 100%; }
 .calendar-grid .chip *{ max-width: 100%; }
 
+/* ===== Compact(7칸 미만): 도크는 레이아웃에 영향 X(closed)이지만 '보이게' ===== */
+html[data-compact="1"] .presets-dock{ display:flex !important; width:52px; }
+html[data-compact="1"] .presets-dock.collapsed{ display:flex !important; }
+
+/* ===== ModifyChipInfoModal: 아이콘 콤보를 아이콘 아래로 절대 배치 ===== */
+.icon-chooser{ position: relative; width:36px; height:36px; flex:0 0 36px; }
+.icon-chooser .icon-btn{ position:absolute; inset:0; } /* 버튼이 레이아웃을 밀지 않음 */
+.icon-chooser .icon-combo{
+  position:absolute; left:0; top:40px; z-index:10020;
+  padding:6px 10px; border:1px solid var(--border); border-radius:8px;
+  background:var(--card); cursor: default !important;   /* 커서 변화 없음 */
+}
+
+/* ===== 캘린더 셀 내부 칩 간격 더 감소 ===== */
+.calendar-grid .chips{ gap: 2px !important; }
+.calendar-grid .chip{
+  margin: 4px !important;
+  gap: 3px !important;
+  padding: 4px 6px !important;
+}
+
+/* ===== DateInfoModal 플래그 버튼 크기 = 휴 버튼과 동일 ===== */
+.flag-btn{ width:28px; height:28px; border-radius:8px; }
+
+/* ===== Modal 내 칩(테마 반영) — 전역 클래스를 쓰되 색은 토큰 사용 ===== */
+.modal .chip{
+  background: var(--card) !important;
+  border: 1px solid var(--border) !important;
+  color: inherit !important;
+}
