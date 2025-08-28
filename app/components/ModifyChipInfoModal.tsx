@@ -94,7 +94,7 @@ export default function ModifyChipInfoModal({
               disabled={!canEdit}
               style={{
                 width: 36, height: 36, borderRadius: 18,
-                display: 'grid', placeItems: 'center',
+                display: 'grid', placeItems: 'center', lineHeight: 1,
                 border: '1px solid var(--border)', background: '#fff', fontSize: 18,
                 flex: '0 0 36px', cursor: canEdit ? 'pointer':'not-allowed'
               }}

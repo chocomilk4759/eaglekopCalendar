@@ -50,6 +50,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [canShowSeven, setCanShowSeven] = useState(true);
   const [cols, setCols] = useState(7);
 
+  const lastDecisionRef = useRef<'seven'|'compact'>('seven');
+  const pendingRef = useRef<'seven'|'compact'|null>(null);
+  const tRef = useRef<number|undefined>(undefined);
+
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
   useEffect(() => {
     const el = gridRef.current;

@@ -20,15 +20,16 @@
   --flagBlue:#4C88DB;
 
   /* presets dock position */
-  --dock-width-expanded: 320px;
+  /*--dock-width-expanded: 320px;*/
+  --dock-width-expanded: 240px;
   --dock-top: 84px;
 
   /* emoji nudge (platform fine-tune) */
   --emoji-nudge-y: -0.06em;
   --emoji-box: 1.25em;
   
-  --cell-min-h: 200px;   /* 이미 존재 */
-  --cell-max-h: 320px;   /* 원하는 값으로 조정 */
+  --cell-min-h: 160px;   /* 이미 존재 */
+  --cell-max-h: 240px;   /* 원하는 값으로 조정 */
 }
 [data-theme="dark"]{
   --bg:#0e0f12;
@@ -183,10 +184,10 @@ button:active{ transform: translateY(.5px); }
 }
 .chip-text{ min-width:0; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
 
-.calendar-grid .chips{ gap:4px; }
+.calendar-grid .chips{ gap:2px; }
 .calendar-grid .chip{
-  padding:4px 8px; border-radius:8px; gap:4px; line-height:1.25; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06);
-  margin:4px;
+  padding:4px 6px; border-radius:8px; gap:3px; line-height:1.25; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06);
+  margin:2px;
 }
 [data-theme="dark"] .calendar-grid .chip{ background:#171a20; box-shadow:0 1px 2px rgba(0,0,0,.4); }
 .calendar-grid .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
@@ -200,9 +201,25 @@ button:active{ transform: translateY(.5px); }
   display:inline-grid; place-items:center; width:1em; height:1em; line-height:1;
   transform: translateY(var(--emoji-nudge-y));
 }
-.chip-emoji > svg, .chip-emoji > img, .icon-btn .emoji-glyph > svg, .icon-btn .emoji-glyph > img{
+.chip-emoji > svg, .chip-emoji > img {
   display:block; width:100%; height:100%;
 }
+
+.icon-btn{
+  display: grid !important;
+  place-items: center !important;
+  line-height: 1 !important;
+}
+.icon-btn .emoji-glyph{
+  display: inline-grid !important;
+  place-items: center !important;
+  width: var(--emoji-box);
+  height: var(--emoji-box);
+  line-height: 1;
+  transform: translateY(var(--emoji-nudge-y));
+}
+.icon-btn .emoji-glyph > svg,
+.icon-btn .emoji-glyph > img{ display:block; width:100%; height:100%; }
 
 /* 6) PRESETS DOCK ------------------------------------------------------------- */
 .presets-dock{
@@ -218,7 +235,14 @@ button:active{ transform: translateY(.5px); }
   border:1px solid var(--border); border-radius:8px; background:var(--card); font-weight:700;
 }
 .dock-toggle:hover{ background:rgba(0,0,0,.03); }
-.preset-vertical-list{ overflow:auto; padding-right:2px; display:flex; flex-direction:column; align-items:flex-end; gap:0; }
+.preset-vertical-list{
+  overflow:auto;
+  padding-right:2px;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:0;
+}
 .presets-dock.collapsed{ width:52px; }
 .presets-dock.collapsed .preset-vertical-list{ display:none; }
 .presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
@@ -233,6 +257,19 @@ button:active{ transform: translateY(.5px); }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.presets-dock .preset-chip{
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 6px 8px;
+  border: 1px dashed var(--border);      /* 외곽 라인 */
+  border-radius: 10px;
+  background: var(--card);
+  min-width: 180px;                       /* 아이콘·텍스트 노출 보장 */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* 7) AUTH POPOVER -------------------------------------------------------------- */
@@ -303,4 +340,3 @@ html[data-compact="1"] .col-main { padding-left: 0; padding-right: 0; }
 /* row -> column 변환(data-compact="1") 시: 인증 버튼과 우측 도크만 숨김 */
 html[data-compact="1"] .header-fixed-left .left { display: none !important; }  /* AuthButton */
 html[data-compact="1"] .presets-dock { display: none !important; }            /* PresetsDock */
-
