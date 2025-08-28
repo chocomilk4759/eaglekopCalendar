@@ -28,9 +28,11 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
           title={collapsed ? '펼치기' : '접기'}
           onClick={() => setCollapsed(v => !v)}
         >
-          <span aria-hidden style={justifyContent:'center'}>{collapsed ? '프리셋 펼치기' : '프리셋 접기'}</span>
+          <span aria-hidden style={{justifyContent:'center'}}>{collapsed ? '프리셋 펼치기' : '프리셋 접기'}</span>
         </button>
       </div>
+
+
       <div className="preset-vertical-list">
         <PresetsPanel canEdit={canEdit} mode="vertical" />
       </div>
