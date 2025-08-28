@@ -39,7 +39,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
-
+  const [presetToAdd, setPresetToAdd] = useState<{ emoji: string | null; label: string } | null>(null);
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
   const ymKey = `${ym.y}-${ym.m}`;
@@ -132,30 +132,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       return;
     }
     if (payload?.type !== 'preset') return;
-
     const preset = payload.preset as { emoji: string | null; label: string };
-
-    const detail = window.prompt(
-      `세부 내용을 입력하세요 (예: "${preset.emoji ?? ''} 맨시티 vs 리버풀 09:00")`,
-      preset.emoji ? `${preset.emoji} ` : ''
-    );
-    const trimmed = (detail ?? '').trim();
-
-    const newItem: Item = {
-      emoji: preset.emoji ?? null,
-      label: preset.label,
-      text: trimmed.length ? trimmed : undefined,
-      emojiOnly: trimmed.length ? false : true,
-    };
-
-    const k = cellKey(y, m, d);
-    const cur = notes[k] || { y, m, d, content: '', items: [], color: null, link: null, image_url: null };
-    const next: Note = { ...cur, items: [...(cur.items || []), newItem] };
-
-    const { data, error } = await supabase.from('notes').upsert(next, { onConflict: 'y,m,d' }).select().single();
-    if (error) { console.error('dropPreset upsert error:', error.message); return; }
-    onSaved(data as any);
-    openInfo(y, m, d);
+    // 저장하지 않고, 해당 날짜 모달을 열고 프리셋을 전달한다.
+    setPresetToAdd(preset);
+    setModalDate({ y, m, d });
+    setModalOpen(true);
   }
 
   // 월 그리드 생성
@@ -398,6 +379,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           note={notes[cellKey(modalDate.y, modalDate.m, modalDate.d)] || null}
           canEdit={canEdit}
           onSaved={onSaved}
+          addChipPreset={presetToAdd}
+          onConsumedAddPreset={() => setPresetToAdd(null)}
         />
       )}
     </>

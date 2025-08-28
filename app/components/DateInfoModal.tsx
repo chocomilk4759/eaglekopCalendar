@@ -11,13 +11,15 @@ type Preset = { emoji: string | null; label: string };
 const BUCKET = 'note-images';
 
 export default function DateInfoModal({
-  open, onClose, date, note: initial, canEdit, onSaved
+  open, onClose, date, note: initial, canEdit, onSaved, addChipPreset, onConsumedAddPreset
 }:{
   open:boolean; onClose:()=>void;
   date:{y:number;m:number;d:number};
   note:Note|null;
   canEdit:boolean;
   onSaved:(n:Note)=>void;
+  addChipPreset?: { emoji: string | null; label: string } | null;
+  onConsumedAddPreset?: () => void;
 }){
   const supabase = createClient();
 
@@ -81,6 +83,16 @@ export default function DateInfoModal({
   useEffect(() => {
     setDisplayImageUrl(imageUrl ?? null); // 공개 버킷이면 그대로 보임
   }, [imageUrl]);
+
+  // 캘린더 드롭에서 넘어온 프리셋이 있으면 한 번만 ADD 모달을 연다
+  useEffect(() => {
+    if (!open || !addChipPreset) return;
+    setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
+    setChipModalMode('add');
+    setChipEditIndex(null);
+    setChipModalOpen(true);
+    onConsumedAddPreset?.(); // 1회성 소모
+  }, [open, addChipPreset]);
 
   function extractPathFromPublicUrl(url: string): string | null {
     // https://.../storage/v1/object/public/note-images/<PATH>
@@ -180,7 +192,7 @@ export default function DateInfoModal({
     setChipEditIndex(null);
     setChipModalOpen(true);
   }
-  
+
   async function applyAddChip(text: string){
     if(!canEdit) return;
     const newItem: Item = {
@@ -190,9 +202,15 @@ export default function DateInfoModal({
       emojiOnly: !text
     };
     const items = [...(note.items || []), newItem];
-    try{ await persist({ items }); } catch(e:any){ alert(e?.message ?? '아이템 추가 중 오류'); }
+    try{
+      const saved = await persist({ items });
+      // 필요 시 토스트 등을 띄우고…
+    }catch(e:any){
+      alert(e?.message ?? '아이템 추가 중 오류');
+    }
     setChipModalOpen(false);
   }
+
   async function applyEditChip(text: string){
     if(!canEdit || chipEditIndex==null) return;
     const items = [...(note.items || [])];
@@ -354,7 +372,7 @@ export default function DateInfoModal({
     try { await persist({ items }); setPresetPickerOpen(false); }
     catch (e:any) { alert(e?.message ?? '아이템 추가 중 오류'); }
   }
-
+  
   if(!open) return null;
 
   return (
