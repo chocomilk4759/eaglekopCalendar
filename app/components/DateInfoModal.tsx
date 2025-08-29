@@ -59,7 +59,7 @@ export default function DateInfoModal({
   const [size, setSize] = useState<{w:number;h:number}>({ w: 720, h: 480 });
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{dx:number;dy:number;active:boolean}>({ dx:0, dy:0, active:false });
-
+  const imgBoxHeight = useMemo(() => Math.round(size.h * 175 / 330), [size.h]);
   const title = useMemo(
     () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
     [date]
@@ -618,7 +618,7 @@ export default function DateInfoModal({
           {/* 이미지 프리뷰: 모달 크기에 반응. 기본 210x210 (CSS에서 설정) */}
           {displayImageUrl && (
             <div className="note-image-wrap">
-              <div className="note-image-box">
+              <div className="note-image-box" style={{ height: imgBoxHeight }}>
                 <img
                   src={displayImageUrl}
                   alt="미리보기"
