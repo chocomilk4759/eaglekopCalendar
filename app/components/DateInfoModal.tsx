@@ -59,7 +59,9 @@ export default function DateInfoModal({
   const [size, setSize] = useState<{w:number;h:number}>({ w: 720, h: 480 });
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{dx:number;dy:number;active:boolean}>({ dx:0, dy:0, active:false });
-  const imgBoxHeight = useMemo(() => Math.round(size.h * 210 / 330), [size.h]);
+  const IMG_BASE_H = 175;
+  const MODAL_BASE_H = 330;
+  const imgBoxHeight = useMemo(() => Math.round(size.h * IMG_BASE_H / MODAL_BASE_H), [size.h]);
   const title = useMemo(
     () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
     [date]
@@ -578,7 +580,7 @@ export default function DateInfoModal({
             )}
 
             {/* 하단 버튼: [초기화] | [저장 | 이미지삽입, 이미지제거, 링크 | 닫기] */}
-            <div className="actions" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:8 }}>
+            <div className="actions actions--fixed" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:8 }}>
               <div className="actions-left" style={{ marginRight:'auto' }}>
                 <button onClick={clearAll} disabled={disabled} className="btn-plain-danger">초기화</button>
               </div>

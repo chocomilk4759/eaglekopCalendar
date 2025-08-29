@@ -486,3 +486,9 @@ button:active{ transform: translateY(.5px); }
   object-fit: contain;
   display: block;
 }
+
+/* DateInfoModal 버튼 크기 고정(이미지 유무/모달 폭과 무관) */
+.modal .actions.actions--fixed button{
+  padding: 6px 8px !important;   /* “이미지 없음” 케이스와 동일 규격 */
+  font-size: 12px !important;
+}
