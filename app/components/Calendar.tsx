@@ -90,15 +90,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const LONGPRESS_MS = isCoarse ? 550 : 350;
     pressTimerRef.current = window.setTimeout(() => {
       setDragEnableKey(k);
+      triggerPulse(k);
     }, LONGPRESS_MS);
   }
   function onPressEndCell() {
     clearPressTimer();
-        // 롱프레스가 완주하지 못했을 때 남은 펄스 타이머 정리
-    if (pulseTimerRef.current) {
-      window.clearTimeout(pulseTimerRef.current);
-      pulseTimerRef.current = undefined;
-    }
     setDragPulseKey(null);
   }
 
