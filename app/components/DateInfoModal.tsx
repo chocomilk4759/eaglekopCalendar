@@ -59,7 +59,7 @@ export default function DateInfoModal({
   const [size, setSize] = useState<{w:number;h:number}>({ w: 720, h: 480 });
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{dx:number;dy:number;active:boolean}>({ dx:0, dy:0, active:false });
-  const imgBoxHeight = useMemo(() => Math.round(size.h * 175 / 330), [size.h]);
+  const imgBoxHeight = useMemo(() => Math.round(size.h * 210 / 330), [size.h]);
   const title = useMemo(
     () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
     [date]
@@ -97,7 +97,7 @@ export default function DateInfoModal({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const hasImg = !!base.image_url;
-    const wantW = hasImg ? 780 : 550;
+    const wantW = hasImg ? 880 : 550;
     const wantH = hasImg ? 330 : 315;
     const w = Math.min(wantW, Math.floor(vw * 0.98));
     const h = Math.min(wantH, Math.floor(vh * 0.90));
