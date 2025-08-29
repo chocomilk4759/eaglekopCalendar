@@ -36,8 +36,6 @@ export default function DateInfoModal({
     [note]
   );
 
-  const [editingIndex, setEditingIndex] = useState<number | null>(null);
-  const [editingText, setEditingText] = useState<string>('');
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
@@ -47,21 +45,29 @@ export default function DateInfoModal({
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [presetPickerOpen, setPresetPickerOpen] = useState(false);
-  const [presets, setPresets] = useState<Preset[] | null>(null);
-  const loadingPresetsRef = useRef(false);
-
   const [comboOpen, setComboOpen] = useState(false);
   const [chipModalOpen, setChipModalOpen] = useState(false);
   const [chipModalMode, setChipModalMode] = useState<ModifyChipMode>('add');
   const [chipModalPreset, setChipModalPreset] = useState<ChipPreset>({ emoji: null, label: '' });
   const [chipEditIndex, setChipEditIndex] = useState<number | null>(null);
-  
+
+  const [presets, setPresets] = useState<Preset[] | null>(null);
+  const loadingPresetsRef = useRef(false);
+
+  // ── 모달 이동/리사이즈 상태 ─────────────────────────────────────────────
+  const [pos, setPos] = useState<{x:number;y:number}>({ x: 0, y: 0 });
+  const [size, setSize] = useState<{w:number;h:number}>({ w: 720, h: 480 });
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<{dx:number;dy:number;active:boolean}>({ dx:0, dy:0, active:false });
+
   const title = useMemo(
     () => `${date.y}-${String(date.m+1).padStart(2,'0')}-${String(date.d).padStart(2,'0')}`,
     [date]
   );
 
+  const disabled = !canEdit;
+
+  // 모달 열릴 때 상태 초기화 + 중앙 배치
   useEffect(()=>{
     if (!open) return;
     const base = initial || emptyNote;
@@ -69,19 +75,29 @@ export default function DateInfoModal({
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
     setTitleInput(((base as any)?.title ?? '') as string);
-    setEditingIndex(null);
-    setEditingText('');
     setDragIndex(null);
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
     setDisplayImageUrl(null);
     setLinkPanelOpen(false);
-    setPresetPickerOpen(false);
+    setComboOpen(false);
+
+    // 중앙 배치 + 적절한 시작 크기
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const w = Math.min(720, Math.floor(vw * 0.95));
+    const h = Math.min(480, Math.floor(vh * 0.85));
+    const x = Math.max(12, Math.floor((vw - w)/2));
+    const y = Math.max(12, Math.floor((vh - h)/2));
+    setSize({ w, h });
+    setPos({ x, y });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
+  // 이미지 URL 표시 최적화
   useEffect(() => { setDisplayImageUrl(imageUrl ?? null); }, [imageUrl]);
 
+  // 외부에서 (+) 프리셋 전달되면 모달 열기
   useEffect(() => {
     if (!open || !addChipPreset) return;
     setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
@@ -89,7 +105,7 @@ export default function DateInfoModal({
     setChipEditIndex(null);
     setChipModalOpen(true);
     onConsumedAddPreset?.();
-  }, [open, addChipPreset]);
+  }, [open, addChipPreset, onConsumedAddPreset]);
 
   function extractPathFromPublicUrl(url: string): string | null {
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
@@ -148,12 +164,14 @@ export default function DateInfoModal({
     }
   }
 
+  // 메모 저장: content + title (+ 현재 image_url도 함께 보존)
   async function saveMemo(){
     if (!canEdit) return;
     try{
       const saved = await persist({
         content: memo,
-        title: titleInput.trim() ? titleInput.trim() : null
+        title: titleInput.trim() ? titleInput.trim() : null,
+        image_url: imageUrl ?? null,  // 이미지가 있으면 함께 확정 반영
       });
       setInitialMemo(saved.content || '');
       alert('메모가 저장되었습니다.');
@@ -174,26 +192,20 @@ export default function DateInfoModal({
       const cleared = normalizeNote({ ...emptyNote });
       setNote(cleared);
       setMemo(''); setInitialMemo('');
-      setEditingIndex(null); setLinkInput('');
+      setLinkInput('');
       setImageUrl(null); setDisplayImageUrl(null);
-      setLinkPanelOpen(false); setPresetPickerOpen(false);
+      setLinkPanelOpen(false); setComboOpen(false);
       alert('초기화했습니다.');
       onSaved(cleared);
-    }catch(e:any){ alert(e?.message ?? '초기화 중 오류가 발생했습니다.'); }
+    }catch(e:any){ alert(e?.message ?? '초기화 중 오류'); }
   }
 
   function onDoubleClickChip(idx:number){
+    if (!canEdit) return;       // 보기 전용일 때 편집 모달 열리지 않음
     const cur = note.items?.[idx]; if(!cur) return;
     setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
     setChipModalMode('edit');
     setChipEditIndex(idx);
-    setChipModalOpen(true);
-  }
-
-  function openChipModalForAdd(p: Preset){
-    setChipModalPreset({ emoji: p.emoji ?? null, label: p.label });
-    setChipModalMode('add');
-    setChipEditIndex(null);
     setChipModalOpen(true);
   }
 
@@ -237,14 +249,18 @@ export default function DateInfoModal({
   }
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
-    if(!canEdit) return; setDragIndex(idx);
-    e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain', String(idx));
+    if(!canEdit) return;
+    setDragIndex(idx);
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain', String(idx));
   }
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){
-    if(!canEdit) return; e.preventDefault(); e.dataTransfer.dropEffect='move';
+    if(!canEdit) return;
+    e.preventDefault(); e.dataTransfer.dropEffect='move';
   }
   async function onDropChip(e:React.DragEvent<HTMLSpanElement>, targetIdx:number){
-    if(!canEdit) return; e.preventDefault();
+    if(!canEdit) return;
+    e.preventDefault();
     const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain'));
     if(isNaN(from) || from===targetIdx) return;
     const items = [...(note.items || [])]; const [moved] = items.splice(from, 1); items.splice(targetIdx, 0, moved);
@@ -252,7 +268,8 @@ export default function DateInfoModal({
     catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
   }
   async function onDropContainer(e:React.DragEvent<HTMLDivElement>){
-    if(!canEdit) return; e.preventDefault();
+    if(!canEdit) return;
+    e.preventDefault();
     const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain')); if(isNaN(from)) return;
     const items = [...(note.items || [])]; const [moved] = items.splice(from, 1); items.push(moved);
     try{ await persist({ items }); setDragIndex(null); }
@@ -278,6 +295,7 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
   }
 
+  // WebP 압축 (GIF는 그대로 업로드)
   async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
       const el = new Image(); el.onload = () => res(el); el.onerror = rej;
@@ -292,7 +310,7 @@ export default function DateInfoModal({
 
   async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
-    if (!canEdit) { alert('권한이 없습니다.'); return; }
+    if (!canEdit) { alert('권한이 없습니다.'); e.currentTarget.value=''; return; }
     setUploading(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -301,7 +319,7 @@ export default function DateInfoModal({
       // ✅ GIF 여부 판별
       const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
 
-      // (선택) GIF 용량 제한 – 너무 큰 GIF는 그대로 올리면 무겁습니다.
+      // (선택) GIF 용량 제한
       if (isGif && f.size > 8 * 1024 * 1024) {
         alert('GIF 용량이 큽니다(>8MB). 크기를 줄여 다시 시도하세요.');
         setUploading(false);
@@ -309,16 +327,12 @@ export default function DateInfoModal({
         return;
       }
 
-      // ✅ GIF는 원본 그대로, 그 외는 WebP로 압축
+      // ✅ GIF는 원본, 그 외는 WebP로 압축
       let blob: Blob, ext: 'gif' | 'webp', contentType: string;
       if (isGif) {
-        blob = f;
-        ext = 'gif';
-        contentType = 'image/gif';
+        blob = f; ext='gif'; contentType='image/gif';
       } else {
-        blob = await compressToWebp(f);      // 기존 함수 그대로 사용
-        ext = 'webp';
-        contentType = 'image/webp';
+        blob = await compressToWebp(f); ext='webp'; contentType='image/webp';
       }
 
       const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.${ext}`;
@@ -327,7 +341,7 @@ export default function DateInfoModal({
         .upload(path, blob, { upsert: true, contentType });
       if (error) throw error;
 
-      await persist({ image_url: path });
+      await persist({ image_url: path });   // 업로드 직후 DB 반영
       setImageUrl(path);
 
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
@@ -341,7 +355,7 @@ export default function DateInfoModal({
     }
   }
 
-  function openPicker(){ fileRef.current?.click(); }
+  function openPicker(){ if(!canEdit) return; fileRef.current?.click(); }
 
   async function removeImage() {
     if (!canEdit) return;
@@ -389,17 +403,55 @@ export default function DateInfoModal({
     const items = [...(note.items || [])];
     const newItem: Item = { emoji: p.emoji ?? null, label: p.label, emojiOnly: true };
     items.push(newItem);
-    try { await persist({ items }); setPresetPickerOpen(false); }
+    try { await persist({ items }); setComboOpen(false); }
     catch (e:any) { alert(e?.message ?? '아이템 추가 중 오류'); }
   }
-  
+
+  // ── 모달 드래그 핸들러 ──────────────────────────────────────────────────
+  function onDragDown(e: React.MouseEvent) {
+    // 에디터 권한과 무관하게 모달 이동은 허용 (요구사항)
+    const target = sheetRef.current;
+    if (!target) return;
+    dragRef.current.active = true;
+    dragRef.current.dx = e.clientX - pos.x;
+    dragRef.current.dy = e.clientY - pos.y;
+    window.addEventListener('mousemove', onDragMove);
+    window.addEventListener('mouseup', onDragUp, { once: true });
+  }
+  function onDragMove(e: MouseEvent) {
+    if (!dragRef.current.active) return;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const x = Math.max(8, Math.min(e.clientX - dragRef.current.dx, vw - 40));
+    const y = Math.max(8, Math.min(e.clientY - dragRef.current.dy, vh - 40));
+    setPos({ x, y });
+  }
+  function onDragUp() {
+    dragRef.current.active = false;
+    window.removeEventListener('mousemove', onDragMove);
+  }
+
   if(!open) return null;
 
   return (
     <div className="modal" onClick={onClose}>
-      <div className="sheet" onClick={e=>e.stopPropagation()}>
-        {/* 날짜 + 초기화 + 플래그 */}
-        <div className="date-head">
+      {/* position:absolute로 이동/리사이즈 가능 */}
+      <div
+        ref={sheetRef}
+        className="sheet modal-draggable"
+        style={{
+          position:'absolute',
+          left: pos.x, top: pos.y,
+          width: size.w, height: size.h,
+          minWidth: 420, minHeight: 320,
+          maxWidth: Math.min(1100, window.innerWidth - 24),
+          maxHeight: Math.min(900, window.innerHeight - 24),
+          resize:'both',
+          overflow:'auto'
+        }}
+        onClick={(e)=>e.stopPropagation()}
+      >
+        {/* 드래그 핸들(상단 바 전체) */}
+        <div className="date-head drag-handle" onMouseDown={onDragDown} style={{cursor:'move', userSelect:'none'}}>
           <h3 style={{margin:'8px 0'}}>{title}</h3>
           <input
             type="text"
@@ -408,23 +460,29 @@ export default function DateInfoModal({
             placeholder="셀 타이틀"
             style={{ marginLeft: 12, padding:'6px 8px', borderRadius:8, minWidth:180 }}
             aria-label="셀 상단 타이틀"
+            disabled={disabled}
           />
 
-          <div className="flag-buttons" aria-label="날짜 강조 색상">
+          <div className="flag-buttons" aria-label="날짜 강조 색상" style={{ userSelect:'none' }}>
             <button
               className={`rest-btn ${isRest ? 'active' : ''}`}
               onClick={toggleRest}
               title="휴(휴방)"
               aria-label="휴(휴방)"
+              disabled={disabled}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
                 <path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
               </svg>
             </button>
             <button className={`flag-btn red ${note.color==='red'?'active':''}`}
-                    onClick={()=>toggleFlag('red')} title="빨간날" aria-label="빨간날로 표시" />
+                    onClick={()=>toggleFlag('red')}
+                    title="빨간날" aria-label="빨간날로 표시"
+                    disabled={disabled} />
             <button className={`flag-btn blue ${note.color==='blue'?'active':''}`}
-                    onClick={()=>toggleFlag('blue')} title="파란날" aria-label="파란날로 표시" />
+                    onClick={()=>toggleFlag('blue')}
+                    title="파란날" aria-label="파란날로 표시"
+                    disabled={disabled} />
           </div>
         </div>
 
@@ -433,23 +491,24 @@ export default function DateInfoModal({
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
             <button
-              onClick={async ()=>{ await ensurePresets(); setComboOpen(v=>!v); }}
+              onClick={async ()=>{ if(disabled) return; await ensurePresets(); setComboOpen(v=>!v); }}
+              disabled={disabled}
               style={{ marginLeft:8, border:'1px dashed var(--border)', borderRadius:999, padding:'2px 10px' }}
               title="아이템 추가" aria-label="아이템 추가"
             >＋</button>
           </div>
         ) : (
           <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}
-               onDragOver={(e)=>{ if(canEdit){ e.preventDefault(); }}}
-               onDrop={onDropContainer}>
+               onDragOver={(e)=>{ if(!disabled){ e.preventDefault(); }}}
+               onDrop={(e)=>{ if(!disabled) onDropContainer(e); }}>
             {note.items.map((it:Item, idx:number)=>(
               <span key={idx} className="chip"
-                    title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : '더블클릭: 보기'}
-                    onDoubleClick={()=> onDoubleClickChip(idx)}
-                    draggable={canEdit}
-                    onDragStart={(e)=>onDragStartChip(e, idx)}
-                    onDragOver={onDragOverChip}
-                    onDrop={(e)=>onDropChip(e, idx)}
+                    title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경' : '보기 전용'}
+                    onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
+                    draggable={!disabled}
+                    onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
+                    onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
+                    onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center',
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
@@ -461,15 +520,16 @@ export default function DateInfoModal({
               </span>
             ))}
             <button
-              onClick={async ()=>{ await ensurePresets(); setComboOpen(v=>!v); }}
+              onClick={async ()=>{ if(disabled) return; await ensurePresets(); setComboOpen(v=>!v); }}
+              disabled={disabled}
               style={{ border:'1px dashed var(--border)', borderRadius:999, padding:'4px 10px',
-                       background:'var(--card)', cursor:'pointer', fontSize:12 }}
+                       background:'var(--card)', fontSize:12 }}
               title="아이템 추가" aria-label="아이템 추가"
             >＋</button>
           </div>
         ))}
 
-        {comboOpen && presets && (
+        {comboOpen && presets && !disabled && (
           <div style={{ margin:'6px 0 4px' }}>
             <select
               onChange={(e) => {
@@ -477,13 +537,18 @@ export default function DateInfoModal({
                 if (!Number.isNaN(idx) && presets[idx]) {
                   const p = presets[idx];
                   setComboOpen(false);
-                  openChipModalForAdd(p);
+                  // ADD 모달 열기
+                  setChipModalPreset({ emoji: p.emoji ?? null, label: p.label });
+                  setChipModalMode('add');
+                  setChipEditIndex(null);
+                  setChipModalOpen(true);
                   e.currentTarget.selectedIndex = 0;
                 }
               }}
               defaultValue=""
               aria-label="프리셋 선택"
               style={{ padding:'6px 10px', borderRadius:8, border:'1px solid var(--border)' }}
+              disabled={disabled}
             >
               <option value="" disabled>프리셋 선택…</option>
               {presets.map((p, i)=>(
@@ -499,7 +564,8 @@ export default function DateInfoModal({
             {!isRest && (
             <textarea value={memo} onChange={(e)=>setMemo(e.target.value)}
                       placeholder="메모를 입력하세요"
-                      style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}} />
+                      style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}}
+                      disabled={disabled} />
             )}
             {linkPanelOpen && (
               <div style={{ display:'flex', gap:8, alignItems:'center',
@@ -508,31 +574,37 @@ export default function DateInfoModal({
                 <input placeholder="https://example.com" value={linkInput}
                        onChange={(e)=> setLinkInput(e.target.value)}
                        onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
-                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }} />
-                <button type="button" onClick={saveLink} disabled={!canEdit}>링크 저장</button>
-                <button type="button" onClick={deleteLink} disabled={!canEdit}>링크 삭제</button>
+                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
+                       disabled={disabled} />
+                <button type="button" onClick={saveLink} disabled={disabled}>링크 저장</button>
+                <button type="button" onClick={deleteLink} disabled={disabled}>링크 삭제</button>
               </div>
             )}
 
             <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:8 }}>
-              <button onClick={saveMemo} disabled={!canEdit}>메모 저장</button>
+              <button onClick={saveMemo} disabled={disabled}>메모 저장</button>
               <button onClick={resetMemo}>리셋</button>
 
               <span style={{ flex: '0 0 12px' }} />
 
-              <button onClick={openPicker} disabled={!canEdit || uploading}>
+              <button onClick={openPicker} disabled={disabled || uploading}>
                 {uploading ? '업로드 중…' : '이미지 삽입'}
               </button>
               <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
 
-              <button type="button" onClick={()=> setLinkPanelOpen(v=>!v)} aria-expanded={linkPanelOpen}>링크</button>
+              <button type="button"
+                      onClick={()=> { if(disabled) return; setLinkPanelOpen(v=>!v); }}
+                      aria-expanded={linkPanelOpen}
+                      disabled={disabled}>
+                링크
+              </button>
 
-              {imageUrl && <button onClick={removeImage} disabled={!canEdit}>이미지 제거</button>}
+              {imageUrl && <button onClick={removeImage} disabled={disabled}>이미지 제거</button>}
 
               <span style={{ flex: '0 0 12px' }} />
 
               <button onClick={onClose}>닫기</button>
-
+              <button onClick={clearAll} disabled={disabled}>초기화</button>
             </div>
           </div>
 
@@ -553,6 +625,7 @@ export default function DateInfoModal({
           )}
         </div>
 
+        {/* 칩 편집 모달 */}
         <ModifyChipInfoModal
           open={chipModalOpen}
           mode={chipModalMode}
