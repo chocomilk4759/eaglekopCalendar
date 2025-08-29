@@ -293,13 +293,6 @@ button:active{ transform: translateY(.5px); }
 }
 
 /* 7) AUTH POPOVER -------------------------------------------------------------- */
-.pop{
-  position:absolute; top:44px; right:0; width:320px; max-width:calc(100vw - 24px);
-  background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.1);
-  padding:12px; opacity:0; transform:scale(.96); transform-origin: top right;
-  pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
-}
-.pop.open{ opacity:1; transform:scale(1); pointer-events:auto; }
 .overlay{ position:fixed; inset:0; background:transparent; z-index:9997; }
 
 /* 8) DATE INFO MODAL ----------------------------------------------------------- */
@@ -338,9 +331,6 @@ button:active{ transform: translateY(.5px); }
 @media (max-width:980px){
   .container{ padding:16px; }
   .presets-dock{ position:static; width:auto; max-height:none; right:auto; top:auto; margin-top:8px; }
-}
-@media (max-width:640px){
-  .pop{ width:92vw; }
 }
 
 /* mobile: chips scroll */
@@ -504,4 +494,28 @@ button:active{ transform: translateY(.5px); }
   box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px rgba(0,145,255,0.25);
   animation: calendarPulse 220ms ease-out forwards;
   pointer-events: none;
+}
+
+/* AUTH 전용 팝오버(축소 + 모바일 최적화) */
+.pop.pop-auth{
+  width: 260px;
+  padding: 10px;
+  border-radius: 10px;
+}
+#auth-dock h4{ font-size: 14px; margin: 0 0 6px; }
+#auth-dock label span{ font-size: 12px; }
+#auth-dock input, #auth-dock button{ padding: 6px 8px; font-size: 13px; }
+
+@media (max-width: 640px){
+  .pop.pop-auth{
+    width: 88vw;
+    max-width: 88vw;
+    padding: 10px;
+    border-radius: 10px;
+  }
+  #auth-dock h4{ font-size: 13px; }
+  #auth-dock input, #auth-dock button{ padding: 6px 8px; font-size: 13px; }
+}
+@media (max-width: 380px){
+  .pop.pop-auth{ width: 92vw; max-width: 92vw; }
 }
