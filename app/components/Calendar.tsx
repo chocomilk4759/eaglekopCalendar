@@ -58,9 +58,22 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   
   // ----- 롱프레스 드래그 상태 -----
   const [dragEnableKey, setDragEnableKey] = useState<string|null>(null);
-  const [dragActiveKey, setDragActiveKey] = useState<string|null>(null);
+  const [dragPulseKey, setDragPulseKey] = useState<string|null>(null); // ★ 펄스(반짝) 표시 대상 셀
   const pressTimerRef = useRef<number|undefined>(undefined);
   const pressKeyRef = useRef<string|null>(null);
+  const pulseTimerRef = useRef<number|undefined>(undefined);           // ★ 펄스 자동 종료 타이머
+
+  
+  function triggerPulse(k: string) {
+    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+    if (isCoarse) return;                 // 터치 환경에서는 생략
+    if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current);
+    setDragPulseKey(k);
+    pulseTimerRef.current = window.setTimeout(() => {
+      setDragPulseKey(null);
+      pulseTimerRef.current = undefined;
+    }, 200); // 0.2s 반짝
+  }
 
   function clearPressTimer() {
     if (pressTimerRef.current) {
@@ -81,12 +94,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
   function onPressEndCell() {
     clearPressTimer();
+        // 롱프레스가 완주하지 못했을 때 남은 펄스 타이머 정리
+    if (pulseTimerRef.current) {
+      window.clearTimeout(pulseTimerRef.current);
+      pulseTimerRef.current = undefined;
+    }
+    setDragPulseKey(null);
   }
 
   // 드래그 시작 시 데이터 적재
   function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
     if (!note) { e.preventDefault(); return; }
-    setDragActiveKey(k);
     // 복제 페이로드(필요 필드만)
     const payload = {
       type: 'note-copy',
@@ -109,7 +127,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onCellDragEnd() {
     setDragEnableKey(null);
     clearPressTimer();
-    setDragActiveKey(null);
   }
 
   // 내용 존재 여부 판단
@@ -548,29 +565,18 @@ useEffect(() => {
           const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
 
-          // ★ 셀 스타일 구성: 배경 + 드래그 중 피드백
-          const cellStyle: React.CSSProperties = bg ? {
-            backgroundImage: `url(${bg})`,
-            backgroundSize: '80% 80%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat',
-            backgroundColor: 'transparent'
-          } : {};
-          if (canEdit && !!c.d && dragActiveKey === k) {
-            cellStyle.cursor = 'grabbing';
-            cellStyle.transform = 'scale(0.98)';                  // 살짝 줄여서 “집힌” 느낌
-            cellStyle.boxShadow = '0 0 0 2px var(--accent) inset, 0 6px 16px rgba(0,0,0,.18)';
-            cellStyle.opacity = 0.88;                             // 살짝 투명
-            cellStyle.transition = 'transform .05s linear';       // 부드럽게
-          }
-
           return (
             <div
               key={idx}
               className={cn}
               draggable={canEdit && !!c.d && dragEnableKey === k}
-              style={cellStyle}
-              aria-grabbed={dragActiveKey === k ? true : undefined}
+              style={ bg ? {
+                backgroundImage: `url(${bg})`,
+                backgroundSize: '80% 80%',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: 'transparent'
+              } : undefined }
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
               onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
               onMouseUp={onPressEndCell}
@@ -580,12 +586,12 @@ useEffect(() => {
               onDragStart={(e) => { if (canEdit && c.d && dragEnableKey === k) onCellDragStart(e, k, note || null); }}
               onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
-                if (canEdit && c.d) { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }
+                if (canEdit && c.d) e.preventDefault();
               }}
               onDrop={(e) => {
                 if (canEdit && c.d) {
                   e.preventDefault();
-                  
+                  dropPreset(c.y, c.m, c.d, e.dataTransfer.getData('application/json'));
                   const raw = e.dataTransfer.getData('application/json');
                   try {
                     const json = JSON.parse(raw);
@@ -600,7 +606,16 @@ useEffect(() => {
                 }
               }}
             >
-              <div className="cell-inner" role="group" aria-label="calendar cell" /*style={{ backdropFilter: bg ? 'brightness(0.9)' : undefined }} */>
+              <div
+                className="cell-inner"
+                role="group"
+                aria-label="calendar cell"
+                style={{ position: 'relative' }}  // 오버레이 기준 컨테이너
+              >
+                {/* 롱프레스 성립 순간에만 0.2s 펄스(PC 전용) */}
+                {dragPulseKey === k && (
+                  <div aria-hidden className="calendar-cell-pulse" />
+                )}
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
