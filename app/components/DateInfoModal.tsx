@@ -67,7 +67,21 @@ export default function DateInfoModal({
 
   const disabled = !canEdit;
 
-  // 모달 열릴 때 상태 초기화 + 중앙 배치
+  // 이미지 URL → 즉시 표시(서명URL 생성 포함)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!imageUrl) { setDisplayImageUrl(null); return; }
+      if (/^https?:\/\//i.test(imageUrl)) { setDisplayImageUrl(imageUrl); return; }
+      const { data, error } = await supabase
+        .storage.from(BUCKET)
+        .createSignedUrl(imageUrl, 60 * 60);
+      if (!cancelled) setDisplayImageUrl(error ? null : (data?.signedUrl ?? null));
+    })();
+    return () => { cancelled = true; };
+  }, [imageUrl, supabase]);
+
+  // 모달 열릴 때 상태 초기화 + 중앙 배치 + ★초기 크기 규칙 반영(이미지 유무)
   useEffect(()=>{
     if (!open) return;
     const base = initial || emptyNote;
@@ -82,42 +96,19 @@ export default function DateInfoModal({
     setLinkPanelOpen(false);
     setComboOpen(false);
 
-    // 중앙 배치 + 적절한 시작 크기
     const vw = window.innerWidth;
     const vh = window.innerHeight;
-    const w = Math.min(720, Math.floor(vw * 0.95));
-    const h = Math.min(480, Math.floor(vh * 0.85));
+    const hasImg = !!base.image_url;
+    const wantW = hasImg ? 720 : 710;
+    const wantH = hasImg ? 390 : 320;
+    const w = Math.min(wantW, Math.floor(vw * 0.98));
+    const h = Math.min(wantH, Math.floor(vh * 0.90));
     const x = Math.max(12, Math.floor((vw - w)/2));
     const y = Math.max(12, Math.floor((vh - h)/2));
     setSize({ w, h });
     setPos({ x, y });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
-
-  // 이미지 URL 표시 최적화
-  // 이미지가 있으면 즉시 표시(절대 URL은 그대로, 스토리지 경로면 서명 URL 생성)
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!imageUrl) { setDisplayImageUrl(null); return; }
-      if (/^https?:\/\//i.test(imageUrl)) { setDisplayImageUrl(imageUrl); return; }
-      const { data, error } = await supabase
-        .storage.from(BUCKET)
-        .createSignedUrl(imageUrl, 60 * 60);
-      if (!cancelled) setDisplayImageUrl(error ? null : (data?.signedUrl ?? null));
-    })();
-    return () => { cancelled = true; };
-  }, [imageUrl, supabase]);
-
-  // 외부에서 (+) 프리셋 전달되면 모달 열기
-  useEffect(() => {
-    if (!open || !addChipPreset) return;
-    setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
-    setChipModalMode('add');
-    setChipEditIndex(null);
-    setChipModalOpen(true);
-    onConsumedAddPreset?.();
-  }, [open, addChipPreset, onConsumedAddPreset]);
 
   function extractPathFromPublicUrl(url: string): string | null {
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
@@ -183,15 +174,14 @@ export default function DateInfoModal({
       const saved = await persist({
         content: memo,
         title: titleInput.trim() ? titleInput.trim() : null,
-        image_url: imageUrl ?? null,  // 이미지가 있으면 함께 확정 반영
+        image_url: imageUrl ?? null,
       });
       setInitialMemo(saved.content || '');
-      alert('메모가 저장되었습니다.');
+      alert('저장되었습니다.');
     }catch(e:any){
       alert(e?.message ?? '저장 중 오류가 발생했습니다.');
     }
   }
-  function resetMemo(){ setMemo(initialMemo || ''); }
 
   async function clearAll(){
     if(!canEdit){ setMemo(''); return; }
@@ -213,7 +203,7 @@ export default function DateInfoModal({
   }
 
   function onDoubleClickChip(idx:number){
-    if (!canEdit) return;       // 보기 전용일 때 편집 모달 열리지 않음
+    if (!canEdit) return;
     const cur = note.items?.[idx]; if(!cur) return;
     setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
     setChipModalMode('edit');
@@ -328,10 +318,7 @@ export default function DateInfoModal({
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
 
-      // ✅ GIF 여부 판별
       const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
-
-      // (선택) GIF 용량 제한
       if (isGif && f.size > 8 * 1024 * 1024) {
         alert('GIF 용량이 큽니다(>8MB). 크기를 줄여 다시 시도하세요.');
         setUploading(false);
@@ -339,7 +326,6 @@ export default function DateInfoModal({
         return;
       }
 
-      // ✅ GIF는 원본, 그 외는 WebP로 압축
       let blob: Blob, ext: 'gif' | 'webp', contentType: string;
       if (isGif) {
         blob = f; ext='gif'; contentType='image/gif';
@@ -353,7 +339,7 @@ export default function DateInfoModal({
         .upload(path, blob, { upsert: true, contentType });
       if (error) throw error;
 
-      await persist({ image_url: path });   // 업로드 직후 DB 반영
+      await persist({ image_url: path });
       setImageUrl(path);
 
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
@@ -421,7 +407,6 @@ export default function DateInfoModal({
 
   // ── 모달 드래그 핸들러 ──────────────────────────────────────────────────
   function onDragDown(e: React.MouseEvent) {
-    // 에디터 권한과 무관하게 모달 이동은 허용 (요구사항)
     const target = sheetRef.current;
     if (!target) return;
     dragRef.current.active = true;
@@ -549,7 +534,6 @@ export default function DateInfoModal({
                 if (!Number.isNaN(idx) && presets[idx]) {
                   const p = presets[idx];
                   setComboOpen(false);
-                  // ADD 모달 열기
                   setChipModalPreset({ emoji: p.emoji ?? null, label: p.label });
                   setChipModalMode('add');
                   setChipEditIndex(null);
@@ -593,30 +577,34 @@ export default function DateInfoModal({
               </div>
             )}
 
-            <div className="actions" style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center', marginTop:8 }}>
-              <button onClick={saveMemo} disabled={disabled}>메모 저장</button>
-              <button onClick={resetMemo}>리셋</button>
+            {/* ===== 하단 버튼: [초기화] | [저장 | 이미지삽입, 이미지제거, 링크 | 닫기] ===== */}
+            <div className="actions" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:8 }}>
+              <div className="actions-left" style={{ marginRight:'auto' }}>
+                <button onClick={clearAll} disabled={disabled} className="btn-plain-danger">초기화</button>
+              </div>
 
-              <span style={{ flex: '0 0 12px' }} />
+              <div className="actions-right" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                <button onClick={saveMemo} disabled={disabled}>저장</button>
 
-              <button onClick={openPicker} disabled={disabled || uploading}>
-                {uploading ? '업로드 중…' : '이미지 삽입'}
-              </button>
-              <input ref={fileRef} type="file" accept="image/*" onChange={pickImage} style={{ display:'none' }} />
+                <span className="actions-sep" aria-hidden style={{ width:16, display:'inline-block' }} />
 
-              <button type="button"
-                      onClick={()=> { if(disabled) return; setLinkPanelOpen(v=>!v); }}
-                      aria-expanded={linkPanelOpen}
-                      disabled={disabled}>
-                링크
-              </button>
+                <button onClick={openPicker} disabled={disabled || uploading}>
+                  {uploading ? '업로드 중…' : '이미지 삽입'}
+                </button>
+                {imageUrl && <button onClick={removeImage} disabled={disabled}>이미지 제거</button>}
+                <button
+                  type="button"
+                  onClick={()=> { if(disabled) return; setLinkPanelOpen(v=>!v); }}
+                  aria-expanded={linkPanelOpen}
+                  disabled={disabled}
+                >
+                  링크
+                </button>
 
-              {imageUrl && <button onClick={removeImage} disabled={disabled}>이미지 제거</button>}
+                <span className="actions-sep" aria-hidden style={{ width:16, display:'inline-block' }} />
 
-              <span style={{ flex: '0 0 12px' }} />
-
-              <button onClick={onClose}>닫기</button>
-              <button onClick={clearAll} disabled={disabled}>초기화</button>
+                <button onClick={onClose}>닫기</button>
+              </div>
             </div>
           </div>
 

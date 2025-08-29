@@ -411,3 +411,28 @@ button:active{ transform: translateY(.5px); }
     margin-top: calc(46px + env(safe-area-inset-top, 0px)) !important;
   }
 }
+
+/* DateInfoModal — 하단 버튼 반응형 크기 & 좌/우 정렬 */
+.modal .actions button{
+  padding: 8px 12px;
+  font-size: 14px;
+}
+@media (max-width: 900px){
+  .modal .actions button{ padding: 7px 10px; font-size: 13px; }
+}
+@media (max-width: 600px){
+  .modal .actions button{ padding: 6px 8px; font-size: 12px; }
+}
+
+/* 초기화(왼쪽) 버튼은 빨간 글씨의 플레인 스타일 */
+.btn-plain-danger{
+  color: var(--flagRed);
+  background: transparent;
+  border-color: transparent;
+}
+.btn-plain-danger:hover{
+  background: color-mix(in srgb, var(--flagRed) 10%, transparent);
+}
+
+/* ‘|’ 대신 여백 스페이서 */
+.actions-sep{ opacity: 0; width: 12px; display: inline-block; }
