@@ -551,7 +551,7 @@ export default function DateInfoModal({
         )}
 
         {/* [ 메모 | 이미지 ] */}
-        <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
+        <div style={{ display:'flex', alignItems:'stretch', gap:10, minHeight: 0 }}>
           <div style={{ flex:'1 1 0', minWidth:0 }}>
             {!isRest && (
               <textarea
