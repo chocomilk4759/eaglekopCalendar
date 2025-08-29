@@ -425,7 +425,7 @@ useEffect(() => {
               className={cn}
               style={ bg ? {
                 backgroundImage: `url(${bg})`,
-                backgroundSize: 'cover',
+                backgroundSize: '80% 80%',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat'
               } : undefined }
