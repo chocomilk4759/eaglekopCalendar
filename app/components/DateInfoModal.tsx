@@ -99,8 +99,8 @@ export default function DateInfoModal({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const hasImg = !!base.image_url;
-    const wantW = hasImg ? 720 : 710;
-    const wantH = hasImg ? 390 : 320;
+    const wantW = hasImg ? 850 : 710;
+    const wantH = hasImg ? 400 : 320;
     const w = Math.min(wantW, Math.floor(vw * 0.98));
     const h = Math.min(wantH, Math.floor(vh * 0.90));
     const x = Math.max(12, Math.floor((vw - w)/2));
