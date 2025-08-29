@@ -427,7 +427,8 @@ useEffect(() => {
                 backgroundImage: `url(${bg})`,
                 backgroundSize: '80% 80%',
                 backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat'
+                backgroundRepeat: 'no-repeat',
+                backgroundColor: 'transparent'
               } : undefined }
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
               onDragOver={(e) => {
@@ -440,7 +441,7 @@ useEffect(() => {
                 }
               }}
             >
-              <div className="cell-inner" role="group" aria-label="calendar cell" style={{ backdropFilter: bg ? 'brightness(0.9)' : undefined }}>
+              <div className="cell-inner" role="group" aria-label="calendar cell" /*style={{ backdropFilter: bg ? 'brightness(0.9)' : undefined }} */>
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
