@@ -55,6 +55,128 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pendingRef = useRef<'seven'|'compact'|null>(null);
   const tRef = useRef<number|undefined>(undefined);
 
+  
+  // ----- 롱프레스 드래그 상태 -----
+  const [dragEnableKey, setDragEnableKey] = useState<string|null>(null);
+  const pressTimerRef = useRef<number|undefined>(undefined);
+  const pressKeyRef = useRef<string|null>(null);
+
+  function clearPressTimer() {
+    if (pressTimerRef.current) {
+      window.clearTimeout(pressTimerRef.current);
+      pressTimerRef.current = undefined;
+    }
+    pressKeyRef.current = null;
+  }
+
+  function onPressStartCell(k: string) {
+    clearPressTimer();
+    pressKeyRef.current = k;
+    pressTimerRef.current = window.setTimeout(() => {
+      setDragEnableKey(k); // 2초 후 드래그 가능
+    }, 2000);
+  }
+  function onPressEndCell() {
+    clearPressTimer();
+  }
+
+  // 드래그 시작 시 데이터 적재
+  function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
+    if (!note) { e.preventDefault(); return; }
+    // 복제 페이로드(필요 필드만)
+    const payload = {
+      type: 'note-copy',
+      note: {
+        y: note.y, m: note.m, d: note.d,
+        content: note.content ?? '',
+        items: Array.isArray(note.items) ? note.items : [],
+        color: note.color ?? null,
+        link: note.link ?? null,
+        image_url: note.image_url ?? null,
+        title: (note as any)?.title ?? null,
+        use_image_as_bg: (note as any)?.use_image_as_bg ?? false,
+      }
+    };
+    try {
+      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      e.dataTransfer.effectAllowed = 'copy';
+    } catch {}
+  }
+  function onCellDragEnd() {
+    setDragEnableKey(null);
+    clearPressTimer();
+  }
+
+  // 내용 존재 여부 판단
+  function hasAnyContent(n?: Note|null) {
+    if (!n) return false;
+    if (n.content && n.content.trim().length) return true;
+    if (Array.isArray(n.items) && n.items.length) return true;
+    if (n.link) return true;
+    if (n.image_url) return true;
+    if (n.color) return true;
+    if ((n as any)?.title) return true;
+    return false;
+  }
+
+  // 병합 규칙: items = concat, content = 줄바꿈 병합, 그 외(링크/이미지/타이틀/색상)는 대상이 없으면 원본으로 채움
+  function mergeNotes(src: Note, dst: Note): Note {
+    const merged: Note = normalizeNote({
+      ...dst,
+      content: [dst.content || '', src.content || ''].filter(Boolean).join('\n'),
+      items: [...(dst.items || []), ...(src.items || [])],
+      link: dst.link ?? src.link ?? null,
+      image_url: dst.image_url ?? src.image_url ?? null,
+      color: dst.color ?? src.color ?? null,
+      title: (dst as any)?.title ?? (src as any)?.title ?? null,
+      use_image_as_bg: ((dst as any)?.use_image_as_bg ?? false) || ((src as any)?.use_image_as_bg ?? false),
+    });
+    return merged;
+  }
+
+  async function upsertNote(note: Note) {
+    const payload = normalizeNote(note);
+    const { data, error } = await supabase
+      .from('notes')
+      .upsert(payload, { onConflict: 'y,m,d' })
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    return normalizeNote(data as any);
+  }
+
+  // note 복제 드롭 처리
+  async function dropNoteCopy(targetY:number, targetM:number, targetD:number, json: any) {
+    if (!canEdit) return;
+    if (!json || json.type !== 'note-copy' || !json.note) return;
+    const src: Note = normalizeNote(json.note);
+    if (src.y === targetY && src.m === targetM && src.d === targetD) return; // 동일 셀은 무시
+
+    const k = cellKey(targetY, targetM, targetD);
+    const dst = notes[k] || normalizeNote({ y: targetY, m: targetM, d: targetD, content:'', items:[], color:null, link:null, image_url:null });
+
+    let finalNote: Note;
+    if (hasAnyContent(dst)) {
+      const ans = window.prompt('동작 선택: 1) 덮어쓰기  2) 합치기  3) 취소', '2');
+      if (ans === '1') {
+        finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
+      } else if (ans === '2') {
+        finalNote = mergeNotes(src, normalizeNote({ ...dst, y: targetY, m: targetM, d: targetD }));
+      } else {
+        return; // 취소
+      }
+    } else {
+      finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
+    }
+
+    try {
+      const saved = await upsertNote(finalNote);
+      setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+    } catch (e:any) {
+      alert(e?.message ?? '복제 저장 중 오류');
+    }
+  }
+
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
   useEffect(() => {
     const el = gridRef.current;
@@ -290,6 +412,8 @@ useEffect(() => {
     return rawTitle ? `${day}:${rawTitle}` : day;
   }
 
+
+
   return (
     <>
       {/* ==================== 상단 컨테이너 (horizontal) ==================== */}
@@ -423,6 +547,7 @@ useEffect(() => {
             <div
               key={idx}
               className={cn}
+              draggable={canEdit && !!c.d && dragEnableKey === k}
               style={ bg ? {
                 backgroundImage: `url(${bg})`,
                 backgroundSize: '80% 80%',
@@ -431,6 +556,13 @@ useEffect(() => {
                 backgroundColor: 'transparent'
               } : undefined }
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
+              onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
+              onMouseUp={onPressEndCell}
+              onMouseLeave={onPressEndCell}
+              onTouchStart={() => { if (canEdit && c.d) onPressStartCell(k); }}
+              onTouchEnd={onPressEndCell}
+              onDragStart={(e) => { if (canEdit && c.d && dragEnableKey === k) onCellDragStart(e, k, note || null); }}
+              onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
                 if (canEdit && c.d) e.preventDefault();
               }}
@@ -438,6 +570,17 @@ useEffect(() => {
                 if (canEdit && c.d) {
                   e.preventDefault();
                   dropPreset(c.y, c.m, c.d, e.dataTransfer.getData('application/json'));
+                  const raw = e.dataTransfer.getData('application/json');
+                  try {
+                    const json = JSON.parse(raw);
+                    if (json?.type === 'note-copy') {
+                      dropNoteCopy(c.y, c.m, c.d, json);
+                    } else if (json?.type === 'preset') {
+                      dropPreset(c.y, c.m, c.d, raw);
+                    }
+                  } catch {
+                    // 무시
+                  }
                 }
               }}
             >
