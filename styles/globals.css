@@ -468,8 +468,14 @@ button:active{ transform: translateY(.5px); }
 @container (min-width: 741px){
   .modal .actions button{ padding: 8px 12px; font-size: 14px; }
 }
-/* (치환) 이미지 박스: 최소 175px로 하향, 컨테이너 비례 확대 */
-.note-image-wrap{ flex: 0 0 auto; }
+
+
+/* ==== DateInfoModal 이미지: 모달 크기에 반응 + 항상 전체 보이기 ==== */
+.note-image-wrap {
+  flex: 1 1 0;
+  min-width: 175px;
+  display: flex;
+}
 .note-image-box{
   
   flex: 1 1 auto;
@@ -485,10 +491,4 @@ button:active{ transform: translateY(.5px); }
   height: 100%;
   object-fit: contain;
   display: block;
-}
-/* ==== DateInfoModal 이미지: 모달 크기에 반응 + 항상 전체 보이기 ==== */
-.note-image-wrap {
-  flex: 1 1 0;
-  min-width: 260px;
-  display: flex;
 }
