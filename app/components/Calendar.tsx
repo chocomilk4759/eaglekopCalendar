@@ -29,7 +29,7 @@ function cellKey(y: number, m: number, d: number) {
 const fmtUrl = (s: string) => (/^https?:\/\//i.test(s) ? s : `https://${s}`);
 
 export default function Calendar({ canEdit }: { canEdit: boolean }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const today = useMemo(() => new Date(), []);
   const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
@@ -139,6 +139,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ymKey]);
 
+  function shallowEqualObj(a: Record<string,string>, b: Record<string,string>) {
+    const ak = Object.keys(a), bk = Object.keys(b);
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) if (a[k] !== b[k]) return false;
+    return true;
+  }
+
   function extractStoragePath(url: string): { bucket: string; key: string } | null {
     const m = url.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
     if (!m) return null;
@@ -146,36 +153,40 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
   const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const tasks: Array<Promise<[string, string]>> = [];
-      for (const n of Object.values(notes)) {
-        if (!n?.image_url || !(n as any)?.use_image_as_bg) continue;
-        const k = `${n.y}-${n.m}-${n.d}`;
-        const raw = n.image_url!;
-        tasks.push((async () => {
-          if (isHttp(raw)) {
-            const parsed = extractStoragePath(raw);
-            if (parsed) {
-              const { data } = await supabase.storage.from(parsed.bucket).createSignedUrl(parsed.key, 3600);
-              return [k, data?.signedUrl || raw] as [string, string];
-            }
-            return [k, raw] as [string, string];
-          } else {
-            const { data } = await supabase.storage.from('note-images').createSignedUrl(raw, 3600);
-            return [k, data?.signedUrl || ''] as [string, string];
+// 배경 URL effect 의존성 축소 + setState 최적화
+useEffect(() => {
+  let cancelled = false;
+  (async () => {
+    const tasks: Array<Promise<[string, string]>> = [];
+    for (const n of Object.values(notes)) {
+      if (!n?.image_url || !(n as any)?.use_image_as_bg) continue;
+      const k = `${n.y}-${n.m}-${n.d}`;
+      const raw = n.image_url!;
+      tasks.push((async () => {
+        if (/^https?:\/\//i.test(raw)) {
+          const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
+          if (m) {
+            const bucket = m[1], key = decodeURIComponent(m[2]);
+            const { data } = await supabase.storage.from(bucket).createSignedUrl(key, 3600);
+            return [k, data?.signedUrl || raw] as [string, string];
           }
-        })());
-      }
-      const settled = await Promise.allSettled(tasks);
-      if (cancelled) return;
-      const map: Record<string, string> = {};
-      for (const r of settled) if (r.status === 'fulfilled') { const [k, u] = r.value; if (u) map[k] = u; }
-      setBgUrls(map);
-    })();
-    return () => { cancelled = true; };
-  }, [notes, ymKey, supabase]);
+          return [k, raw] as [string, string];
+        } else {
+          const { data } = await supabase.storage.from('note-images').createSignedUrl(raw, 3600);
+          return [k, data?.signedUrl || ''] as [string, string];
+        }
+      })());
+    }
+    const settled = await Promise.allSettled(tasks);
+    if (cancelled) return;
+    const map: Record<string, string> = {};
+    for (const r of settled) if (r.status === 'fulfilled') {
+      const [k, u] = r.value; if (u) map[k] = u;
+    }
+    setBgUrls(prev => shallowEqualObj(prev, map) ? prev : map);
+  })();
+  return () => { cancelled = true; };
+}, [notes, ymKey]);
 
   async function prefetchMonth(y: number, m: number) {
     const k = `${y}-${m}`;
