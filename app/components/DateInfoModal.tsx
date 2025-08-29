@@ -44,6 +44,7 @@ export default function DateInfoModal({
   const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [useImageAsBg, setUseImageAsBg] = useState<boolean>(!!(note as any)?.use_image_as_bg);
 
   const [comboOpen, setComboOpen] = useState(false);
   const [chipModalOpen, setChipModalOpen] = useState(false);
@@ -93,6 +94,7 @@ export default function DateInfoModal({
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
     setDisplayImageUrl(null);
+    setUseImageAsBg(!!(base as any)?.use_image_as_bg);
     setLinkPanelOpen(false);
     setComboOpen(false);
 
@@ -180,6 +182,13 @@ export default function DateInfoModal({
     }catch(e:any){
       alert(e?.message ?? '저장 중 오류가 발생했습니다.');
     }
+  }
+
+  async function toggleUseBg(checked: boolean) {
+    if (!canEdit) return;
+    setUseImageAsBg(checked);
+    try { await persist({ use_image_as_bg: checked }); }
+    catch (e:any) { alert(e?.message ?? '배경 사용 여부 저장 중 오류'); setUseImageAsBg(!checked); }
   }
 
   async function clearAll(){
@@ -338,7 +347,7 @@ export default function DateInfoModal({
         .upload(path, blob, { upsert: true, contentType });
       if (error) throw error;
 
-      await persist({ image_url: path });
+      await persist({ image_url: path, use_image_as_bg: true }); // 업로드 시 자동으로 배경 사용 ON
       setImageUrl(path);
 
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
@@ -627,6 +636,10 @@ export default function DateInfoModal({
                   onError={()=> { fallbackToSignedUrlIfNeeded(); }}
                 />
               </div>
+              <label style={{ display:'flex', alignItems:'center', gap:8, marginTop:8, fontSize:13 }}>
+                <input type="checkbox" checked={useImageAsBg} onChange={(e)=> toggleUseBg(e.target.checked)} disabled={disabled || !imageUrl} />
+                이미지를 배경으로 사용
+              </label>
             </div>
           )}
         </div>

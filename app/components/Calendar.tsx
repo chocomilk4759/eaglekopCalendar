@@ -45,6 +45,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
   const ymKey = `${ym.y}-${ym.m}`;
   const [loading, setLoading] = useState(false);
+  const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
   // 그리드 칼럼 수 관찰 → 7칸 가능 여부
   const gridRef = useRef<HTMLDivElement>(null);
   const [canShowSeven, setCanShowSeven] = useState(true);
@@ -137,6 +138,44 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ymKey]);
+
+  function extractStoragePath(url: string): { bucket: string; key: string } | null {
+    const m = url.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
+    if (!m) return null;
+    return { bucket: m[1], key: decodeURIComponent(m[2]) };
+  }
+  const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const tasks: Array<Promise<[string, string]>> = [];
+      for (const n of Object.values(notes)) {
+        if (!n?.image_url || !(n as any)?.use_image_as_bg) continue;
+        const k = `${n.y}-${n.m}-${n.d}`;
+        const raw = n.image_url!;
+        tasks.push((async () => {
+          if (isHttp(raw)) {
+            const parsed = extractStoragePath(raw);
+            if (parsed) {
+              const { data } = await supabase.storage.from(parsed.bucket).createSignedUrl(parsed.key, 3600);
+              return [k, data?.signedUrl || raw] as [string, string];
+            }
+            return [k, raw] as [string, string];
+          } else {
+            const { data } = await supabase.storage.from('note-images').createSignedUrl(raw, 3600);
+            return [k, data?.signedUrl || ''] as [string, string];
+          }
+        })());
+      }
+      const settled = await Promise.allSettled(tasks);
+      if (cancelled) return;
+      const map: Record<string, string> = {};
+      for (const r of settled) if (r.status === 'fulfilled') { const [k, u] = r.value; if (u) map[k] = u; }
+      setBgUrls(map);
+    })();
+    return () => { cancelled = true; };
+  }, [notes, ymKey, supabase]);
 
   async function prefetchMonth(y: number, m: number) {
     const k = `${y}-${m}`;
@@ -358,6 +397,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
           const isToday =
             !!c.d && c.y === today.getFullYear() && c.m === today.getMonth() && c.d === today.getDate();
+          const bg = c.d ? bgUrls[k] : undefined; // 배경 URL
 
           const flagClass = note?.color ? `flag-${note.color}` : '';
           const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
@@ -372,6 +412,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             <div
               key={idx}
               className={cn}
+              style={ bg ? {
+                backgroundImage: `url(${bg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat'
+              } : undefined }
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
               onDragOver={(e) => {
                 if (canEdit && c.d) e.preventDefault();
@@ -383,7 +429,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 }
               }}
             >
-              <div className="cell-inner" role="group" aria-label="calendar cell">
+              <div className="cell-inner" role="group" aria-label="calendar cell" style={{ backdropFilter: bg ? 'brightness(0.9)' : undefined }}>
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
