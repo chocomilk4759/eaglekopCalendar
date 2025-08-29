@@ -58,8 +58,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   
   // ----- 롱프레스 드래그 상태 -----
   const [dragEnableKey, setDragEnableKey] = useState<string|null>(null);
+  const [dragHintKey, setDragHintKey] = useState<string|null>(null);
   const pressTimerRef = useRef<number|undefined>(undefined);
   const pressKeyRef = useRef<string|null>(null);
+  const dragHintTimerRef = useRef<number|undefined>(undefined);
+  const [srMsg, setSrMsg] = useState<string>('');
 
   function clearPressTimer() {
     if (pressTimerRef.current) {
@@ -69,6 +72,15 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     pressKeyRef.current = null;
   }
 
+  function showDragHint(k: string) {
+    setDragHintKey(k);
+    setSrMsg('드래그 가능'); // 접근성 알림
+    if (dragHintTimerRef.current) window.clearTimeout(dragHintTimerRef.current);
+    dragHintTimerRef.current = window.setTimeout(() => {
+      setDragHintKey(null);
+    }, 1200);
+  }
+
   function onPressStartCell(k: string) {
     clearPressTimer();
     pressKeyRef.current = k;
@@ -76,6 +88,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const LONGPRESS_MS = isCoarse ? 550 : 350;
     pressTimerRef.current = window.setTimeout(() => {
       setDragEnableKey(k);
+      showDragHint(k);
     }, LONGPRESS_MS);
   }
   function onPressEndCell() {
@@ -107,6 +120,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onCellDragEnd() {
     setDragEnableKey(null);
     clearPressTimer();
+    if (dragHintTimerRef.current) {
+      window.clearTimeout(dragHintTimerRef.current);
+      dragHintTimerRef.current = undefined;
+    }
+    setDragHintKey(null);
   }
 
   // 내용 존재 여부 판단
@@ -418,6 +436,9 @@ useEffect(() => {
 
   return (
     <>
+      <div aria-live="polite" role="status" style={{ position:'absolute', left:-9999, top:'auto', width:1, height:1, overflow:'hidden' }}>
+        {srMsg}
+      </div>
       {/* ==================== 상단 컨테이너 (horizontal) ==================== */}
       <div
         className="calendar-top"
@@ -545,18 +566,27 @@ useEffect(() => {
           const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
 
+          // ★ 셀 스타일(배경 + 드래그 준비 피드백)
+          const cellStyle: React.CSSProperties = bg ? {
+            backgroundImage: `url(${bg})`,
+            backgroundSize: '80% 80%',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundColor: 'transparent'
+          } : {};
+          cellStyle.position = 'relative';
+          if (canEdit && !!c.d && dragEnableKey === k) {
+            cellStyle.cursor = 'grab';
+            cellStyle.outline = '2px dashed var(--accent)';
+            cellStyle.outlineOffset = '-4px';
+          }
+
           return (
             <div
               key={idx}
               className={cn}
               draggable={canEdit && !!c.d && dragEnableKey === k}
-              style={ bg ? {
-                backgroundImage: `url(${bg})`,
-                backgroundSize: '80% 80%',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: 'transparent'
-              } : undefined }
+              style={cellStyle}
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
               onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
               onMouseUp={onPressEndCell}
@@ -587,6 +617,25 @@ useEffect(() => {
               }}
             >
               <div className="cell-inner" role="group" aria-label="calendar cell" /*style={{ backdropFilter: bg ? 'brightness(0.9)' : undefined }} */>
+                {/* ★ 롱프레스 피드백 배지 */}
+                {dragHintKey === k && (
+                  <div
+                    style={{
+                      position:'absolute', inset: 6, pointerEvents:'none',
+                      display:'flex', alignItems:'center', justifyContent:'center'
+                    }}
+                  >
+                    <div
+                      style={{
+                        padding:'6px 8px', fontSize:12, color:'#fff',
+                        background:'rgba(0,0,0,0.65)', borderRadius:8,
+                        boxShadow:'0 2px 6px rgba(0,0,0,0.25)', userSelect:'none'
+                      }}
+                    >
+                      드래그 시작!
+                    </div>
+                  </div>
+                )}
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
