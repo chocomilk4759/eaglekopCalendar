@@ -72,9 +72,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onPressStartCell(k: string) {
     clearPressTimer();
     pressKeyRef.current = k;
+    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+    const LONGPRESS_MS = isCoarse ? 550 : 350;
     pressTimerRef.current = window.setTimeout(() => {
-      setDragEnableKey(k); // 2초 후 드래그 가능
-    }, 2000);
+      setDragEnableKey(k);
+    }, LONGPRESS_MS);
   }
   function onPressEndCell() {
     clearPressTimer();
