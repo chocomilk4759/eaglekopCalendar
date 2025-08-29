@@ -60,6 +60,7 @@ export default function DateInfoModal({
   const [size, setSize] = useState<{w:number;h:number}>({ w: 720, h: 480 });
   const sheetRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{dx:number;dy:number;active:boolean}>({ dx:0, dy:0, active:false });
+  const [limits, setLimits] = useState<{minW:number; minH:number; maxW:number; maxH:number; margin:number}>({ minW:420, minH:320, maxW:1100, maxH:900, margin:12 });
   const IMG_BASE_H = 175;
   const MODAL_BASE_H = 330;
   const imgBoxHeight = useMemo(() => Math.round(size.h * IMG_BASE_H / MODAL_BASE_H), [size.h]);
@@ -98,19 +99,58 @@ export default function DateInfoModal({
     setLinkPanelOpen(false);
     setComboOpen(false);
 
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
     const hasImg = !!base.image_url;
+    // 뷰포트에 따라 min/max 한계 재계산
+    const L = computeLimits(hasImg);
+    setLimits(L);
+    // 원하는 기본 크기를 한계 내에서 보정
     const wantW = hasImg ? 880 : 550;
     const wantH = hasImg ? 330 : 315;
-    const w = Math.min(wantW, Math.floor(vw * 0.98));
-    const h = Math.min(wantH, Math.floor(vh * 0.90));
-    const x = Math.max(12, Math.floor((vw - w)/2));
-    const y = Math.max(12, Math.floor((vh - h)/2));
-    setSize({ w, h });
-    setPos({ x, y });
+    const w = clamp(wantW, L.minW, L.maxW);
+    const h = clamp(wantH, L.minH, L.maxH);
+    const vw = window.innerWidth, vh = window.innerHeight;
+    const x = Math.max(L.margin, Math.floor((vw - w)/2));
+    const y = Math.max(L.margin, Math.floor((vh - h)/2));
+    setSize({ w, h }); setPos({ x, y });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onResize() {
+      const hasImg = !!(imageUrl || note.image_url);
+      const L = computeLimits(hasImg);
+      setLimits(L);
+      setSize(prev => ({ w: clamp(prev.w, L.minW, L.maxW), h: clamp(prev.h, L.minH, L.maxH) }));
+      setPos(prev => {
+        const w = clamp(size.w, L.minW, L.maxW);
+        const h = clamp(size.h, L.minH, L.maxH);
+        const vw = window.innerWidth, vh = window.innerHeight;
+        return {
+          x: clamp(prev.x, L.margin, Math.max(L.margin, vw - w - L.margin)),
+          y: clamp(prev.y, L.margin, Math.max(L.margin, vh - h - L.margin)),
+        };
+      });
+    }
+    window.addEventListener('resize', onResize);
+    onResize();
+    return () => window.removeEventListener('resize', onResize);
+  }, [open, imageUrl, note.image_url]);
+
+  function computeLimits(hasImg:boolean){
+    const margin = 12;
+    const vw = Math.max(320, window.innerWidth);
+    const vh = Math.max(320, window.innerHeight);
+    const baseMinW = hasImg ? 540 : 420;
+    const baseMinH = 320;
+    const minW = Math.max(320, Math.min(baseMinW, vw - margin*2));
+    const minH = Math.max(260, Math.min(baseMinH, vh - margin*2));
+    const maxW = Math.max(minW, Math.min(1100, vw - margin*2));
+    const maxH = Math.max(minH, Math.min(900, vh - margin*2));
+    return { minW, minH, maxW, maxH, margin };
+  }
+
+  function clamp(n:number, lo:number, hi:number){ return Math.min(hi, Math.max(lo, n)); }
 
   function extractPathFromPublicUrl(url: string): string | null {
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
@@ -446,9 +486,8 @@ export default function DateInfoModal({
           position:'absolute',
           left: pos.x, top: pos.y,
           width: size.w, height: size.h,
-          minWidth: 420, minHeight: 320,
-          maxWidth: Math.min(1100, window.innerWidth - 24),
-          maxHeight: Math.min(900, window.innerHeight - 24),
+          minWidth: limits.minW, minHeight: limits.minH,
+          maxWidth: limits.maxW, maxHeight: limits.maxH,
           resize:'both',
           overflow:'auto'
         }}
