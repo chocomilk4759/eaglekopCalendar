@@ -57,7 +57,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   
   // ----- 롱프레스 드래그 상태 -----
-  const [dragEnableKey, setDragEnableKey] = useState<string|null>(null);
+  const [longReadyKey, setLongReadyKey] = useState<string|null>(null);
   const [dragPulseKey, setDragPulseKey] = useState<string|null>(null); // ★ 펄스(반짝) 표시 대상 셀
   const pressTimerRef = useRef<number|undefined>(undefined);
   const pressKeyRef = useRef<string|null>(null);
@@ -89,17 +89,18 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
     const LONGPRESS_MS = isCoarse ? 550 : 350;
     pressTimerRef.current = window.setTimeout(() => {
-      setDragEnableKey(k);
+      setLongReadyKey(k);
       triggerPulse(k);
     }, LONGPRESS_MS);
   }
   function onPressEndCell() {
     clearPressTimer();
-    setDragPulseKey(null);
+    setLongReadyKey(null);
   }
 
   // 드래그 시작 시 데이터 적재
   function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
+    if (longReadyKey !== k) { e.preventDefault(); return; }
     if (!note) { e.preventDefault(); return; }
     // 복제 페이로드(필요 필드만)
     const payload = {
@@ -121,7 +122,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     } catch {}
   }
   function onCellDragEnd() {
-    setDragEnableKey(null);
+    setLongReadyKey(null);
     clearPressTimer();
   }
 
@@ -565,7 +566,7 @@ useEffect(() => {
             <div
               key={idx}
               className={cn}
-              draggable={canEdit && !!c.d && dragEnableKey === k}
+              draggable={canEdit && !!c.d }
               style={ bg ? {
                 backgroundImage: `url(${bg})`,
                 backgroundSize: '80% 80%',
@@ -579,7 +580,7 @@ useEffect(() => {
               onMouseLeave={onPressEndCell}
               onTouchStart={() => { if (canEdit && c.d) onPressStartCell(k); }}
               onTouchEnd={onPressEndCell}
-              onDragStart={(e) => { if (canEdit && c.d && dragEnableKey === k) onCellDragStart(e, k, note || null); }}
+              onDragStart={(e) => { if (canEdit && c.d) onCellDragStart(e, k, note || null); }}
               onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
                 if (canEdit && c.d) e.preventDefault();
