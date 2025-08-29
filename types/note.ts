@@ -18,6 +18,7 @@ export type Note = {
   link: string | null;          // 통일: 필수 + string|null
   image_url: string | null;     // 통일: 필수 + string|null
   title?: string | null;  
+  use_image_as_bg?: boolean;
 };
 
 /**
@@ -38,5 +39,6 @@ export function normalizeNote(row: Partial<Note> & Record<string, any>): Note {
     link: row.link ?? null,
     image_url: row.image_url ?? null,
     title: row.title ?? null,
+    use_image_as_bg: row.use_image_as_bg ?? false,
   };
 }
