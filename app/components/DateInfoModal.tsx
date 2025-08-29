@@ -95,7 +95,19 @@ export default function DateInfoModal({
   }, [open, initial?.id]);
 
   // 이미지 URL 표시 최적화
-  useEffect(() => { setDisplayImageUrl(imageUrl ?? null); }, [imageUrl]);
+  // 이미지가 있으면 즉시 표시(절대 URL은 그대로, 스토리지 경로면 서명 URL 생성)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (!imageUrl) { setDisplayImageUrl(null); return; }
+      if (/^https?:\/\//i.test(imageUrl)) { setDisplayImageUrl(imageUrl); return; }
+      const { data, error } = await supabase
+        .storage.from(BUCKET)
+        .createSignedUrl(imageUrl, 60 * 60);
+      if (!cancelled) setDisplayImageUrl(error ? null : (data?.signedUrl ?? null));
+    })();
+    return () => { cancelled = true; };
+  }, [imageUrl, supabase]);
 
   // 외부에서 (+) 프리셋 전달되면 모달 열기
   useEffect(() => {
