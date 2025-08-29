@@ -97,8 +97,8 @@ export default function DateInfoModal({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const hasImg = !!base.image_url;
-    const wantW = hasImg ? 765 : 550;   // ★ 요구사항
-    const wantH = hasImg ? 315 : 315;   // ★ 요구사항
+    const wantW = hasImg ? 765 : 550;
+    const wantH = hasImg ? 315 : 315;
     const w = Math.min(wantW, Math.floor(vw * 0.98));
     const h = Math.min(wantH, Math.floor(vh * 0.90));
     const x = Math.max(12, Math.floor((vw - w)/2));
