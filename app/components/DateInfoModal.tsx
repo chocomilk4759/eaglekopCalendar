@@ -607,6 +607,13 @@ export default function DateInfoModal({
               </div>
             </div>
           </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            onChange={pickImage}
+            hidden
+          />
 
           {/* 이미지 프리뷰: 모달 크기에 반응. 기본 210x210 (CSS에서 설정) */}
           {displayImageUrl && (
