@@ -67,21 +67,19 @@ export default function DateInfoModal({
 
   const disabled = !canEdit;
 
-  // 이미지 URL → 즉시 표시(서명URL 생성 포함)
+  // ── 이미지 URL 표시 (스토리지 경로면 서명URL) ───────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!imageUrl) { setDisplayImageUrl(null); return; }
       if (/^https?:\/\//i.test(imageUrl)) { setDisplayImageUrl(imageUrl); return; }
-      const { data, error } = await supabase
-        .storage.from(BUCKET)
-        .createSignedUrl(imageUrl, 60 * 60);
+      const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(imageUrl, 60 * 60);
       if (!cancelled) setDisplayImageUrl(error ? null : (data?.signedUrl ?? null));
     })();
     return () => { cancelled = true; };
   }, [imageUrl, supabase]);
 
-  // 모달 열릴 때 상태 초기화 + 중앙 배치 + ★초기 크기 규칙 반영(이미지 유무)
+  // ── 모달 열릴 때 초기화 + 중앙 배치 + 초기 크기 규칙(요구사항) ────────────
   useEffect(()=>{
     if (!open) return;
     const base = initial || emptyNote;
@@ -99,8 +97,8 @@ export default function DateInfoModal({
     const vw = window.innerWidth;
     const vh = window.innerHeight;
     const hasImg = !!base.image_url;
-    const wantW = hasImg ? 850 : 710;
-    const wantH = hasImg ? 400 : 320;
+    const wantW = hasImg ? 765 : 550;   // ★ 요구사항
+    const wantH = hasImg ? 315 : 315;   // ★ 요구사항
     const w = Math.min(wantW, Math.floor(vw * 0.98));
     const h = Math.min(wantH, Math.floor(vh * 0.90));
     const x = Math.max(12, Math.floor((vw - w)/2));
@@ -118,7 +116,6 @@ export default function DateInfoModal({
     if (bucket !== BUCKET) return null;
     return path;
   }
-
   async function fallbackToSignedUrlIfNeeded() {
     if (!imageUrl) return;
     if (!/^https?:\/\//i.test(imageUrl)) {
@@ -167,7 +164,7 @@ export default function DateInfoModal({
     }
   }
 
-  // 메모 저장: content + title (+ 현재 image_url도 함께 보존)
+  // 저장(메모+타이틀+이미지URL 유지)
   async function saveMemo(){
     if (!canEdit) return;
     try{
@@ -297,7 +294,7 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
   }
 
-  // WebP 압축 (GIF는 그대로 업로드)
+  // ── 업로드(비GIF는 WebP 압축) ────────────────────────────────────────────
   async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
       const el = new Image(); el.onload = () => res(el); el.onerror = rej;
@@ -405,7 +402,7 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '아이템 추가 중 오류'); }
   }
 
-  // ── 모달 드래그 핸들러 ──────────────────────────────────────────────────
+  // ── 드래그 이동 핸들러 ───────────────────────────────────────────────────
   function onDragDown(e: React.MouseEvent) {
     const target = sheetRef.current;
     if (!target) return;
@@ -431,7 +428,6 @@ export default function DateInfoModal({
 
   return (
     <div className="modal" onClick={onClose}>
-      {/* position:absolute로 이동/리사이즈 가능 */}
       <div
         ref={sheetRef}
         className="sheet modal-draggable"
@@ -447,7 +443,7 @@ export default function DateInfoModal({
         }}
         onClick={(e)=>e.stopPropagation()}
       >
-        {/* 드래그 핸들(상단 바 전체) */}
+        {/* 상단(드래그 핸들) */}
         <div className="date-head drag-handle" onMouseDown={onDragDown} style={{cursor:'move', userSelect:'none'}}>
           <h3 style={{margin:'8px 0'}}>{title}</h3>
           <input
@@ -483,7 +479,7 @@ export default function DateInfoModal({
           </div>
         </div>
 
-        {/* 아이템 목록 + (+) 버튼 */}
+        {/* 칩 영역 */}
         {!isRest && ((note.items?.length || 0) === 0 ? (
           <div style={{opacity:.6,fontSize:13, marginBottom:6}}>
             아이템 없음
@@ -558,11 +554,15 @@ export default function DateInfoModal({
         <div style={{ display:'flex', alignItems:'flex-start', gap:10 }}>
           <div style={{ flex:'1 1 0', minWidth:0 }}>
             {!isRest && (
-            <textarea value={memo} onChange={(e)=>setMemo(e.target.value)}
-                      placeholder="메모를 입력하세요"
-                      style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}}
-                      disabled={disabled} />
+              <textarea
+                value={memo}
+                onChange={(e)=>setMemo(e.target.value)}
+                placeholder="메모를 입력하세요"
+                style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}}
+                disabled={disabled}
+              />
             )}
+
             {linkPanelOpen && (
               <div style={{ display:'flex', gap:8, alignItems:'center',
                             border:'1px solid var(--border)', borderRadius:10,
@@ -577,7 +577,7 @@ export default function DateInfoModal({
               </div>
             )}
 
-            {/* ===== 하단 버튼: [초기화] | [저장 | 이미지삽입, 이미지제거, 링크 | 닫기] ===== */}
+            {/* 하단 버튼: [초기화] | [저장 | 이미지삽입, 이미지제거, 링크 | 닫기] */}
             <div className="actions" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:8 }}>
               <div className="actions-left" style={{ marginRight:'auto' }}>
                 <button onClick={clearAll} disabled={disabled} className="btn-plain-danger">초기화</button>
@@ -608,16 +608,13 @@ export default function DateInfoModal({
             </div>
           </div>
 
+          {/* 이미지 프리뷰: 모달 크기에 반응. 기본 210x210 (CSS에서 설정) */}
           {displayImageUrl && (
-            <div style={{ flex:'0 0 280px' }}>
-              <div style={{
-                width:'100%', border:'1px solid var(--border)', borderRadius:8, overflow:'hidden',
-                background:'#fff'
-              }}>
+            <div className="note-image-wrap">
+              <div className="note-image-box">
                 <img
                   src={displayImageUrl}
                   alt="미리보기"
-                  style={{ width:'100%', height:'auto', maxHeight:360, objectFit:'contain', display:'block' }}
                   onError={()=> { fallbackToSignedUrlIfNeeded(); }}
                 />
               </div>

@@ -435,4 +435,55 @@ button:active{ transform: translateY(.5px); }
 }
 
 /* ‘|’ 대신 여백 스페이서 */
-.actions-sep{ opacity: 0; width: 12px; display: inline-block; }
+.actions-sep{ opacity: 0; width: 10px; display: inline-block; }
+
+/* ============================================================================
+   DateInfoModal — 컨테이너 쿼리 기반 반응형(모달 크기에 따라)
+   - 버튼: 모달(.sheet) 너비에 따라 padding / font-size 반응
+   - 이미지: 초기 210x210, 모달에 비례하여 확대 (cqi 사용)
+   ============================================================================ */
+
+.modal .sheet{
+  /* 컨테이너 쿼리 활성화 (inline-size 기준) */
+  container-type: inline-size;
+}
+
+/* 버튼 기본값 */
+.modal .actions button{
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+/* 모달이 좁을 때 */
+@container (max-width: 560px){
+  .modal .actions button{ padding: 6px 8px; font-size: 12px; }
+}
+
+/* 중간 너비 */
+@container (min-width: 561px) and (max-width: 740px){
+  .modal .actions button{ padding: 7px 10px; font-size: 13px; }
+}
+
+/* 넓을 때 */
+@container (min-width: 741px){
+  .modal .actions button{ padding: 8px 12px; font-size: 14px; }
+}
+
+/* 이미지 박스: 기본 210x210, 모달 너비에 비례해 커짐
+   - 32cqi: 컨테이너(모달) inline-size의 32%
+   - 210px ≤ size ≤ 360px 범위로 제한(원하면 상한 조절 가능) */
+.note-image-wrap{ flex: 0 0 auto; }
+.note-image-box{
+  width: clamp(210px, 32cqi, 360px);
+  aspect-ratio: 1 / 1;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.note-image-box > img{
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
