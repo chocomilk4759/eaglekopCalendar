@@ -298,16 +298,41 @@ export default function DateInfoModal({
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
 
-      const blob = await compressToWebp(f);
-      const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.webp`;
+      // ✅ GIF 여부 판별
+      const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
+
+      // (선택) GIF 용량 제한 – 너무 큰 GIF는 그대로 올리면 무겁습니다.
+      if (isGif && f.size > 8 * 1024 * 1024) {
+        alert('GIF 용량이 큽니다(>8MB). 크기를 줄여 다시 시도하세요.');
+        setUploading(false);
+        e.currentTarget.value = '';
+        return;
+      }
+
+      // ✅ GIF는 원본 그대로, 그 외는 WebP로 압축
+      let blob: Blob, ext: 'gif' | 'webp', contentType: string;
+      if (isGif) {
+        blob = f;
+        ext = 'gif';
+        contentType = 'image/gif';
+      } else {
+        blob = await compressToWebp(f);      // 기존 함수 그대로 사용
+        ext = 'webp';
+        contentType = 'image/webp';
+      }
+
+      const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.${ext}`;
+
       const { error } = await supabase.storage.from(BUCKET)
-        .upload(path, blob, { upsert: true, contentType: 'image/webp' });
+        .upload(path, blob, { upsert: true, contentType });
       if (error) throw error;
 
       await persist({ image_url: path });
       setImageUrl(path);
+
       const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
       setDisplayImageUrl(signed?.signedUrl ?? null);
+
     } catch (err:any) {
       alert(err?.message ?? '이미지 업로드 실패');
     } finally {
