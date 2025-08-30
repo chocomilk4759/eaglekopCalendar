@@ -134,11 +134,11 @@ export default function ModifyChipInfoModal({
             onChange={(e) => setText(e.target.value)}
             placeholder="내용 입력"
             aria-label="칩 내용"
-            style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, font-size:12 }}
+            style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
           />
 
           {/* 액션 */}
-          <div style={{ display: 'flex', gap: 8, font-size:12 }}>
+          <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
             <button onClick={() => onSave(text.trim(), localPreset)} aria-label="저장">저장</button>
             {mode === 'add' ? (
               <button onClick={onClose} aria-label="취소">취소</button>
@@ -147,11 +147,11 @@ export default function ModifyChipInfoModal({
                 <button
                   onClick={onDelete}
                   aria-label="삭제"
-                  style={{ borderColor: '#b12a2a', color: '#b12a2a', font-size:12 }}
+                  style={{ borderColor: '#b12a2a', color: '#b12a2a', fontSize: 12 }}
                 >
                   삭제
                 </button>
-                <button onClick={onClose} aria-label="닫기" style={{font-size:12}}>닫기</button>
+                <button onClick={onClose} aria-label="닫기" style={{ fontSize: 12 }}>닫기</button>
               </>
             )}
           </div>
