@@ -552,7 +552,9 @@ useEffect(() => {
           const isToday =
             !!c.d && c.y === today.getFullYear() && c.m === today.getMonth() && c.d === today.getDate();
           const bg = c.d ? bgUrls[k] : undefined; // 배경 URL
-
+          const baseBgColor =
+            note?.color === 'red' ? 'var(--flagRed)' :
+            note?.color === 'blue' ? 'var(--flagBlue)' : 'var(--card)';
           const flagClass = note?.color ? `flag-${note.color}` : '';
           const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
 
@@ -572,7 +574,7 @@ useEffect(() => {
                 backgroundSize: '80% 80%',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                backgroundColor: 'transparent'
+                backgroundColor: baseBgColor
               } : undefined }
               onClick={() => c.d && openInfo(c.y, c.m, c.d)}
               onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
