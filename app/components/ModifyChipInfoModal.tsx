@@ -15,6 +15,7 @@ export default function ModifyChipInfoModal({
   onDelete,
   onClose,
   canEdit = false,
+  title,
 }:{
   open: boolean;
   mode: ModifyChipMode;          // 'add' | 'edit'
@@ -24,6 +25,7 @@ export default function ModifyChipInfoModal({
   onDelete?: () => void;
   onClose: () => void;
   canEdit?: boolean;
+  title?: React.ReactNode;
 }) {
   const [text, setText] = useState(initialText);
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
@@ -82,6 +84,11 @@ export default function ModifyChipInfoModal({
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        {title && (
+          <div style={{marginBottom:8, fontSize:12, fontWeight:700, opacity:.85}}>
+            {title}
+          </div>
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
           <div className="icon-chooser">

@@ -6,6 +6,7 @@ import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
+import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -55,6 +56,88 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pendingRef = useRef<'seven'|'compact'|null>(null);
   const tRef = useRef<number|undefined>(undefined);
 
+  // ---------- Ctrl 다중 선택 ----------
+  const [ctrlSelecting, setCtrlSelecting] = useState(false);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const selectedKeysRef = useRef<Set<string>>(new Set());
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkTargets, setBulkTargets] = useState<Array<{y:number;m:number;d:number}>>([]);
+
+  // 선택 날짜 타이틀(최대 5개 표시)
+  function fmtBulkTitle(ts: Array<{y:number;m:number;d:number}>){
+    if (!ts.length) return null;
+    const parts = ts.slice().sort((a,b)=>a.y-b.y||a.m-b.m||a.d-b.d).map(t=>`${t.m+1}/${t.d}`);
+    const head = parts.slice(0,5).join(', ');
+    const more = parts.length>5 ? ` 외 ${parts.length-5}일` : '';
+    return <>선택한 날짜: {head}{more}</>;
+  }
+
+  // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent){
+      if (e.key === 'Control' && !ctrlSelecting){
+        setCtrlSelecting(true);
+        selectedKeysRef.current = new Set();
+        setSelectedKeys(new Set());
+      }
+    }
+    function onKeyUp(e: KeyboardEvent){
+      if (e.key === 'Control' && ctrlSelecting){
+        const picked = Array.from(selectedKeysRef.current);
+        if (picked.length){
+          const targets = picked.map(k => { const [y,m,d]=k.split('-').map(Number); return {y,m,d}; });
+          setBulkTargets(targets);
+          setBulkOpen(true);
+        }
+        setCtrlSelecting(false);
+        selectedKeysRef.current = new Set();
+        setSelectedKeys(new Set());
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
+  }, [ctrlSelecting]);
+
+  // 월 전환 시 선택 상태 초기화
+  useEffect(() => {
+    setCtrlSelecting(false);
+    selectedKeysRef.current = new Set();
+    setSelectedKeys(new Set());
+  }, [ymKey]);
+
+  // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
+  function onCellClick(e: React.MouseEvent, y:number, m:number, d:number, key:string){
+    if (ctrlSelecting){
+      e.preventDefault(); e.stopPropagation();
+      const next = new Set(selectedKeysRef.current);
+      next.has(key) ? next.delete(key) : next.add(key);
+      selectedKeysRef.current = next;
+      setSelectedKeys(new Set(next));
+    } else {
+      openInfo(y,m,d);
+    }
+  }
+
+  // 일괄 칩 추가
+  function applyBulkAddChip(text: string, preset?: ChipPreset){
+    const targets = bulkTargets.slice();
+    if (!targets.length){ setBulkOpen(false); return; }
+    setNotes(prev => {
+      const next = { ...prev };
+      for (const t of targets){
+        const k = `${t.y}-${t.m}-${t.d}`;
+        const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
+        const items = Array.isArray((n as any).items) ? [ ...(n as any).items ] : [];
+        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '' });
+        (n as any).items = items;
+        next[k] = n as any;
+      }
+      return next;
+    });
+    setBulkOpen(false);
+    setBulkTargets([]);
+  }
   
   // ----- 롱프레스 드래그 상태 -----
   const [longReadyKey, setLongReadyKey] = useState<string|null>(null);
@@ -557,7 +640,7 @@ useEffect(() => {
             note?.color === 'blue' ? 'var(--flagBlue)' : 'var(--card)';
           const flagClass = note?.color ? `flag-${note.color}` : '';
           const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass} ${bg ? 'has-bgimg' : ''}`.trim();
-          
+
           // 휴: color=red 이고 content가 '휴방'이면 휴 모드
           const isRest = !!note && note.color === 'red' && (note.content?.trim() === '휴방');
           // 메모(내용)는 배경색(color) 지정 + 휴가 아닐 때만 노출
@@ -567,7 +650,7 @@ useEffect(() => {
           return (
             <div
               key={idx}
-              className={cn}
+              className={`${cn} ${isPicked ? 'sel' : ''}`}
               draggable={canEdit && !!c.d }
               style={ bg ? {
                 backgroundImage: `url(${bg})`,
@@ -576,7 +659,7 @@ useEffect(() => {
                 backgroundRepeat: 'no-repeat',
                 backgroundColor: baseBgColor
               } : undefined }
-              onClick={() => c.d && openInfo(c.y, c.m, c.d)}
+              onClick={(e) => c.d && onCellClick(e, c.y, c.m, c.d, k)}
               onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
               onMouseUp={onPressEndCell}
               onMouseLeave={onPressEndCell}
@@ -680,6 +763,18 @@ useEffect(() => {
           onConsumedAddPreset={() => setPresetToAdd(null)}
         />
       )}
+
+      {/* ── Ctrl 선택 → 일괄 칩 추가 모달 ── */}
+      <ModifyChipInfoModal
+        open={bulkOpen}
+        mode="add"
+        preset={{ emoji: null, label: '' }}
+        initialText=""
+        onSave={(t,p)=> applyBulkAddChip(t,p)}
+        onClose={()=> setBulkOpen(false)}
+        canEdit={canEdit}
+        title={fmtBulkTitle(bulkTargets)}
+      />
     </>
   );
 }
