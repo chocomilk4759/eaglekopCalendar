@@ -556,8 +556,8 @@ useEffect(() => {
             note?.color === 'red' ? 'var(--flagRed)' :
             note?.color === 'blue' ? 'var(--flagBlue)' : 'var(--card)';
           const flagClass = note?.color ? `flag-${note.color}` : '';
-          const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass}`.trim();
-
+          const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass} ${bg ? 'has-bgimg' : ''}`.trim();
+          
           // 휴: color=red 이고 content가 '휴방'이면 휴 모드
           const isRest = !!note && note.color === 'red' && (note.content?.trim() === '휴방');
           // 메모(내용)는 배경색(color) 지정 + 휴가 아닐 때만 노출
