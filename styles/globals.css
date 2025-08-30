@@ -296,7 +296,7 @@ button:active{ transform: translateY(.5px); }
 .pop{
   position:absolute; top:44px; right:0; width:260px; max-width:calc(100vw - 24px);
   background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.1);
-  padding:12px; opacity:0; transform:scale(.96); transform-origin: top right;
+  padding:12px; opacity:0; transform:scale(.96); transform-origin: top right; font-size: 12px;
   pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
 }
 .pop.open{ opacity:1; transform:scale(1); pointer-events:auto; }

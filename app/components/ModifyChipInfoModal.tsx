@@ -82,7 +82,7 @@ export default function ModifyChipInfoModal({
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, font-size:12 }}>
           {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
           <div className="icon-chooser">
             <button
@@ -95,7 +95,7 @@ export default function ModifyChipInfoModal({
               style={{
                 width: 36, height: 36, borderRadius: 18,
                 display: 'grid', placeItems: 'center', lineHeight: 1,
-                border: '1px solid var(--border)', background: '#fff', fontSize: 18,
+                border: '1px solid var(--border)', background: '#fff', fontSize: 12,
                 flex: '0 0 36px', cursor: canEdit ? 'pointer':'not-allowed'
               }}
             >
@@ -134,11 +134,11 @@ export default function ModifyChipInfoModal({
             onChange={(e) => setText(e.target.value)}
             placeholder="내용 입력"
             aria-label="칩 내용"
-            style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8 }}
+            style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, font-size:12 }}
           />
 
           {/* 액션 */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, font-size:12 }}>
             <button onClick={() => onSave(text.trim(), localPreset)} aria-label="저장">저장</button>
             {mode === 'add' ? (
               <button onClick={onClose} aria-label="취소">취소</button>
@@ -147,11 +147,11 @@ export default function ModifyChipInfoModal({
                 <button
                   onClick={onDelete}
                   aria-label="삭제"
-                  style={{ borderColor: '#b12a2a', color: '#b12a2a' }}
+                  style={{ borderColor: '#b12a2a', color: '#b12a2a', font-size:12 }}
                 >
                   삭제
                 </button>
-                <button onClick={onClose} aria-label="닫기">닫기</button>
+                <button onClick={onClose} aria-label="닫기" style={{font-size:12}}>닫기</button>
               </>
             )}
           </div>
