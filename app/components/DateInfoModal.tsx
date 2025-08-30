@@ -71,6 +71,19 @@ export default function DateInfoModal({
 
   const disabled = !canEdit;
 
+  // DateInfoModal.tsx 내 state 선언부 아래에 추가
+  useEffect(() => {
+    if (!open) return;
+    if (!canEdit) return;
+    if (!addChipPreset) return;
+    setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
+    setChipModalMode('add');
+    setChipEditIndex(null);
+    setChipModalOpen(true);
+    onConsumedAddPreset?.();
+  }, [open, addChipPreset, canEdit]);
+
+
   // ── 이미지 URL 표시 (스토리지 경로면 서명URL) ───────────────────────────
   useEffect(() => {
     let cancelled = false;
