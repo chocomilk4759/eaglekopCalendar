@@ -259,16 +259,7 @@ button:active{ transform: translateY(.5px); }
   border:1px solid var(--border); border-radius:8px; background:var(--card); font-weight:700;
 }
 .dock-toggle:hover{ background:rgba(0,0,0,.03); }
-.preset-vertical-list{
-  overflow:auto;
-  padding-right:2px;
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:0;
-}
 .presets-dock.collapsed{ width:52px; }
-.presets-dock.collapsed .preset-vertical-list{ display:none; }
 .presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
 
 /* 칩 최소 크기 보장(아이콘+텍스트 전부 보이게) */
@@ -539,18 +530,20 @@ button:active{ transform: translateY(.5px); }
     -1px 0 0 rgba(0,0,0,0.9);
 }
 
-/* Presets Dock: vertical scroll for chips */
-.presets-dock{ display:flex; flex-direction:column; max-height:100vh; height:100%; }
-.presets-dock .dock-toggle-wrap{ position:sticky; top:0; z-index:1; background:var(--bg); }
-.presets-dock > .preset-vertical-list{ flex:1 1 auto; min-height:0; overflow:hidden; }
-.presets-dock > .preset-vertical-list > .preset-vertical-list{
-  display:flex; flex-direction:column; gap:8px;
-  padding-right:6px; max-height:100%;
-  overflow-y:auto; overflow-x:hidden;
+/* 📦 PresetsDock: 독립 스크롤 박스 */
+.dock-scrollbox{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
 }
-.presets-dock.collapsed > .preset-vertical-list > .preset-vertical-list{ padding-right:4px; }
-@media (pointer: coarse){
-  .presets-dock > .preset-vertical-list > .preset-vertical-list{
-    -webkit-overflow-scrolling:touch; scroll-behavior:smooth;
-  }
+/* 리스트는 스크롤 제거(박스가 담당) */
+.preset-vertical-list{
+  padding-right: 0;
+  display:flex; flex-direction:column; align-items:flex-end; gap:0;
+  overflow: visible;
 }
+/* 접힘 상태에선 스크롤 박스 숨김 */
+.presets-dock.collapsed .dock-scrollbox{ display:none; }

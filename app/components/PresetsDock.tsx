@@ -53,9 +53,11 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
       </div>
 
 
-      <div className="preset-vertical-list">
+      {/* ▼ 스크롤 박스: 칩은 이 안에서만 스크롤 */}
+      <div className="dock-scrollbox" role="region" aria-label="프리셋 스크롤 영역">
         <PresetsPanel canEdit={canEdit} mode="vertical" />
       </div>
+
     </aside>
   );
 }
