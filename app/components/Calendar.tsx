@@ -646,7 +646,7 @@ useEffect(() => {
           // 메모(내용)는 배경색(color) 지정 + 휴가 아닐 때만 노출
           const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
-
+          const isPicked = selectedKeys.has(k);
           return (
             <div
               key={idx}
