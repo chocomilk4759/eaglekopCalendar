@@ -248,9 +248,15 @@ button:active{ transform: translateY(.5px); }
 /* 6) PRESETS DOCK ------------------------------------------------------------- */
 .presets-dock{
   position:fixed; right:12px; top:var(--dock-top);
-  z-index:9990; width:var(--dock-width-expanded); max-height:calc(100vh - 72px);
+  z-index:9990; width:var(--dock-width-expanded);
+  /* 레이아웃 한계: 폭/높이 모두 화면을 넘지 않도록 클램프 */
+  --dock-padding: 8px;
+  --dock-toggle-h: 28px;
+  --dock-max-h: min(650px, calc(100vh - var(--dock-top) - 24px));
+  max-height: var(--dock-max-h);
+  max-width: calc(100vw - 24px);
   display:flex; flex-direction:column; gap:8px; overflow:hidden;
-  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:8px;
+  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:var(--dock-padding);
   box-shadow:0 6px 16px rgba(0,0,0,.06); transition:width .18s ease;
 }
 .dock-toggle-wrap{ display:flex; justify-content:flex-end; align-items:center; height:28px; }
@@ -534,10 +540,13 @@ button:active{ transform: translateY(.5px); }
 .dock-scrollbox{
   flex: 1 1 auto;
   min-height: 0;
+  /* 도크 최대 높이 안에서만 스크롤 발생(버튼/토글은 항상 노출) */
+  max-height: calc(var(--dock-max-h) - var(--dock-toggle-h) - (var(--dock-padding) * 2));
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 4px;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain; /* 페이지 스크롤과 충돌 방지 */
 }
 /* 리스트는 스크롤 제거(박스가 담당) */
 .preset-vertical-list{
@@ -546,4 +555,4 @@ button:active{ transform: translateY(.5px); }
   overflow: visible;
 }
 /* 접힘 상태에선 스크롤 박스 숨김 */
-.presets-dock.collapsed .dock-scrollbox{ display:none; }
+.presets-dock.collapsed .dock-scrollbox{ display:none; }  /* 접힘 때 칩 영역 숨김 */
