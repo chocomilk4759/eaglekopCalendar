@@ -293,6 +293,13 @@ button:active{ transform: translateY(.5px); }
 }
 
 /* 7) AUTH POPOVER -------------------------------------------------------------- */
+.pop{
+  position:absolute; top:44px; right:0; width:260px; max-width:calc(100vw - 24px);
+  background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.1);
+  padding:12px; opacity:0; transform:scale(.96); transform-origin: top right;
+  pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
+}
+.pop.open{ opacity:1; transform:scale(1); pointer-events:auto; }
 .overlay{ position:fixed; inset:0; background:transparent; z-index:9997; }
 
 /* 8) DATE INFO MODAL ----------------------------------------------------------- */
