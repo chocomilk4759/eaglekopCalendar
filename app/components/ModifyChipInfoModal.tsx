@@ -82,7 +82,7 @@ export default function ModifyChipInfoModal({
   return (
     <div className="modal" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, font-size:12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
           <div className="icon-chooser">
             <button
