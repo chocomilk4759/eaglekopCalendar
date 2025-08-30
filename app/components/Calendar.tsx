@@ -588,17 +588,20 @@ useEffect(() => {
               onDrop={(e) => {
                 if (canEdit && c.d) {
                   e.preventDefault();
-                  dropPreset(c.y, c.m, c.d, e.dataTransfer.getData('application/json'));
                   const raw = e.dataTransfer.getData('application/json');
                   try {
                     const json = JSON.parse(raw);
                     if (json?.type === 'note-copy') {
+                      // 노트 복제 드롭
                       dropNoteCopy(c.y, c.m, c.d, json);
                     } else if (json?.type === 'preset') {
+                      // ✅ 프리셋 드롭 → 단 한 번만 호출해서 모달 오픈
                       dropPreset(c.y, c.m, c.d, raw);
+                    } else {
+                      // 다른 타입은 무시
                     }
                   } catch {
-                    // 무시
+                    // 파싱 실패 시 무시
                   }
                 }
               }}
