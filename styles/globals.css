@@ -502,27 +502,3 @@ button:active{ transform: translateY(.5px); }
   animation: calendarPulse 220ms ease-out forwards;
   pointer-events: none;
 }
-
-/* AUTH 전용 팝오버(축소 + 모바일 최적화) */
-.pop.pop-auth{
-  width: 260px;
-  padding: 10px;
-  border-radius: 10px;
-}
-#auth-dock h4{ font-size: 14px; margin: 0 0 6px; }
-#auth-dock label span{ font-size: 12px; }
-#auth-dock input, #auth-dock button{ padding: 6px 8px; font-size: 13px; }
-
-@media (max-width: 640px){
-  .pop.pop-auth{
-    width: 88vw;
-    max-width: 88vw;
-    padding: 10px;
-    border-radius: 10px;
-  }
-  #auth-dock h4{ font-size: 13px; }
-  #auth-dock input, #auth-dock button{ padding: 6px 8px; font-size: 13px; }
-}
-@media (max-width: 380px){
-  .pop.pop-auth{ width: 92vw; max-width: 92vw; }
-}

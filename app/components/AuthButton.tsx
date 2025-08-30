@@ -152,7 +152,7 @@ export default function AuthButton() {
       {/* 좌측 도크(폭 320px) — CSS .pop 를 좌측 배치로 사용 */}
       <div
         id="auth-dock"
-        className={`pop pop-auth ${open ? 'open' : ''}`}
+        className={`pop ${open ? 'open' : ''}`}
         style={{ left: 'auto', right: 0 }}
         role="dialog"
         aria-modal="true"
