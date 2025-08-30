@@ -621,10 +621,10 @@ export default function DateInfoModal({
                 <input placeholder="https://example.com" value={linkInput}
                        onChange={(e)=> setLinkInput(e.target.value)}
                        onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
-                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8 }}
+                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8, font-size:12}}
                        disabled={disabled} />
-                <button type="button" onClick={saveLink} disabled={disabled}>링크 저장</button>
-                <button type="button" onClick={deleteLink} disabled={disabled}>링크 삭제</button>
+                <button type="button" onClick={saveLink} disabled={disabled} style={{font-size:12}}>링크 저장</button>
+                <button type="button" onClick={deleteLink} disabled={disabled} style={{font-size:12}}>링크 삭제</button>
               </div>
             )}
 
