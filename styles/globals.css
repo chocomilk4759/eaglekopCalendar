@@ -502,3 +502,26 @@ button:active{ transform: translateY(.5px); }
   animation: calendarPulse 220ms ease-out forwards;
   pointer-events: none;
 }
+
+/* DateInfoModal: Link panel (compact & mobile friendly) */
+.link-panel{
+  display:flex; align-items:center; gap:8px;
+  border:1px solid var(--border); border-radius:10px;
+  padding:6px 8px; background:#fff; margin-top:6px;
+}
+.link-panel__input{
+  flex:1; padding:6px 8px;
+  border:1px solid var(--border); border-radius:8px;
+  font-size:13px; min-width:0;
+}
+.link-panel__actions{ display:flex; gap:6px; }
+.btn-sm{ padding:6px 8px; font-size:13px; line-height:1.2; }
+
+@media (max-width: 640px){
+  .link-panel{ gap:6px; padding:6px 8px; }
+  .link-panel__input{ font-size:12px; padding:6px 8px; }
+  .btn-sm{ font-size:12px; padding:6px 8px; }
+}
+@media (pointer: coarse){
+  .link-panel__actions{ gap:8px; }
+}

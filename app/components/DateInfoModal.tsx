@@ -628,16 +628,19 @@ export default function DateInfoModal({
             )}
 
             {linkPanelOpen && (
-              <div style={{ display:'flex', gap:8, alignItems:'center',
-                            border:'1px solid var(--border)', borderRadius:10,
-                            padding:'8px 10px', background:'#fff', marginTop:8 }}>
-                <input placeholder="https://example.com" value={linkInput}
-                       onChange={(e)=> setLinkInput(e.target.value)}
-                       onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
-                       style={{ flex:1, padding:'8px 10px', border:'1px solid var(--border)', borderRadius:8}}
-                       disabled={disabled} />
-                <button type="button" onClick={saveLink} disabled={disabled}>링크 저장</button>
-                <button type="button" onClick={deleteLink} disabled={disabled}>링크 삭제</button>
+              <div className="link-panel">
+                <input
+                  className="link-panel__input"
+                  placeholder="https://example.com"
+                  value={linkInput}
+                  onChange={(e)=> setLinkInput(e.target.value)}
+                  onBlur={()=> setLinkInput(s => (s && !/^https?:\/\//i.test(s) ? `https://${s}` : s))}
+                  disabled={disabled}
+                />
+                <div className="link-panel__actions">
+                  <button type="button" className="btn-sm" onClick={saveLink} disabled={disabled}>링크 저장</button>
+                  <button type="button" className="btn-sm btn-plain-danger" onClick={deleteLink} disabled={disabled}>링크 삭제</button>
+                </div>
               </div>
             )}
 
