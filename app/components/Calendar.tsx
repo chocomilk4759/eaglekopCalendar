@@ -74,6 +74,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
   useEffect(() => {
+    if (!canEdit) return;  // 권한 없으면 비활성화
     function onKeyDown(e: KeyboardEvent){
       if (e.key === 'Control' && !ctrlSelecting){
         setCtrlSelecting(true);
@@ -97,18 +98,20 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
-  }, [ctrlSelecting]);
+  }, [ctrlSelecting, canEdit]);
 
   // 월 전환 시 선택 상태 초기화
   useEffect(() => {
+    if(!canEdit) {
     setCtrlSelecting(false);
     selectedKeysRef.current = new Set();
     setSelectedKeys(new Set());
-  }, [ymKey]);
+    }
+  }, [canEdit]);
 
   // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
   function onCellClick(e: React.MouseEvent, y:number, m:number, d:number, key:string){
-    if (ctrlSelecting){
+    if (ctrlSelecting && canEdit){
       e.preventDefault(); e.stopPropagation();
       const next = new Set(selectedKeysRef.current);
       next.has(key) ? next.delete(key) : next.add(key);

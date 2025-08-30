@@ -108,7 +108,7 @@ button:active{ transform: translateY(.5px); }
   display:flex; flex-direction:column; overflow:hidden;
 }
 .calendar-grid .cell.sel{
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--flagRed);
   outline-offset: -2px; /* today 등 기존 스타일과 겹치지 않게 */
 }
 
