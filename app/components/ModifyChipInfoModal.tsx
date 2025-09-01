@@ -94,10 +94,6 @@ export default function ModifyChipInfoModal({
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
-          {showRestButton && canEdit && (
-            <button type="button" onClick={onRest} aria-label="휴방 설정">휴방</button>
-          )}
           {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
           <div className="icon-chooser">
             <button
@@ -151,6 +147,11 @@ export default function ModifyChipInfoModal({
             aria-label="칩 내용"
             style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
           />
+
+          {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
+          {showRestButton && canEdit && (
+            <button type="button" onClick={onRest} aria-label="휴방 설정" style={{fontSize:12}}>휴방</button>
+          )}
 
           {/* 액션 */}
           <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
