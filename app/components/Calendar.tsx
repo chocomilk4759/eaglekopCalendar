@@ -142,6 +142,25 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setBulkTargets([]);
   }
   
+  // ★ Ctrl 일괄: '휴방' 적용(기존 휴방 로직과 동일하게 content='휴방', color='red')
+  function applyBulkRest(){
+    const targets = bulkTargets.slice();
+    if (!targets.length){ setBulkOpen(false); return; }
+    setNotes(prev => {
+      const next = { ...prev };
+      for (const t of targets){
+        const k = `${t.y}-${t.m}-${t.d}`;
+        const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
+        (n as any).content = '휴방';
+        (n as any).color = 'red';
+        next[k] = n as any;
+      }
+      return next;
+    });
+    setBulkOpen(false);
+    setBulkTargets([]);
+  }
+  
   // ----- 롱프레스 드래그 상태 -----
   const [longReadyKey, setLongReadyKey] = useState<string|null>(null);
   const [dragPulseKey, setDragPulseKey] = useState<string|null>(null); // ★ 펄스(반짝) 표시 대상 셀
@@ -777,6 +796,8 @@ useEffect(() => {
         onClose={()=> setBulkOpen(false)}
         canEdit={canEdit}
         title={fmtBulkTitle(bulkTargets)}
+        onRest={applyBulkRest}
+        showRestButton={true}
       />
     </>
   );

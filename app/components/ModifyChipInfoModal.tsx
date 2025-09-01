@@ -16,6 +16,8 @@ export default function ModifyChipInfoModal({
   onClose,
   canEdit = false,
   title,
+  onRest,
+  showRestButton = false,
 }:{
   open: boolean;
   mode: ModifyChipMode;          // 'add' | 'edit'
@@ -26,6 +28,8 @@ export default function ModifyChipInfoModal({
   onClose: () => void;
   canEdit?: boolean;
   title?: React.ReactNode;
+  onRest?: () => void;
+  showRestButton?: boolean;
 }) {
   const [text, setText] = useState(initialText);
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
@@ -90,6 +94,10 @@ export default function ModifyChipInfoModal({
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
+          {showRestButton && canEdit && (
+            <button type="button" onClick={onRest} aria-label="휴방 설정">휴방</button>
+          )}
           {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
           <div className="icon-chooser">
             <button
