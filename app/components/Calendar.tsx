@@ -27,16 +27,54 @@ function nextOf({ y, m }: { y: number; m: number }) {
 function cellKey(y: number, m: number, d: number) {
   return `${y}-${m}-${d}`;
 }
-const fmtUrl = (s: string) => (/^https?:\/\//i.test(s) ? s : `https://${s}`);
+// 한국(서울) 기준 날짜 파츠
+const SEOUL_TZ = 'Asia/Seoul';
+function seoulParts(d = new Date())
+{
+  const f = new Intl.DateTimeFormat('en-CA', {
+    timeZone: SEOUL_TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+  });
+  const [y, m, day] = f.format(d).split('-').map(Number);
+  return { y, m: m - 1, d: day }; // m: 0~11
+}
+
+// 외부 링크 안전화
+function safeUrl(raw: string | null | undefined): string | null
+{
+  if (!raw) return null;
+  const s = raw.trim().replace(/[\u0000-\u001F\u007F]/g, '');
+  if (/^(https?):\/\//i.test(s)) return s;
+  if (/^[\w.-]+\.[A-Za-z]{2,}(\/.*)?$/.test(s)) return `https://${s}`;
+  return null; // 허용 스킴/도메인 패턴 아니면 링크 미노출
+}
+
+function lsKey(y:number, m:number) { return `cal:${y}-${m}`; }
+function loadMonthLS(y:number, m:number): any[] | null
+{
+  try {
+    const raw = localStorage.getItem(lsKey(y,m));
+    const arr = raw ? JSON.parse(raw) : null;
+    return Array.isArray(arr) ? arr : null;
+  } catch { return null; }
+}
+function saveMonthLS(y:number, m:number, rows:any[]){ 
+  try { localStorage.setItem(lsKey(y,m), JSON.stringify(rows||[])); } catch {}
+}
+function normMonth(y:number, m:number){ 
+  // m 범위 보정(예: -1 -> 이전해 11월)
+  const yy = y + Math.floor(m/12);
+  const mm = ((m%12)+12)%12;
+  return [yy, mm] as const;
+}
 
 export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const supabase = useMemo(() => createClient(), []);
 
-  const today = useMemo(() => new Date(), []);
-  const todayLabel = `${today.getFullYear()}.${pad(today.getMonth() + 1)}.${pad(today.getDate())}`;
+  const todayParts = useMemo(() => seoulParts(new Date()), []);
+  const todayLabel = `${todayParts.y}.${pad(todayParts.m + 1)}.${pad(todayParts.d)}`;
 
-  const [ym, setYM] = useState({ y: today.getFullYear(), m: today.getMonth() });
-  const [jump, setJump] = useState<string>(() => fmt(today.getFullYear(), today.getMonth(), today.getDate()));
+  const [ym, setYM] = useState({ y: todayParts.y, m: todayParts.m });
+  const [jump, setJump] = useState<string>(() => fmt(todayParts.y, todayParts.m, todayParts.d));
 
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen] = useState(false);
@@ -44,6 +82,22 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [presetToAdd, setPresetToAdd] = useState<{ emoji: string | null; label: string } | null>(null);
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
+  // 앱/캐시 버전이 바뀌면 month LS 캐시 무해화
+  useEffect(() => {
+    const VER = 'cal-cache-0.16.0';
+    const cur = localStorage.getItem('cal:ver');
+    if (cur !== VER) {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i)!;
+        if (k && k.startsWith('cal:') && k !== 'cal:ver') {
+          // 키 목록이 변하므로 안전하게 나중에 지움
+          setTimeout(() => localStorage.removeItem(k), 0);
+        }
+      }
+      localStorage.setItem('cal:ver', VER);
+    }
+  }, []);
+
   const ymKey = `${ym.y}-${ym.m}`;
   const [loading, setLoading] = useState(false);
   const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
@@ -334,11 +388,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     let alive = true;
 
     const run = async () => {
-      // 1) 캐시가 있으면 즉시 표시(깜빡임 억제)
-      const cached = monthCache.get(ymKey);
+      // 1) 캐시가 있으면 즉시 표시 → 없으면 로컬스토리지 폴백
+      const cached = monthCache.get(ymKey) || loadMonthLS(ym.y, ym.m);
       if (cached) {
         const map: Record<string, Note> = {};
-        cached.forEach((row: any) => {
+        (cached as any[]).forEach((row: any) => {
           const n = normalizeNote(row);
           map[cellKey(n.y, n.m, n.d)] = n;
         });
@@ -350,9 +404,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       try {
         const { data, error } = await supabase
           .from('notes')
-          .select('*')
+          .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
           .eq('y', ym.y)
-          .eq('m', ym.m);
+          .eq('m', ym.m); 
 
         if (!alive) return;
         if (error) {
@@ -371,6 +425,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           next.set(ymKey, data || []);
           return next;
         });
+        saveMonthLS(ym.y, ym.m, data || []);
       } catch (e) {
         if (alive) console.error(e);
       } finally {
@@ -436,14 +491,39 @@ useEffect(() => {
 
   async function prefetchMonth(y: number, m: number) {
     const k = `${y}-${m}`;
-    if (monthCache.has(k)) return;
-    const { data, error } = await supabase.from('notes').select('*').eq('y', y).eq('m', m);
+    if (monthCache.has(k) || loadMonthLS(y, m)) return;
+
+    const { data, error } = await supabase
+      .from('notes')
+      .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
+      .eq('y', y).eq('m', m);
+
     if (!error) {
       setMonthCache((prev) => {
         const next = new Map(prev);
         next.set(k, data || []);
         return next;
       });
+      saveMonthLS(y, m, data || []); // ← 누락 보완
+
+      // 백그라운드로 이전/다음 달 미리 가져오기
+      (async () => {
+        for (const [yy, mm0] of [[ym.y, ym.m-1], [ym.y, ym.m+1]]) {
+          const [ny, nm] = normMonth(yy, mm0);
+          const k = `${ny}-${nm}`;
+          if (monthCache.get(k) || loadMonthLS(ny, nm)) continue;
+          try {
+            const { data: nb } = await supabase
+              .from('notes')
+              .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
+              .eq('y', ny).eq('m', nm);
+            if (nb) {
+              setMonthCache((prev) => { const next = new Map(prev); next.set(k, nb); return next; });
+              saveMonthLS(ny, nm, nb);
+            }
+          } catch {}
+        }
+      })();
     }
   }
 
@@ -654,8 +734,8 @@ useEffect(() => {
           const k = cellKey(c.y, c.m, c.d ?? -1);
           const note = c.d ? notes[k] : null;
 
-          const isToday =
-            !!c.d && c.y === today.getFullYear() && c.m === today.getMonth() && c.d === today.getDate();
+          const isToday = !!c.d && c.y === todayParts.y && c.m === todayParts.m && c.d === todayParts.d;
+
           const bg = c.d ? bgUrls[k] : undefined; // 배경 URL
           const baseBgColor =
             note?.color === 'red' ? 'var(--flagRed)' :
@@ -669,6 +749,7 @@ useEffect(() => {
           const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
           const isPicked = selectedKeys.has(k);
+          const linkUrl = safeUrl(note?.link ?? null);
           return (
             <div
               key={idx}
@@ -730,9 +811,9 @@ useEffect(() => {
                     {cellTitleOf(note || null, c.w, !canShowSeven)}
                   </div>
                   <div className="cell-link">
-                    {!!note?.link && (
+                    {linkUrl && (
                       <a
-                        href={fmtUrl(note.link)}
+                        href={linkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         title={note.link || undefined}

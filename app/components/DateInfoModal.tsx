@@ -9,6 +9,51 @@ import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInf
 type Preset = { emoji: string | null; label: string };
 
 const BUCKET = 'note-images';
+const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif'] as const;
+const MAX_GIF_MB = 20; // 기존 로직 유지
+// 비-GIF는 WebP로 리사이즈/압축하므로 별도 용량 제한은 두지 않음(압축 단계에서 처리)
+
+function derivePreviewPath(p: string)
+{
+  const i = p.lastIndexOf('.');
+  const stem = i >= 0 ? p.slice(0, i) : p;
+  return `${stem}-p.webp`;
+}
+
+// Supabase Storage 서명 URL(에러 시 null)
+async function signedUrl(supabase: ReturnType<typeof createClient>, path: string, ttlSec = 3600)
+{
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
+  return error ? null : (data?.signedUrl ?? null);
+}
+
+// 프리뷰 먼저 보여주고, 백그라운드에서 원본 프리로드 후 교체
+async function loadPreviewThenFull(
+  supabase: ReturnType<typeof createClient>,
+  path: string,
+  setDisplay: (u: string|null)=>void
+)
+{
+  const previewPath = derivePreviewPath(path);
+  let preview = await signedUrl(supabase, previewPath, 3600);
+  if (!preview) {
+    // 프리뷰 없는 오래된 항목: 원본만 표시
+    const full = await signedUrl(supabase, path, 3600);
+    setDisplay(full);
+    return;
+  }
+  setDisplay(preview);
+
+  // 원본을 미리 로드하고 로드 완료 시 교체
+  const full = await signedUrl(supabase, path, 3600);
+  if (full) {
+    const img = new Image();
+    img.decoding = 'async';
+    img.loading = 'eager';
+    img.src = full;
+    img.onload = () => setDisplay(full);
+  }
+}
 
 export default function DateInfoModal({
   open, onClose, date, note: initial, canEdit, onSaved, addChipPreset, onConsumedAddPreset
@@ -84,14 +129,16 @@ export default function DateInfoModal({
   }, [open, addChipPreset, canEdit]);
 
 
-  // ── 이미지 URL 표시 (스토리지 경로면 서명URL) ───────────────────────────
+  // ── 이미지 URL 표시 (프리뷰 → 원본 교체) ───────────────────────────────────
   useEffect(() => {
     let cancelled = false;
     (async () => {
       if (!imageUrl) { setDisplayImageUrl(null); return; }
       if (/^https?:\/\//i.test(imageUrl)) { setDisplayImageUrl(imageUrl); return; }
-      const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(imageUrl, 60 * 60);
-      if (!cancelled) setDisplayImageUrl(error ? null : (data?.signedUrl ?? null));
+
+      await loadPreviewThenFull(supabase, imageUrl, (u) => {
+        if (!cancelled) setDisplayImageUrl(u);
+      });
     })();
     return () => { cancelled = true; };
   }, [imageUrl, supabase]);
@@ -361,8 +408,11 @@ export default function DateInfoModal({
   // ── 업로드(비GIF는 WebP 압축) ────────────────────────────────────────────
   async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
-      const el = new Image(); el.onload = () => res(el); el.onerror = rej;
-      el.src = URL.createObjectURL(file);
+      const el = new Image();
+      const u = URL.createObjectURL(file);
+      el.onload = () => { URL.revokeObjectURL(u); res(el); };
+      el.onerror = (e) => { URL.revokeObjectURL(u); rej(e); };
+      el.src = u;
     });
     const r = Math.min(max / img.width, max / img.height, 1);
     const w = Math.round(img.width * r), h = Math.round(img.height * r);
@@ -379,9 +429,14 @@ export default function DateInfoModal({
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
 
+      if (!ALLOWED.includes(f.type as any)) {
+        alert('이미지 형식은 PNG/JPEG/WebP/GIF만 허용합니다.');
+        setUploading(false); e.currentTarget.value=''; return;
+      }
+
       const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
-      if (isGif && f.size > 8 * 1024 * 1024) {
-        alert('GIF 용량이 큽니다(>8MB). 크기를 줄여 다시 시도하세요.');
+      if (isGif && f.size > MAX_GIF_MB * 1024 * 1024) {
+        alert('GIF 용량이 큽니다(>${MAX_GIF_MB}MB). 크기를 줄여 다시 시도하세요.');
         setUploading(false);
         e.currentTarget.value = '';
         return;
@@ -396,15 +451,23 @@ export default function DateInfoModal({
 
       const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.${ext}`;
 
+      // 1) 원본 업로드
       const { error } = await supabase.storage.from(BUCKET)
-        .upload(path, blob, { upsert: true, contentType });
+        .upload(path, blob, { upsert: false, contentType });
       if (error) throw error;
 
-      await persist({ image_url: path, use_image_as_bg: true }); // 업로드 시 자동으로 배경 사용 ON
-      setImageUrl(path);
+      // 2) 프리뷰(WebP, max 640px) 생성 후 병행 업로드(실패해도 무시)
+      try {
+        const previewBlob = await compressToWebp(f, 640, 0.72);
+        const previewPath = derivePreviewPath(path);
+        await supabase.storage.from(BUCKET)
+          .upload(previewPath, previewBlob, { upsert: false, contentType: 'image/webp' });
+      } catch { /* 프리뷰 업로드 실패는 무시 */ }
 
-      const { data: signed } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
-      setDisplayImageUrl(signed?.signedUrl ?? null);
+      // 3) DB 저장 + 프리뷰부터 표시 후 원본으로 교체
+      await persist({ image_url: path, use_image_as_bg: true });
+      setImageUrl(path);
+      await loadPreviewThenFull(supabase, path, (u) => setDisplayImageUrl(u));
 
     } catch (err:any) {
       alert(err?.message ?? '이미지 업로드 실패');
@@ -687,9 +750,12 @@ export default function DateInfoModal({
             <div className="note-image-wrap">
               <div className="note-image-box" style={{ height: imgBoxHeight }}>
                 <img
-                  src={displayImageUrl}
+                  src={displayImageUrl ?? undefined}
                   alt="미리보기"
-                  onError={()=> { fallbackToSignedUrlIfNeeded(); }}
+                  decoding="async"
+                  loading="eager"
+                  ref={(el) => { if (el) el.setAttribute('fetchpriority', 'high'); }}
+                  onError={() => { fallbackToSignedUrlIfNeeded(); }}
                 />
               </div>
               <label style={{ display:'flex', alignItems:'center', gap:8, marginTop:8, fontSize:13 }}>
