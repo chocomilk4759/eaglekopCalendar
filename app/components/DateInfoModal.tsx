@@ -447,8 +447,6 @@ export default function DateInfoModal({
       let ext: string;
       let contentType: string;
 
-      const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
-
       // GIF는 원본 그대로(애니메이션 보존)
       if (isGif)
       {
