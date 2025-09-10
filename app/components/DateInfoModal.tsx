@@ -187,24 +187,21 @@ export default function DateInfoModal({
 
   useEffect(() => {
     if (!open) return;
+    
     function onResize() {
       const hasImg = !!(imageUrl || note.image_url);
       const L = computeLimits(hasImg);
       setLimits(L);
-
-      // 현재 DOM 크기 기준으로 계산(상태값의 지연 참조 방지)
-      const curW = sheetRef.current?.offsetWidth ?? size.w;
-      const curH = sheetRef.current?.offsetHeight ?? size.h;
-      const w = clamp(curW, L.minW, L.maxW);
-      const h = clamp(curH, L.minH, L.maxH);
-
-      setSize({ w, h });
-
-      const vw = window.innerWidth, vh = window.innerHeight;
-      setPos(prev => ({
-        x: clamp(prev.x, L.margin, Math.max(L.margin, vw - w - L.margin)),
-        y: clamp(prev.y, L.margin, Math.max(L.margin, vh - h - L.margin)),
-      }));
+      setSize(prev => ({ w: clamp(prev.w, L.minW, L.maxW), h: clamp(prev.h, L.minH, L.maxH) }));
+      setPos(prev => {
+        const w = clamp(size.w, L.minW, L.maxW);
+        const h = clamp(size.h, L.minH, L.maxH);
+        const vw = window.innerWidth, vh = window.innerHeight;
+        return {
+          x: clamp(prev.x, L.margin, Math.max(L.margin, vw - w - L.margin)),
+          y: clamp(prev.y, L.margin, Math.max(L.margin, vh - h - L.margin)),
+        };
+      });
     }
 
     window.addEventListener('resize', onResize);
