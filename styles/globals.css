@@ -569,3 +569,31 @@ a:focus-visible{
 /* 접힘 상태에선 스크롤 박스 숨김 */
 .presets-dock.collapsed .dock-scrollbox{ display:none; }  /* 접힘 때 칩 영역 숨김 */
 
+/* 캘린더 셀 텍스트 잘림 방지 */
+.calendar .cell{
+  box-sizing: border-box;
+  line-height: 1.28;               /* 줄 간격 확보 */
+  padding-bottom: 8px;              /* 마지막 줄 컷 방지 */
+  scrollbar-gutter: stable both-edges; /* 스크롤바로 인한 폭 변동 방지 */
+}
+
+/* 셀 내부 텍스트 래핑(국문/영문 모두) */
+.calendar .cell,
+.calendar .cell .cell-text,
+.calendar .cell .content,
+.calendar .cell p,
+.calendar .cell div{
+  white-space: pre-wrap;            /* 줄바꿈/개행 유지 */
+  overflow-wrap: anywhere;          /* 긴 단어 강제 줄바꿈 */
+  word-break: break-word;           /* 구형 엔진 대응 */
+}
+
+
+@media print {
+  /* 버튼/아이콘/입력 등은 숨김 */
+  button, input, textarea, .link-ico, .top-ribbon, .toolbar { display: none !important; }
+
+  /* 달력 격자만 명확히 */
+  .calendar { box-shadow: none !important; background: #fff !important; }
+  .cell { break-inside: avoid; }
+}
