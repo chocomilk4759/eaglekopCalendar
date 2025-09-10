@@ -9,9 +9,8 @@ import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInf
 type Preset = { emoji: string | null; label: string };
 
 const BUCKET = 'note-images';
-const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif'] as const;
-const MAX_GIF_MB = 20; // 기존 로직 유지
-// 비-GIF는 WebP로 리사이즈/압축하므로 별도 용량 제한은 두지 않음(압축 단계에서 처리)
+const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif','image/apng','image/avif'] as const;
+const MAX_GIF_MB = 20;
 
 function derivePreviewPath(p: string)
 {
@@ -20,11 +19,22 @@ function derivePreviewPath(p: string)
   return `${stem}-p.webp`;
 }
 
-// Supabase Storage 서명 URL(에러 시 null)
+// Supabase Storage 서명 URL 캐시 (기본 TTL 45분: 실제 만료의 75% 시점)
+const _signedUrlCache = new Map<string, { url: string; exp: number }>();
+
 async function signedUrl(supabase: ReturnType<typeof createClient>, path: string, ttlSec = 3600)
 {
+  const now = Date.now();
+  const hit = _signedUrlCache.get(path);
+  if (hit && hit.exp > now) return hit.url;
+
   const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
-  return error ? null : (data?.signedUrl ?? null);
+  const url = error ? null : (data?.signedUrl ?? null);
+  if (url) {
+    const safeMs = Math.max(60, Math.floor(ttlSec * 0.75)) * 1000;
+    _signedUrlCache.set(path, { url, exp: now + safeMs });
+  }
+  return url;
 }
 
 // 프리뷰 먼저 보여주고, 백그라운드에서 원본 프리로드 후 교체
@@ -181,17 +191,22 @@ export default function DateInfoModal({
       const hasImg = !!(imageUrl || note.image_url);
       const L = computeLimits(hasImg);
       setLimits(L);
-      setSize(prev => ({ w: clamp(prev.w, L.minW, L.maxW), h: clamp(prev.h, L.minH, L.maxH) }));
-      setPos(prev => {
-        const w = clamp(size.w, L.minW, L.maxW);
-        const h = clamp(size.h, L.minH, L.maxH);
-        const vw = window.innerWidth, vh = window.innerHeight;
-        return {
-          x: clamp(prev.x, L.margin, Math.max(L.margin, vw - w - L.margin)),
-          y: clamp(prev.y, L.margin, Math.max(L.margin, vh - h - L.margin)),
-        };
-      });
+
+      // 현재 DOM 크기 기준으로 계산(상태값의 지연 참조 방지)
+      const curW = sheetRef.current?.offsetWidth ?? size.w;
+      const curH = sheetRef.current?.offsetHeight ?? size.h;
+      const w = clamp(curW, L.minW, L.maxW);
+      const h = clamp(curH, L.minH, L.maxH);
+
+      setSize({ w, h });
+
+      const vw = window.innerWidth, vh = window.innerHeight;
+      setPos(prev => ({
+        x: clamp(prev.x, L.margin, Math.max(L.margin, vw - w - L.margin)),
+        y: clamp(prev.y, L.margin, Math.max(L.margin, vh - h - L.margin)),
+      }));
     }
+
     window.addEventListener('resize', onResize);
     onResize();
     return () => window.removeEventListener('resize', onResize);
@@ -220,17 +235,18 @@ export default function DateInfoModal({
     if (bucket !== BUCKET) return null;
     return path;
   }
+
   async function fallbackToSignedUrlIfNeeded() {
     if (!imageUrl) return;
     if (!/^https?:\/\//i.test(imageUrl)) {
-      const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(imageUrl, 60 * 60);
-      if (!error && data?.signedUrl) setDisplayImageUrl(data.signedUrl);
+      const u = await signedUrl(supabase, imageUrl, 3600);
+      if (u) setDisplayImageUrl(u);
       return;
     }
     const path = extractPathFromPublicUrl(imageUrl);
     if (path) {
-      const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, 60 * 60);
-      if (!error && data?.signedUrl) setDisplayImageUrl(data.signedUrl);
+      const u = await signedUrl(supabase, path, 3600);
+      if (u) setDisplayImageUrl(u);
     }
   }
 
@@ -405,6 +421,25 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
   }
 
+  // 애니메이션 판별
+  async function isWebpAnimated(file: File): Promise<boolean>
+  {
+    if (!(file.type === 'image/webp' || /\.webp$/i.test(file.name))) return false;
+    const head = await file.slice(0, 512 * 1024).arrayBuffer();
+    const s = new TextDecoder('ascii').decode(new Uint8Array(head));
+    return s.includes('ANIM') || s.includes('ANMF');
+  }
+
+  // APNG 판별: PNG 파일 내 'acTL' 청크 존재 시 true
+  async function isApngAnimated(file: File): Promise<boolean>
+  {
+    const looksPng = file.type === 'image/png' || file.type === 'image/apng' || /\.png$/i.test(file.name);
+    if (!looksPng) return false;
+    const head = await file.slice(0, 1024 * 1024).arrayBuffer(); // 앞부분만 스캔
+    const s = new TextDecoder('ascii').decode(new Uint8Array(head));
+    return s.includes('acTL'); // Animation Control Chunk
+  }
+
   // ── 업로드(비GIF는 WebP 압축) ────────────────────────────────────────────
   async function compressToWebp(file: File, max = 1600, quality = 0.82): Promise<Blob> {
     const img = await new Promise<HTMLImageElement>((res, rej) => {
@@ -418,7 +453,10 @@ export default function DateInfoModal({
     const w = Math.round(img.width * r), h = Math.round(img.height * r);
     const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
     canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
-    return await new Promise((ok) => canvas.toBlob((b) => ok(b!), 'image/webp', quality));
+    return await new Promise((ok, rej) =>
+      canvas.toBlob((b) => b ? ok(b) : rej(new Error('toBlob failed')), 'image/webp', quality)
+    );
+
   }
 
   async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
@@ -430,13 +468,17 @@ export default function DateInfoModal({
       if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
 
       if (!ALLOWED.includes(f.type as any)) {
-        alert('이미지 형식은 PNG/JPEG/WebP/GIF만 허용합니다.');
+        alert('이미지 형식은 PNG/JPEG/WebP/GIF/APNG/AVIF만 허용합니다.');
         setUploading(false); e.currentTarget.value=''; return;
       }
 
       const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
+      const isAnimWebp = (f.type === 'image/webp' || /\.webp$/i.test(f.name)) ? await isWebpAnimated(f) : false;
+      const isAnimApng = (f.type === 'image/png' || f.type === 'image/apng' || /\.png$/i.test(f.name)) ? await isApngAnimated(f) : false;
+      const isAvif = f.type === 'image/avif' || /\.avif$/i.test(f.name); // 보수적으로 애니 가능성 고려
+
       if (isGif && f.size > MAX_GIF_MB * 1024 * 1024) {
-        alert('GIF 용량이 큽니다(>${MAX_GIF_MB}MB). 크기를 줄여 다시 시도하세요.');
+        alert(`GIF 용량이 큽니다(>${MAX_GIF_MB}MB). 크기를 줄여 다시 시도하세요.`);
         setUploading(false);
         e.currentTarget.value = '';
         return;
@@ -447,16 +489,20 @@ export default function DateInfoModal({
       let ext: string;
       let contentType: string;
 
-      // GIF는 원본 그대로(애니메이션 보존)
-      if (isGif)
+      if (isGif || isAnimWebp || isAnimApng || isAvif)
       {
+        // 움직이는 이미지들은 원본 그대로 업로드(재생 보존)
         blob = f;
-        ext = 'gif';
-        contentType = 'image/gif';
+        // 확장자는 원본 유지
+        if (isGif)      { ext = 'gif'; }
+        else if (isAvif){ ext = 'avif'; }
+        else if (isAnimWebp){ ext = 'webp'; }
+        else /* APNG */ { ext = 'png'; }
+        contentType = f.type || `image/${ext}`;
       }
       else
       {
-        // 비-GIF만 WebP로 리사이즈/압축
+        // 정적 이미지만 WebP로 리사이즈/압축
         blob = await compressToWebp(f, 1600, 0.82);
         ext = 'webp';
         contentType = 'image/webp';
