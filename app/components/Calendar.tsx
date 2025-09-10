@@ -816,7 +816,10 @@ useEffect(() => {
                         href={linkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title={note.link || undefined}
+                        title={note.link ?? undefined}
+                        onClick={(e) => e.stopPropagation()}
+                        className="link-ico"
+                        style={{ position: 'static' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
                           <path d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
