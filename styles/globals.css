@@ -180,6 +180,32 @@ a:focus-visible{
 .cell.flag-blue .cell-content-text{
   color:#fff; font-weight:800; font-size:clamp(18px, 2.6vw, 30px);
 }
+
+/* 파란 셀: 칩 + 텍스트 번들 표시 */
+.cell.flag-blue .cell-bundle{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  width:100%;
+  align-items:center;   /* 칩과 텍스트 중앙 정렬 */
+  text-align:center;
+}
+
+/* 번들 안 칩은 줄바꿈되며 가운데 정렬 */
+.cell.flag-blue .cell-bundle .chips{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+
+/* 번들 모드의 텍스트는 너무 크지 않게(플래그 단독 텍스트보다 한 단계 작게) */
+.cell.flag-blue .cell-bundle .cell-content-text{
+  color:#fff;
+  font-weight:800;
+  font-size:clamp(14px, 2.2vw, 22px);
+  transform:none;       /* has-text에서 주는 이동 제거 */
+}
+
 .calendar-grid .cell-content-text{ white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
 
 /* 5) CHIPS -------------------------------------------------------------------- */
@@ -588,6 +614,10 @@ a:focus-visible{
   word-break: break-word;           /* 구형 엔진 대응 */
 }
 
+/* (선택) 스크롤바가 텍스트를 가리는 느낌이면 여백을 조금 더 */
+@supports (scrollbar-gutter: stable){
+  .calendar .cell{ scrollbar-gutter: stable both-edges; }
+}
 
 @media print {
   /* 버튼/아이콘/입력 등은 숨김 */

@@ -745,9 +745,16 @@ useEffect(() => {
 
           // 휴: color=red 이고 content가 '휴방'이면 휴 모드
           const isRest = !!note && note.color === 'red' && (note.content?.trim() === '휴방');
-          // 메모(내용)는 배경색(color) 지정 + 휴가 아닐 때만 노출
-          const showMemo = !!note?.color && !!note?.content?.trim()?.length && !isRest;
-          const showChips = (note?.items?.length || 0) > 0 && !showMemo;
+
+          // 파란 셀에서 "칩 + 텍스트"를 함께 보여주기 위한 분기
+          const hasItems = (note?.items?.length || 0) > 0;
+          const hasText  = !!note?.content?.trim()?.length;
+          const isBlue   = note?.color === 'blue';
+          const showBundle = !!note && isBlue && hasItems && hasText && !isRest;
+
+          // 기존 규칙은 유지하되, 번들일 땐 showMemo가 단독으로 칩을 가리지 않도록 제외
+          const showMemo  = !!note?.color && hasText && !isRest && !showBundle;
+          const showChips = hasItems && (!showMemo || showBundle);
           const isPicked = selectedKeys.has(k);
           const linkUrl = safeUrl(note?.link ?? null);
           const linkTitle = note?.link ?? undefined;
@@ -831,10 +838,23 @@ useEffect(() => {
                   </div>
                 </div>
 
-                {/* ── 콘텐츠: 휴(중앙 '휴방') > 플래그 메모(흰색 크게) > 칩 ── */}
-                <div className={`cell-content ${(isRest || showMemo) ? 'has-text' : ''}`}>
+                {/* ── 콘텐츠: 휴(중앙 '휴방') > 파란 셀 번들(칩+텍스트) > 플래그 메모 단독 > 칩 단독 ── */}
+                <div className={`cell-content ${(isRest || (showMemo && !showBundle)) ? 'has-text' : ''}`}>
                   {isRest ? (
                     <div className="cell-rest">휴방</div>
+                  ) : showBundle && note ? (
+                    // 파란 셀에서 칩을 먼저, 텍스트를 아래에
+                    <div className="cell-bundle">
+                      <div className="chips">
+                        {note.items.map((it: Item, i: number) => (
+                          <span key={i} className="chip">
+                            <span className="chip-emoji">{it.emoji ?? ''}</span>
+                            <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
+                          </span>
+                        ))}
+                      </div>
+                      <div className="cell-content-text">{note.content}</div>
+                    </div>
                   ) : showMemo ? (
                     <div className="cell-content-text">{note!.content}</div>
                   ) : (showChips && note) ? (
@@ -848,6 +868,7 @@ useEffect(() => {
                     </div>
                   ) : null}
                 </div>
+
               </div>
             </div>
           );
