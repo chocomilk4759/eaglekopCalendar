@@ -750,6 +750,7 @@ useEffect(() => {
           const showChips = (note?.items?.length || 0) > 0 && !showMemo;
           const isPicked = selectedKeys.has(k);
           const linkUrl = safeUrl(note?.link ?? null);
+          const linkTitle = note?.link ?? undefined;
           return (
             <div
               key={idx}
@@ -816,7 +817,7 @@ useEffect(() => {
                         href={linkUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title={note.link ?? undefined}
+                        title={linkTitle}
                         onClick={(e) => e.stopPropagation()}
                         className="link-ico"
                         style={{ position: 'static' }}
