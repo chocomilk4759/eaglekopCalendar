@@ -442,11 +442,26 @@ export default function DateInfoModal({
         return;
       }
 
-      let blob: Blob, ext: 'gif' | 'webp', contentType: string;
-      if (isGif) {
-        blob = f; ext='gif'; contentType='image/gif';
-      } else {
-        blob = await compressToWebp(f); ext='webp'; contentType='image/webp';
+      // 업로드용 Blob / 확장자 / Content-Type 결정
+      let blob: Blob;
+      let ext: string;
+      let contentType: string;
+
+      const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
+
+      // GIF는 원본 그대로(애니메이션 보존)
+      if (isGif)
+      {
+        blob = f;
+        ext = 'gif';
+        contentType = 'image/gif';
+      }
+      else
+      {
+        // 비-GIF만 WebP로 리사이즈/압축
+        blob = await compressToWebp(f, 1600, 0.82);
+        ext = 'webp';
+        contentType = 'image/webp';
       }
 
       const path = `${date.y}/${date.m + 1}/${date.d}/${Date.now()}.${ext}`;
