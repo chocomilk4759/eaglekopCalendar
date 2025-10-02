@@ -619,6 +619,44 @@ a:focus-visible{
   .calendar .cell{ scrollbar-gutter: stable both-edges; }
 }
 
+/* ===== 이미지 로딩 스켈레톤 ===== */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.image-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card) 0%,
+    color-mix(in srgb, var(--border) 50%, transparent) 50%,
+    var(--card) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* 배경 이미지 로딩 중 표시 */
+.calendar-grid .cell.has-bgimg.loading {
+  position: relative;
+}
+
+.calendar-grid .cell.has-bgimg.loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
 @media print {
   /* 버튼/아이콘/입력 등은 숨김 */
   button, input, textarea, .link-ico, .top-ribbon, .toolbar { display: none !important; }

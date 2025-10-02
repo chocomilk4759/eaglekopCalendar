@@ -457,36 +457,49 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
   const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
-// 배경 URL effect 의존성 축소 + setState 최적화
+// 배경 URL effect 의존성 축소 + setState 최적화 + 캐싱 강화
 useEffect(() => {
   let cancelled = false;
   (async () => {
+    // 동적 import로 imageCache 로드
+    const { getSignedUrl } = await import('@/lib/imageCache');
+
     const tasks: Array<Promise<[string, string]>> = [];
     for (const n of Object.values(notes)) {
       if (!n?.image_url || !(n as any)?.use_image_as_bg) continue;
       const k = `${n.y}-${n.m}-${n.d}`;
       const raw = n.image_url!;
+
       tasks.push((async () => {
+        // HTTP URL이면 그대로 사용 (외부 이미지)
         if (/^https?:\/\//i.test(raw)) {
           const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
           if (m) {
             const bucket = m[1], key = decodeURIComponent(m[2]);
-            const { data } = await supabase.storage.from(bucket).createSignedUrl(key, 3600);
-            return [k, data?.signedUrl || raw] as [string, string];
+            // 캐싱된 getSignedUrl 사용
+            const url = await getSignedUrl(key, bucket);
+            return [k, url || raw] as [string, string];
           }
           return [k, raw] as [string, string];
         } else {
-          const { data } = await supabase.storage.from('note-images').createSignedUrl(raw, 3600);
-          return [k, data?.signedUrl || ''] as [string, string];
+          // 상대 경로는 note-images 버킷
+          const url = await getSignedUrl(raw, 'note-images');
+          return [k, url || ''] as [string, string];
         }
       })());
     }
+
     const settled = await Promise.allSettled(tasks);
     if (cancelled) return;
+
     const map: Record<string, string> = {};
-    for (const r of settled) if (r.status === 'fulfilled') {
-      const [k, u] = r.value; if (u) map[k] = u;
+    for (const r of settled) {
+      if (r.status === 'fulfilled') {
+        const [k, u] = r.value;
+        if (u) map[k] = u;
+      }
     }
+
     setBgUrls(prev => shallowEqualObj(prev, map) ? prev : map);
   })();
   return () => { cancelled = true; };
@@ -555,9 +568,9 @@ useEffect(() => {
     setModalOpen(true);
   }
 
-  // 월 그리드 생성
-  const dim = daysInMonth(ym.y, ym.m);
-  const start = startWeekday(ym.y, ym.m);
+  // 월 그리드 생성 (최적화: 의존성 최소화)
+  const dim = useMemo(() => daysInMonth(ym.y, ym.m), [ym.y, ym.m]);
+  const start = useMemo(() => startWeekday(ym.y, ym.m), [ym.y, ym.m]);
   const cells = useMemo(() => {
     const list: { y: number; m: number; d: number | null; w: number }[] = [];
     if (canShowSeven) {
@@ -574,7 +587,7 @@ useEffect(() => {
       }
     }
     return list;
-  }, [ym, dim, start, canShowSeven]);
+  }, [ym.y, ym.m, dim, start, canShowSeven]);
 
   const monthLabel = `${ym.y}.${pad(ym.m + 1)}`;
 

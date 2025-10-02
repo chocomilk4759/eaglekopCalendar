@@ -20,22 +20,11 @@ function derivePreviewPath(p: string)
   return `${stem}-p.webp`;
 }
 
-// Supabase Storage 서명 URL 캐시 (기본 TTL 45분: 실제 만료의 75% 시점)
-const _signedUrlCache = new Map<string, { url: string; exp: number }>();
-
+// ✅ 전역 imageCache 사용으로 대체 (하위 호환성 유지)
 async function signedUrl(supabase: ReturnType<typeof createClient>, path: string, ttlSec = 3600)
 {
-  const now = Date.now();
-  const hit = _signedUrlCache.get(path);
-  if (hit && hit.exp > now) return hit.url;
-
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, ttlSec);
-  const url = error ? null : (data?.signedUrl ?? null);
-  if (url) {
-    const safeMs = Math.max(60, Math.floor(ttlSec * 0.75)) * 1000;
-    _signedUrlCache.set(path, { url, exp: now + safeMs });
-  }
-  return url;
+  const { getSignedUrl } = await import('@/lib/imageCache');
+  return getSignedUrl(path, BUCKET, ttlSec);
 }
 
 // 프리뷰 먼저 보여주고, 백그라운드에서 원본 프리로드 후 교체
