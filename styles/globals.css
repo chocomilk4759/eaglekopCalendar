@@ -1,314 +1,638 @@
 /* =====================================================================================
-  EAGLEKOP CALENDAR — GLOBAL STYLES (cleaned)
+  EAGLEKOP CALENDAR — GLOBAL STYLES
+  용도별로 섹션 정리
 ===================================================================================== */
 
-/* 1) THEME TOKENS -------------------------------------------------------------- */
-:root{
-  --bg:#ffffff;
-  --fg:#111111;
-  --muted:#666666;
-  --border:#e5e5e5;
-  --card:#ffffff;
-  --accent:#222222;
+/* =====================================================================================
+  1. CSS VARIABLES (테마 토큰)
+===================================================================================== */
+:root {
+  /* 기본 색상 */
+  --bg: #ffffff;
+  --fg: #111111;
+  --muted: #666666;
+  --border: #e5e5e5;
+  --card: #ffffff;
+  --accent: #222222;
 
-  /* weekend colors */
-  --sun:#d00;
-  --sat:#05c;
+  /* 요일 색상 */
+  --sun: #d00;
+  --sat: #05c;
 
-  /* flags */
-  --flagRed:#E74C4C;
-  --flagBlue:#4C88DB;
+  /* 플래그 색상 */
+  --flagRed: #E74C4C;
+  --flagBlue: #4C88DB;
 
-  /* presets dock position */
-  /*--dock-width-expanded: 320px;*/
+  /* 캘린더 셀 크기 */
+  --cell-h: 180px;
+  --cell-min-h: 160px;
+  --cell-max-h: 240px;
+
+  /* 프리셋 도크 */
   --dock-width-expanded: 240px;
   --dock-top: 104px;
+  --dock-padding: 8px;
+  --dock-toggle-h: 28px;
+  --dock-max-h: min(650px, calc(100vh - var(--dock-top) - 24px));
 
-  /* emoji nudge (platform fine-tune) */
+  /* 이모지 정렬 */
   --emoji-nudge-y: -0.06em;
   --emoji-box: 1.25em;
-  
-  --cell-h: 180px;   /* 이미 존재 */
-  --cell-min-h: 160px;   /* 이미 존재 */
-  --cell-max-h: 240px;   /* 원하는 값으로 조정 */
-}
-[data-theme="dark"]{
-  --bg:#0e0f12;
-  --fg:#e9eaee;
-  --muted:#a1a6b3;
-  --border:#2a2d36;
-  --card:#14161b;
-  --accent:#f1f2f4;
-
-  --sun:#ff6b6b;
-  --sat:#6ab0ff;
-
-  --flagRed:#E74C4C;
-  --flagBlue:#4C88DB;
 }
 
-/* 2) BASE RESET & TYPOGRAPHY --------------------------------------------------- */
-*,
-*::before,
-*::after{ box-sizing:border-box; }
-html,body{ height:100%; }
-body{
-  margin:0; background:var(--bg); color:var(--fg);
+[data-theme="dark"] {
+  --bg: #0e0f12;
+  --fg: #e9eaee;
+  --muted: #a1a6b3;
+  --border: #2a2d36;
+  --card: #14161b;
+  --accent: #f1f2f4;
+
+  --sun: #ff6b6b;
+  --sat: #6ab0ff;
+}
+
+
+/* =====================================================================================
+  2. BASE RESET & TYPOGRAPHY
+===================================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-a{ color:inherit; text-decoration:none; }
-button, input, textarea, select{
-  color:inherit; background:var(--card); border:1px solid var(--border);
-  border-radius:10px; padding:8px 10px; font:inherit;
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
-button{ cursor:pointer; transition:background .12s ease, box-shadow .12s ease, transform .06s ease; }
-button:hover{ background:rgba(0,0,0,.03); }
-button:active{ transform: translateY(.5px); }
+
+button, input, textarea, select {
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
+}
+
+button:hover {
+  background: rgba(0, 0, 0, .03);
+}
+
+button:active {
+  transform: translateY(.5px);
+}
 
 button:focus-visible,
-a:focus-visible{
+a:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
-.container{ width:100%; margin:0; padding:24px; max-width:none; }
-
-/* 3) FIXED HEADER (Auth left / Theme right) ----------------------------------- */
-.header-fixed-top{
-  position:fixed; top:12px; left:0; right:0; width:100%;
-  pointer-events:none; z-index:9999;
+.container {
+  width: 100%;
+  margin: 0;
+  padding: 24px;
+  max-width: none;
 }
-.header-fixed-top .left, .header-fixed-top .right{
-  position:absolute; top:0; pointer-events:auto;
-}
-.header-fixed-top .left{ right:60px; }
-.header-fixed-top .right{ right:12px; }
 
-/* header (right wrapper for presets) */
-.header-fixed-bottom{
+
+/* =====================================================================================
+  3. LAYOUT - FIXED HEADER
+===================================================================================== */
+.header-fixed-top {
+  position: fixed;
+  top: 12px;
+  left: 0;
+  right: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+.header-fixed-top .left,
+.header-fixed-top .right {
+  position: absolute;
+  top: 0;
+  pointer-events: auto;
+}
+
+.header-fixed-top .left {
+  right: 60px;
+}
+
+.header-fixed-top .right {
+  right: 12px;
+}
+
+.header-fixed-bottom {
   position: fixed;
   top: 12px;
   right: 12px;
   z-index: 9998;
-  pointer-events: none; /* 래퍼는 이벤트 통과 */
-}
-.header-fixed-bottom > *{
-  pointer-events: auto; /* 내용물은 클릭 가능 */
+  pointer-events: none;
 }
 
-/* 4) CALENDAR (grid / cells / flags) ------------------------------------------ */
-.grid{ display:grid; gap:14px; }
-.calendar-grid.auto{
+.header-fixed-bottom > * {
+  pointer-events: auto;
+}
+
+
+/* =====================================================================================
+  4. CALENDAR - GRID & CELLS
+===================================================================================== */
+
+/* --- Grid Layout --- */
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.calendar-grid.auto {
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
 }
-.calendar-grid.seven{
+
+.calendar-grid.seven {
   grid-template-columns: repeat(7, minmax(140px, 1fr));
 }
-.day-name{ font-size:13px; opacity:.7; text-align:center; }
-.day-name.sun{ color:var(--sun); }
-.day-name.sat{ color:var(--sat); }
 
-.calendar-grid .cell{
-  position:relative; background:var(--card); border:1px solid var(--border);
-  border-radius:12px; padding:10px; min-width:140px; min-height:var(--cell-h); max-height: var(--cell-h);
-  display:flex; flex-direction:column; overflow:hidden;
+/* --- Day Names --- */
+.day-name {
+  font-size: 13px;
+  opacity: .7;
+  text-align: center;
 }
-.calendar-grid .cell.sel{
+
+.day-name.sun {
+  color: var(--sun);
+}
+
+.day-name.sat {
+  color: var(--sat);
+}
+
+/* --- Cell Base --- */
+.calendar-grid .cell {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px;
+  min-width: 140px;
+  min-height: var(--cell-h);
+  max-height: var(--cell-h);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
+  line-height: 1.28;
+  padding-bottom: 8px;
+  scrollbar-gutter: stable both-edges;
+}
+
+.calendar-grid .cell.sel {
   outline: 2px solid var(--flagRed);
-  outline-offset: -2px; /* today 등 기존 스타일과 겹치지 않게 */
+  outline-offset: -2px;
 }
 
-.cell.today{ outline:2px solid var(--flagBlue); outline-offset:2px; }
-.cell.sun .cell-date{ color:var(--sun); }
-.cell.sat .cell-date{ color:var(--sat); }
+.cell.today {
+  outline: 2px solid var(--flagBlue);
+  outline-offset: 2px;
+}
 
-/* flags (red/blue) */
-.cell.flag-red{
-  background:var(--flagRed);
+/* --- Cell Flags (Red/Blue) --- */
+.cell.flag-red {
+  background: var(--flagRed);
   border-color: color-mix(in srgb, var(--flagRed) 85%, #000 15%);
 }
-.cell.flag-blue{
-  background:var(--flagBlue);
+
+.cell.flag-blue {
+  background: var(--flagBlue);
   border-color: color-mix(in srgb, var(--flagBlue) 85%, #000 15%);
 }
-.cell.flag-red .cell-date, .cell.flag-blue .cell-date{ color:#fff !important; opacity:1; }
-/* ⬇️ 배경 있을 때 제목도 흰색 */
-.cell.flag-red .cell-title, .cell.flag-blue .cell-title{ color:#fff !important; overflow: auto; }
 
-/* top bar: date | title | link */
-.calendar-grid .cell-inner{ display:flex; flex-direction:column; height:100%; }
-.calendar-grid .cell-top{
+.cell.flag-red .cell-date,
+.cell.flag-blue .cell-date {
+  color: #fff !important;
+  opacity: 1;
+}
+
+.cell.flag-red .cell-title,
+.cell.flag-blue .cell-title {
+  color: #fff !important;
+  overflow: auto;
+}
+
+/* --- Cell Inner Structure --- */
+.calendar-grid .cell-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.calendar-grid .cell-top {
   --cell-top-h: 28px;
-  display:grid; grid-template-columns:auto 1fr auto; align-items:center;
-  column-gap:8px; min-height:var(--cell-top-h);
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 8px;
+  min-height: var(--cell-top-h);
 }
-.calendar-grid .cell-date{ font-size:14px; opacity:.8; text-align:left; }
-.calendar-grid .cell-title{ text-align:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.calendar-grid .cell-date.sun { color: var(--sun) !important; }
-.calendar-grid .cell-date.sat { color: var(--sat) !important; }
-.calendar-grid .cell-title.sun { color: var(--sun) !important; }
-.calendar-grid .cell-title.sat { color: var(--sat) !important; }
-.calendar-grid .cell-link{ text-align:right; }
 
-/* link icon (top-right) */
-.calendar-grid .cell .link-ico{
-  position:absolute; top:8px; right:8px;
-  display:inline-flex; align-items:center; justify-content:center;
-  width:22px; height:22px; border:1px solid var(--border); border-radius:999px;
-  background:var(--card); opacity:.95;
+.calendar-grid .cell-date {
+  font-size: 14px;
+  opacity: .8;
+  text-align: left;
 }
-.calendar-grid .cell .link-ico:hover{ background:rgba(0,0,0,.03); }
 
-/* content */
-.calendar-grid .cell-content{
-  flex:1; display:flex; align-items:flex-start; justify-content:flex-start;
-  text-align:left; padding:6px; overflow:auto;
+.calendar-grid .cell-date.sun {
+  color: var(--sun) !important;
 }
-.calendar-grid .cell-content.has-text{
-  align-items:center !important; justify-content:center !important; text-align:center !important; overflow: auto;
+
+.calendar-grid .cell-date.sat {
+  color: var(--sat) !important;
 }
+
+.calendar-grid .cell-title {
+  text-align: center;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendar-grid .cell-title.sun {
+  color: var(--sun) !important;
+}
+
+.calendar-grid .cell-title.sat {
+  color: var(--sat) !important;
+}
+
+.calendar-grid .cell-link {
+  text-align: right;
+}
+
+/* --- Link Icon --- */
+.calendar-grid .cell .link-ico {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  opacity: .95;
+}
+
+.calendar-grid .cell .link-ico:hover {
+  background: rgba(0, 0, 0, .03);
+}
+
+/* --- Cell Content --- */
+.calendar-grid .cell-content {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 6px;
+  overflow: auto;
+}
+
+.calendar-grid .cell-content.has-text {
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  overflow: auto;
+}
+
 .calendar-grid .cell-content.has-text .cell-content-text,
-.calendar-grid .cell-content.has-text .cell-rest{
+.calendar-grid .cell-content.has-text .cell-rest {
   transform: translateY(calc(-1 * var(--cell-top-h) / 2));
 }
-.cell .cell-rest{
-  display:flex; align-items:center; justify-content:center; width:100%; height:100%;
-  color:#fff; font-weight:800; letter-spacing:.2px; font-size:clamp(20px, 2.8vw, 32px);
+
+.cell .cell-rest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .2px;
+  font-size: clamp(20px, 2.8vw, 32px);
 }
+
 .cell.flag-red .cell-content-text,
-.cell.flag-blue .cell-content-text{
-  color:#fff; font-weight:800; font-size:clamp(18px, 2.6vw, 30px);
+.cell.flag-blue .cell-content-text {
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(18px, 2.6vw, 30px);
 }
 
-/* 파란 셀: 칩 + 텍스트 번들 표시 */
-.cell.flag-blue .cell-bundle{
-  display:flex;
-  flex-direction:column;
-  gap:6px;
-  width:100%;
-  align-items:center;   /* 칩과 텍스트 중앙 정렬 */
-  text-align:center;
+.calendar-grid .cell-content-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
-/* 번들 안 칩은 줄바꿈되며 가운데 정렬 */
-.cell.flag-blue .cell-bundle .chips{
-  display:flex;
-  flex-wrap:wrap;
-  justify-content:center;
+/* --- Blue Cell Bundle (칩 + 텍스트) --- */
+.cell.flag-blue .cell-bundle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  align-items: center;
+  text-align: center;
 }
 
-/* 번들 모드의 텍스트는 너무 크지 않게(플래그 단독 텍스트보다 한 단계 작게) */
-.cell.flag-blue .cell-bundle .cell-content-text{
-  color:#fff;
-  font-weight:800;
-  font-size:clamp(14px, 2.2vw, 22px);
-  transform:none;       /* has-text에서 주는 이동 제거 */
+.cell.flag-blue .cell-bundle .chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.calendar-grid .cell-content-text{ white-space:pre-wrap; word-break:break-word; overflow-wrap:anywhere; }
-
-/* 5) CHIPS -------------------------------------------------------------------- */
-.chips{ display:flex; gap:4px; flex-wrap:wrap; margin-top:6px; }
-.chip{
-  max-width:100%;
-  border:1px solid var(--border); border-radius:999px; padding:6px 10px;
-  font-size:13px; display:inline-flex; align-items:center; justify-content:center; gap:6px;
-  background:linear-gradient(180deg, rgba(255,255,255,.9), rgba(242,242,242,.95));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.8), 0 1px 2px rgba(0,0,0,.06);
+.cell.flag-blue .cell-bundle .cell-content-text {
+  color: #fff;
+  font-weight: 800;
+  font-size: clamp(14px, 2.2vw, 22px);
+  transform: none;
 }
-[data-theme="dark"] .chip{
-  background:linear-gradient(180deg, #1b1d23, #14161b);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.4);
-}
-.chip-text{ min-width:0; white-space:normal; overflow:hidden; text-overflow:ellipsis; }
 
-.calendar-grid .chips{ gap:2px; }
-.calendar-grid .chip{
-  padding:4px 6px; border-radius:8px; gap:3px; line-height:1.25; background:var(--card); box-shadow:0 1px 2px rgba(0,0,0,.06);
-  margin:2px;
+/* --- Background Image Styles --- */
+.calendar-grid .cell.has-bgimg .cell-top .cell-date,
+.calendar-grid .cell.has-bgimg .cell-top .cell-title,
+.calendar-grid .cell.has-bgimg .cell-content-text,
+.calendar-grid .cell.has-bgimg .cell-rest,
+.calendar-grid .cell.has-bgimg .chips .chip-text {
+  -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.9);
+  text-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.9),
+    1px 0 0 rgba(0, 0, 0, 0.9),
+    0 -1px 0 rgba(0, 0, 0, 0.9),
+    -1px 0 0 rgba(0, 0, 0, 0.9);
 }
-[data-theme="dark"] .calendar-grid .chip{ background:#171a20; box-shadow:0 1px 2px rgba(0,0,0,.4); }
-.calendar-grid .chip-text{ white-space:normal; word-break:break-word; overflow-wrap:anywhere; }
 
-/* emoji absolute centering */
-/* .chip-emoji{
-  display:inline-grid; place-items:center; width:var(--emoji-box); height:var(--emoji-box);
-  line-height:1; transform: translateY(var(--emoji-nudge-y));
+/* --- Long-press Pulse Effect --- */
+@keyframes calendarPulse {
+  0% {
+    opacity: 1;
+    transform: scale(0.98);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.03);
+  }
 }
-.chip-emoji > svg, .chip-emoji > img {
-  display:block; width:100%; height:100%;
-} */
 
-/* 칩 안 이모지도 동일 방식으로 절대 중앙 */
-.chip-emoji{
+.calendar-cell-pulse {
+  position: absolute;
+  inset: 4px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px rgba(0, 145, 255, 0.25);
+  animation: calendarPulse 220ms ease-out forwards;
+  pointer-events: none;
+}
+
+/* --- Text Wrapping --- */
+.calendar .cell,
+.calendar .cell .cell-text,
+.calendar .cell .content,
+.calendar .cell p,
+.calendar .cell div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+@supports (scrollbar-gutter: stable) {
+  .calendar .cell {
+    scrollbar-gutter: stable both-edges;
+  }
+}
+
+
+/* =====================================================================================
+  5. CHIPS (태그)
+===================================================================================== */
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.chip {
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(242, 242, 242, .95));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 1px 2px rgba(0, 0, 0, .06);
+}
+
+[data-theme="dark"] .chip {
+  background: linear-gradient(180deg, #1b1d23, #14161b);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+.chip-text {
+  min-width: 0;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* --- Calendar Grid Chips --- */
+.calendar-grid .chips {
+  gap: 2px;
+}
+
+.calendar-grid .chip {
+  padding: 4px 6px;
+  border-radius: 8px;
+  gap: 3px;
+  line-height: 1.25;
+  background: var(--card);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  margin: 2px;
+}
+
+[data-theme="dark"] .calendar-grid .chip {
+  background: #171a20;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+.calendar-grid .chip-text {
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* --- Emoji Positioning --- */
+.chip-emoji {
   position: relative !important;
   display: inline-block !important;
-  width: var(--emoji-box); height: var(--emoji-box);
+  width: var(--emoji-box);
+  height: var(--emoji-box);
   line-height: 1;
 }
+
 .chip-emoji > svg,
-.chip-emoji > img{
-  position: absolute; top:50%; left:50%;
+.chip-emoji > img {
+  position: absolute;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
-  display:block; width:100%; height:100%;
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
-/* .icon-btn .emoji-glyph{
-  display:inline-grid; place-items:center; width:1em; height:1em; line-height:1;
-  transform: translateY(var(--emoji-nudge-y));
-} */
-.icon-btn{ position: relative !important; }
-.icon-btn .emoji-glyph{
-  position: absolute !important;
-  top: 50%; left: 50%;
-  width: var(--emoji-box);      /* 1.25em 기본 — 필요시 조정 */
-  height: var(--emoji-box);
-  line-height: 1;               /* 베이스라인 영향 제거 */
-  transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
-  display: block;               /* 글리프/이미지 모두 안정 */
-}
-.icon-btn .emoji-glyph > svg,
-.icon-btn .emoji-glyph > img{ 
-  display:block; width:100%; height:100%;
-}
-
-/* 텍스트 이모지(IMG/SVG가 아닌 경우)도 컨테이너를 중앙 앵커로 사용 */
-.chip-emoji:not(:has(svg, img)){
+.chip-emoji:not(:has(svg, img)) {
   position: relative;
 }
-.chip-emoji:not(:has(svg, img))::before{
-  content: attr(data-emoji); /* 필요시 chip-emoji에 data-emoji 세팅 */
-  position:absolute; top:50%; left:50%;
+
+.chip-emoji:not(:has(svg, img))::before {
+  content: attr(data-emoji);
+  position: absolute;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
 }
 
-/* 6) PRESETS DOCK ------------------------------------------------------------- */
-.presets-dock{
-  position:fixed; right:12px; top:var(--dock-top);
-  z-index:9990; width:var(--dock-width-expanded);
-  /* 레이아웃 한계: 폭/높이 모두 화면을 넘지 않도록 클램프 */
-  --dock-padding: 8px;
-  --dock-toggle-h: 28px;
-  --dock-max-h: min(650px, calc(100vh - var(--dock-top) - 24px));
+.icon-btn {
+  position: relative !important;
+}
+
+.icon-btn .emoji-glyph {
+  position: absolute !important;
+  top: 50%;
+  left: 50%;
+  width: var(--emoji-box);
+  height: var(--emoji-box);
+  line-height: 1;
+  transform: translate(-50%, -50%) translateY(var(--emoji-nudge-y));
+  display: block;
+}
+
+.icon-btn .emoji-glyph > svg,
+.icon-btn .emoji-glyph > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+/* =====================================================================================
+  6. PRESETS DOCK (프리셋 도크)
+===================================================================================== */
+.presets-dock {
+  position: fixed;
+  right: 12px;
+  top: var(--dock-top);
+  z-index: 9990;
+  width: var(--dock-width-expanded);
   max-height: var(--dock-max-h);
   max-width: calc(100vw - 24px);
-  display:flex; flex-direction:column; gap:8px; overflow:hidden;
-  background:var(--card); border:1px solid var(--border); border-radius:12px; padding:var(--dock-padding);
-  box-shadow:0 6px 16px rgba(0,0,0,.06); transition:width .18s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: var(--dock-padding);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .06);
+  transition: width .18s ease;
 }
-.dock-toggle-wrap{ display:flex; justify-content:flex-end; align-items:center; height:28px; }
-.dock-toggle{
-  width:28px; height:28px; display:inline-flex; align-items:center; justify-content:center;
-  border:1px solid var(--border); border-radius:8px; background:var(--card); font-weight:700;
-}
-.dock-toggle:hover{ background:rgba(0,0,0,.03); }
-.presets-dock.collapsed{ width:52px; }
-.presets-dock.collapsed .dock-toggle-wrap{ justify-content:center; }
 
-/* 칩 최소 크기 보장(아이콘+텍스트 전부 보이게) */
+.dock-toggle-wrap {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 28px;
+}
+
+.dock-toggle {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-weight: 700;
+}
+
+.dock-toggle:hover {
+  background: rgba(0, 0, 0, .03);
+}
+
+.presets-dock.collapsed {
+  width: 52px;
+}
+
+.presets-dock.collapsed .dock-toggle-wrap {
+  justify-content: center;
+}
+
+.presets-dock.collapsed .dock-scrollbox {
+  display: none;
+}
+
+/* --- Dock Scrollbox --- */
+.dock-scrollbox {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(var(--dock-max-h) - var(--dock-toggle-h) - (var(--dock-padding) * 2));
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+
+.preset-vertical-list {
+  padding-right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  overflow: visible;
+}
+
+/* --- Preset Chip --- */
 .presets-dock:not(.collapsed) .preset-chip,
-.presets-dock:not(.collapsed) .chip{
+.presets-dock:not(.collapsed) .chip {
   min-width: 180px;
   display: inline-flex;
   align-items: center;
@@ -318,311 +642,306 @@ a:focus-visible{
   text-overflow: ellipsis;
 }
 
-.presets-dock .preset-chip{
-  display:inline-flex; align-items:center; gap:8px;
-  padding:8px 10px; margin:6px 8px;
-  border:1px dashed var(--border); border-radius:10px;
-  background:var(--card);
-  min-width:180px;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+.presets-dock .preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin: 6px 8px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  min-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* 7) AUTH POPOVER -------------------------------------------------------------- */
-.pop{
-  position:absolute; top:44px; right:0; width:260px; max-width:calc(100vw - 24px);
-  background:var(--card); border:1px solid var(--border); border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,.1);
-  padding:12px; opacity:0; transform:scale(.96); transform-origin: top right; font-size: 12px;
-  pointer-events:none; transition: opacity .12s ease, transform .12s ease; z-index:9998;
-}
-.pop.open{ opacity:1; transform:scale(1); pointer-events:auto; }
-.overlay{ position:fixed; inset:0; background:transparent; z-index:9997; }
-
-/* 8) DATE INFO MODAL ----------------------------------------------------------- */
-.modal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:10000; }
-.modal .sheet{
-  width:min(720px,95vw); background:var(--card); border:1px solid var(--border); border-radius:16px;
-  padding:16px; box-shadow:0 18px 48px rgba(0,0,0,.22);
-}
-.modal .date-head{ display:flex; align-items:center; gap:10px; }
-.flag-buttons{ display:flex; gap:8px; margin-left:auto; }
-.flag-btn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--border); }
-.flag-btn.red{ background:var(--flagRed); border-color:var(--flagRed); }
-.flag-btn.blue{ background:var(--flagBlue); border-color:var(--flagBlue); }
-.flag-btn.active{ box-shadow:0 0 0 2px #fff inset; }
-
-.rest-btn{
-  width:28px; height:28px; border:1px solid var(--border); border-radius:8px; background:#fff; color:#222;
-  display:inline-flex; align-items:center; justify-content:center;
-}
-.rest-btn:hover{ background:rgba(0,0,0,.03); }
-.rest-btn.active{ background:var(--flagRed); border-color:var(--flagRed); color:#fff; }
-
-.modal textarea{ resize:none; }
-.actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:8px; }
-
-/* 9) MODIFY-CHIP MODAL HELPERS ------------------------------------------------- */
-.icon-chooser{ position:relative; width:36px; height:36px; flex:0 0 36px; }
-.icon-chooser .icon-btn{ position:absolute; inset:0; }
-.icon-chooser .icon-combo{
-  position:absolute; left:0; top:40px; z-index:10020;
-  padding:6px 10px; border:1px solid var(--border); border-radius:8px; background:var(--card);
-  cursor: default !important;
+/* --- Preset Add Form --- */
+.preset-add-icon {
+  align-self: flex-end;
 }
 
-/* 10) RESPONSIVE --------------------------------------------------------------- */
-@media (max-width:980px){
-  .container{ padding:16px; }
-  .presets-dock{ position:static; width:auto; max-height:none; right:auto; top:auto; margin-top:8px; }
-}
-
-/* mobile: chips scroll */
-@media (max-width:767px){
-  .chips-scroll{ overflow-x:scroll !important; scrollbar-gutter:stable both-edges; }
-  .chips-scroll::-webkit-scrollbar{ height:6px; }
-  .chips-scroll::-webkit-scrollbar-thumb{ background:rgba(0,0,0,.3); border-radius:3px; }
-  .chips-scroll::-webkit-scrollbar-track{ background:rgba(0,0,0,.05); }
-  .chips-scroll{ scrollbar-width:thin; }
-}
-
-/* === Wide (아이콘 보임) === */
-@media (min-width: 1200px){
- /* .header-fixed-top .left{ display:block; }     /* AuthButton */
-  .presets-dock{ display:flex; }            /* PresetsDock */
-  .col-main{ padding-left:60px; padding-right:60px; }  /* 좌우 패딩 */
-}
-
-/* === Narrow (아이콘 숨김) === */
-@media (max-width: 1199.98px){
- /* .header-fixed-top .left{ display:none; }      /* Auth만 숨김, ThemeToggle은 유지 */
-  .presets-dock{ display:none !important; }
-  .col-main{ padding-left:0; padding-right:0; }
-}
-
-/* Presets 추가 폼: 우측 정렬 */
-.preset-add-icon{
-  align-self: flex-end;                 /* ＋ 버튼을 항상 오른쪽에 */
-}
-
-.preset-add-form{
-  margin-left: auto;                    /* 컨테이너 자체를 오른쪽으로 밀착 */
+.preset-add-form {
+  margin-left: auto;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;                /* 폼 내부 요소들(아이콘/텍스트/버튼)도 우측 정렬 */
+  align-items: flex-end;
   gap: 6px;
   padding: 6px 0;
 }
 
-.preset-add-form input{
-  width: 200px;                         /* 입력창 폭(원하면 수치 조절) */
+.preset-add-form input {
+  width: 200px;
 }
 
-.preset-add-actions{
+.preset-add-actions {
   display: flex;
   gap: 6px;
-  align-self: flex-end;                 /* 취소/추가 버튼 묶음도 우측 정렬 */
+  align-self: flex-end;
 }
 
-/* TopRibbon가 축소 복귀 후 크기 유지되도록 래퍼에서 강제 */
-.top-ribbon-reset {
-  line-height: 0;
-}
-.top-ribbon-reset img,
-.top-ribbon-reset a,
-.top-ribbon-reset button {
-  height: 64px;          /* Calendar에서 준 containerHeight와 동일 */
-  max-height: 64px;
-  flex: 0 0 auto;
-}
-.top-ribbon-reset img {
-  width: auto;
+
+/* =====================================================================================
+  7. MODALS
+===================================================================================== */
+
+/* --- Auth Popover --- */
+.pop {
+  position: absolute;
+  top: 44px;
+  right: 0;
+  width: 260px;
+  max-width: calc(100vw - 24px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+  padding: 12px;
+  opacity: 0;
+  transform: scale(.96);
+  transform-origin: top right;
+  font-size: 12px;
+  pointer-events: none;
+  transition: opacity .12s ease, transform .12s ease;
+  z-index: 9998;
 }
 
-/* 상단 컨테이너: 모바일에서 여백 +40px (총 46px) */
-@media (max-width: 768px){
-  .calendar-top{
-    margin-top: calc(46px + env(safe-area-inset-top, 0px)) !important;
-  }
+.pop.open {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
 }
 
-/* DateInfoModal — 하단 버튼 반응형 크기 & 좌/우 정렬 */
-.modal .actions button{
-  padding: 8px 12px;
-  font-size: 14px;
-}
-@media (max-width: 900px){
-  .modal .actions button{ padding: 7px 10px; font-size: 13px; }
-}
-@media (max-width: 600px){
-  .modal .actions button{ padding: 6px 8px; font-size: 12px; }
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 9997;
 }
 
-/* 초기화(왼쪽) 버튼은 빨간 글씨의 플레인 스타일 */
-.btn-plain-danger{
+/* --- Date Info Modal --- */
+.modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal .sheet {
+  width: min(720px, 95vw);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+  container-type: inline-size;
+}
+
+.modal .date-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flag-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.flag-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.flag-btn.red {
+  background: var(--flagRed);
+  border-color: var(--flagRed);
+}
+
+.flag-btn.blue {
+  background: var(--flagBlue);
+  border-color: var(--flagBlue);
+}
+
+.flag-btn.active {
+  box-shadow: 0 0 0 2px #fff inset;
+}
+
+.rest-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: #222;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rest-btn:hover {
+  background: rgba(0, 0, 0, .03);
+}
+
+.rest-btn.active {
+  background: var(--flagRed);
+  border-color: var(--flagRed);
+  color: #fff;
+}
+
+.modal textarea {
+  resize: none;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.actions-sep {
+  opacity: 0;
+  width: 10px;
+  display: inline-block;
+}
+
+.btn-plain-danger {
   color: var(--flagRed);
   background: transparent;
   border-color: transparent;
 }
-.btn-plain-danger:hover{
+
+.btn-plain-danger:hover {
   background: color-mix(in srgb, var(--flagRed) 10%, transparent);
 }
 
-/* ‘|’ 대신 여백 스페이서 */
-.actions-sep{ opacity: 0; width: 10px; display: inline-block; }
-
-/* ============================================================================
-   DateInfoModal — 컨테이너 쿼리 기반 반응형(모달 크기에 따라)
-   - 버튼: 모달(.sheet) 너비에 따라 padding / font-size 반응
-   - 이미지: 초기 210x210, 모달에 비례하여 확대 (cqi 사용)
-   ============================================================================ */
-
-.modal .sheet{
-  /* 컨테이너 쿼리 활성화 (inline-size 기준) */
-  container-type: inline-size;
-}
-
-/* 버튼 기본값 */
-.modal .actions button{
+/* --- Modal Container Queries --- */
+.modal .actions button {
   padding: 8px 12px;
   font-size: 14px;
 }
 
-/* 모달이 좁을 때 */
-@container (max-width: 560px){
-  .modal .actions button{ padding: 6px 8px; font-size: 12px; }
+@container (max-width: 560px) {
+  .modal .actions button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
 }
 
-/* 중간 너비 */
-@container (min-width: 561px) and (max-width: 740px){
-  .modal .actions button{ padding: 7px 10px; font-size: 13px; }
+@container (min-width: 561px) and (max-width: 740px) {
+  .modal .actions button {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
 }
 
-/* 넓을 때 */
-@container (min-width: 741px){
-  .modal .actions button{ padding: 8px 12px; font-size: 14px; }
+@container (min-width: 741px) {
+  .modal .actions button {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
 }
 
-/* (치환) 이미지 박스: 최소 175px로 하향, 컨테이너 비례 확대 */
-.note-image-wrap{ flex: 0 0 auto; }
+.modal .actions.actions--fixed button {
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+}
 
-.note-image-box{
-  width: clamp(140px, 32cqi, 300px);  /* ← 210px → 175px */
+/* --- Note Image --- */
+.note-image-wrap {
+  flex: 0 0 auto;
+}
+
+.note-image-box {
+  width: clamp(140px, 32cqi, 300px);
   border: 1px solid var(--border);
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
 }
 
-.note-image-box > img{
+.note-image-box > img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
 
-/* DateInfoModal 버튼 크기 고정(이미지 유무/모달 폭과 무관) */
-.modal .actions.actions--fixed button{
-  padding: 6px 8px !important;   /* “이미지 없음” 케이스와 동일 규격 */
-  font-size: 12px !important;
-}
-/* ===== Calendar: Long-press pulse effect ===== */
-@keyframes calendarPulse {
-  0%   { opacity: 1; transform: scale(0.98); }
-  100% { opacity: 0; transform: scale(1.03); }
-}
-.calendar-cell-pulse {
-  position: absolute;
-  inset: 4px;
+/* --- Link Panel --- */
+.link-panel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--border);
   border-radius: 10px;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px rgba(0,145,255,0.25);
-  animation: calendarPulse 220ms ease-out forwards;
-  pointer-events: none;
+  padding: 6px 8px;
+  background: #fff;
+  margin-top: 6px;
 }
 
-/* DateInfoModal: Link panel (compact & mobile friendly) */
-.link-panel{
-  display:flex; align-items:center; gap:8px;
-  border:1px solid var(--border); border-radius:10px;
-  padding:6px 8px; background:#fff; margin-top:6px;
-}
-.link-panel__input{
-  flex:1; padding:6px 8px;
-  border:1px solid var(--border); border-radius:8px;
-  font-size:13px; min-width:0;
-}
-.link-panel__actions{ display:flex; gap:6px; }
-.btn-sm{ padding:6px 8px; font-size:13px; line-height:1.2; }
-
-@media (max-width: 640px){
-  .link-panel{ gap:6px; padding:6px 8px; }
-  .link-panel__input{ font-size:12px; padding:6px 8px; }
-  .btn-sm{ font-size:12px; padding:6px 8px; }
-}
-@media (pointer: coarse){
-  .link-panel__actions{ gap:8px; }
-}
-/* Calendar: text outline when cell has background image */
-.calendar-grid .cell.has-bgimg .cell-top .cell-date,
-.calendar-grid .cell.has-bgimg .cell-top .cell-title,
-.calendar-grid .cell.has-bgimg .cell-content-text,
-.calendar-grid .cell.has-bgimg .cell-rest,
-.calendar-grid .cell.has-bgimg .chips .chip-text{
-  -webkit-text-stroke: 0.6px rgba(0,0,0,0.9);
-  text-shadow:
-    0 1px 0 rgba(0,0,0,0.9),
-    1px 0 0 rgba(0,0,0,0.9),
-    0 -1px 0 rgba(0,0,0,0.9),
-    -1px 0 0 rgba(0,0,0,0.9);
+.link-panel__input {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  min-width: 0;
 }
 
-/* 📦 PresetsDock: 독립 스크롤 박스 */
-.dock-scrollbox{
-  flex: 1 1 auto;
-  min-height: 0;
-  /* 도크 최대 높이 안에서만 스크롤 발생(버튼/토글은 항상 노출) */
-  max-height: calc(var(--dock-max-h) - var(--dock-toggle-h) - (var(--dock-padding) * 2));
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-right: 4px;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain; /* 페이지 스크롤과 충돌 방지 */
-}
-/* 리스트는 스크롤 제거(박스가 담당) */
-.preset-vertical-list{
-  padding-right: 0;
-  display:flex; flex-direction:column; align-items:flex-end; gap:0;
-  overflow: visible;
-}
-/* 접힘 상태에선 스크롤 박스 숨김 */
-.presets-dock.collapsed .dock-scrollbox{ display:none; }  /* 접힘 때 칩 영역 숨김 */
-
-/* 캘린더 셀 텍스트 잘림 방지 */
-.calendar .cell{
-  box-sizing: border-box;
-  line-height: 1.28;               /* 줄 간격 확보 */
-  padding-bottom: 8px;              /* 마지막 줄 컷 방지 */
-  scrollbar-gutter: stable both-edges; /* 스크롤바로 인한 폭 변동 방지 */
+.link-panel__actions {
+  display: flex;
+  gap: 6px;
 }
 
-/* 셀 내부 텍스트 래핑(국문/영문 모두) */
-.calendar .cell,
-.calendar .cell .cell-text,
-.calendar .cell .content,
-.calendar .cell p,
-.calendar .cell div{
-  white-space: pre-wrap;            /* 줄바꿈/개행 유지 */
-  overflow-wrap: anywhere;          /* 긴 단어 강제 줄바꿈 */
-  word-break: break-word;           /* 구형 엔진 대응 */
+.btn-sm {
+  padding: 6px 8px;
+  font-size: 13px;
+  line-height: 1.2;
 }
 
-/* (선택) 스크롤바가 텍스트를 가리는 느낌이면 여백을 조금 더 */
-@supports (scrollbar-gutter: stable){
-  .calendar .cell{ scrollbar-gutter: stable both-edges; }
+/* --- Chip Modify Modal --- */
+.icon-chooser {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
 }
 
-/* ===== 이미지 로딩 스켈레톤 ===== */
+.icon-chooser .icon-btn {
+  position: absolute;
+  inset: 0;
+}
+
+.icon-chooser .icon-combo {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  z-index: 10020;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  cursor: default !important;
+}
+
+
+/* =====================================================================================
+  8. LOADING STATES (로딩 스켈레톤)
+===================================================================================== */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 .image-skeleton {
@@ -636,7 +955,6 @@ a:focus-visible{
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* 배경 이미지 로딩 중 표시 */
 .calendar-grid .cell.has-bgimg.loading {
   position: relative;
 }
@@ -648,7 +966,7 @@ a:focus-visible{
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255,255,255,0.1) 50%,
+    rgba(255, 255, 255, 0.1) 50%,
     transparent 100%
   );
   background-size: 200% 100%;
@@ -657,11 +975,157 @@ a:focus-visible{
   z-index: 1;
 }
 
-@media print {
-  /* 버튼/아이콘/입력 등은 숨김 */
-  button, input, textarea, .link-ico, .top-ribbon, .toolbar { display: none !important; }
 
-  /* 달력 격자만 명확히 */
-  .calendar { box-shadow: none !important; background: #fff !important; }
-  .cell { break-inside: avoid; }
+/* =====================================================================================
+  9. UTILITIES (유틸리티)
+===================================================================================== */
+.top-ribbon-reset {
+  line-height: 0;
+}
+
+.top-ribbon-reset img,
+.top-ribbon-reset a,
+.top-ribbon-reset button {
+  height: 64px;
+  max-height: 64px;
+  flex: 0 0 auto;
+}
+
+.top-ribbon-reset img {
+  width: auto;
+}
+
+
+/* =====================================================================================
+  10. RESPONSIVE (반응형)
+===================================================================================== */
+
+/* --- Mobile Chips Scroll --- */
+@media (max-width: 767px) {
+  .chips-scroll {
+    overflow-x: scroll !important;
+    scrollbar-gutter: stable both-edges;
+  }
+
+  .chips-scroll::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .chips-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, .3);
+    border-radius: 3px;
+  }
+
+  .chips-scroll::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, .05);
+  }
+
+  .chips-scroll {
+    scrollbar-width: thin;
+  }
+}
+
+/* --- Mobile Header Spacing --- */
+@media (max-width: 768px) {
+  .calendar-top {
+    margin-top: calc(46px + env(safe-area-inset-top, 0px)) !important;
+  }
+}
+
+/* --- Modal Button Responsive --- */
+@media (max-width: 900px) {
+  .modal .actions button {
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal .actions button {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+/* --- Link Panel Mobile --- */
+@media (max-width: 640px) {
+  .link-panel {
+    gap: 6px;
+    padding: 6px 8px;
+  }
+
+  .link-panel__input {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+
+  .btn-sm {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
+
+@media (pointer: coarse) {
+  .link-panel__actions {
+    gap: 8px;
+  }
+}
+
+/* --- Tablet --- */
+@media (max-width: 980px) {
+  .container {
+    padding: 16px;
+  }
+
+  .presets-dock {
+    position: static;
+    width: auto;
+    max-height: none;
+    right: auto;
+    top: auto;
+    margin-top: 8px;
+  }
+}
+
+/* --- Wide Screen (Desktop) --- */
+@media (min-width: 1200px) {
+  .presets-dock {
+    display: flex;
+  }
+
+  .col-main {
+    padding-left: 60px;
+    padding-right: 60px;
+  }
+}
+
+/* --- Narrow Screen --- */
+@media (max-width: 1199.98px) {
+  .presets-dock {
+    display: none !important;
+  }
+
+  .col-main {
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+
+/* =====================================================================================
+  11. PRINT (인쇄)
+===================================================================================== */
+@media print {
+  button, input, textarea, .link-ico, .top-ribbon, .toolbar {
+    display: none !important;
+  }
+
+  .calendar {
+    box-shadow: none !important;
+    background: #fff !important;
+  }
+
+  .cell {
+    break-inside: avoid;
+  }
 }
