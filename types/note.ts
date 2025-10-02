@@ -1,25 +1,10 @@
 // /types/note.ts
 
-export type Item = {
-  emoji: string | null;
-  label: string;
-  text?: string;
-  emojiOnly?: boolean; // 텍스트가 비어있으면 아이콘만 표시
-};
+import type { NoteRow, NoteItem, NoteColor } from './database';
 
-export type Note = {
-  id?: number;
-  y: number;
-  m: number;
-  d: number;
-  content: string;
-  items: Item[];
-  color: 'red' | 'blue' | null; // 기존 플래그 유지
-  link: string | null;          // 통일: 필수 + string|null
-  image_url: string | null;     // 통일: 필수 + string|null
-  title?: string | null;  
-  use_image_as_bg?: boolean;
-};
+// 레거시 호환성을 위한 타입 별칭
+export type Item = NoteItem;
+export type Note = NoteRow;
 
 /**
  * 임의 row/partial 데이터를 안전한 Note로 변환.

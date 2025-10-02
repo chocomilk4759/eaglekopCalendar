@@ -10,7 +10,8 @@ type Preset = { emoji: string | null; label: string };
 
 const BUCKET = 'note-images';
 const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif','image/apng','image/avif'] as const;
-const MAX_GIF_MB = 20;
+const MAX_IMAGE_MB = 5;  // 일반 이미지 최대 크기
+const MAX_GIF_MB = 10;   // GIF 최대 크기 (애니메이션 고려)
 
 function derivePreviewPath(p: string)
 {
@@ -474,8 +475,10 @@ export default function DateInfoModal({
       const isAnimApng = (f.type === 'image/png' || f.type === 'image/apng' || /\.png$/i.test(f.name)) ? await isApngAnimated(f) : false;
       const isAvif = f.type === 'image/avif' || /\.avif$/i.test(f.name); // 보수적으로 애니 가능성 고려
 
-      if (isGif && f.size > MAX_GIF_MB * 1024 * 1024) {
-        alert(`GIF 용량이 큽니다(>${MAX_GIF_MB}MB). 크기를 줄여 다시 시도하세요.`);
+      // 파일 크기 검증: GIF는 별도 제한, 나머지는 일반 제한
+      const maxSize = isGif ? MAX_GIF_MB : MAX_IMAGE_MB;
+      if (f.size > maxSize * 1024 * 1024) {
+        alert(`이미지 용량이 큽니다(>${maxSize}MB). 크기를 줄여 다시 시도하세요.`);
         setUploading(false);
         e.currentTarget.value = '';
         return;

@@ -87,13 +87,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const VER = 'cal-cache-0.16.0';
     const cur = localStorage.getItem('cal:ver');
     if (cur !== VER) {
+      // 배치로 키 목록 수집 후 동기적으로 삭제
+      const keysToRemove: string[] = [];
       for (let i = 0; i < localStorage.length; i++) {
-        const k = localStorage.key(i)!;
+        const k = localStorage.key(i);
         if (k && k.startsWith('cal:') && k !== 'cal:ver') {
-          // 키 목록이 변하므로 안전하게 나중에 지움
-          setTimeout(() => localStorage.removeItem(k), 0);
+          keysToRemove.push(k);
         }
       }
+      // 수집된 키를 한 번에 삭제
+      keysToRemove.forEach(k => localStorage.removeItem(k));
       localStorage.setItem('cal:ver', VER);
     }
   }, []);
