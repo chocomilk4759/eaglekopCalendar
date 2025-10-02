@@ -203,7 +203,6 @@ a:focus-visible {
   overflow: hidden;
   box-sizing: border-box;
   line-height: 1.28;
-  scrollbar-gutter: stable both-edges;
 }
 
 .calendar-grid .cell.sel {
@@ -322,10 +321,13 @@ a:focus-visible {
   align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
-  padding: 4px 2px;
-  overflow: auto;
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
   gap: 6px;
+  margin-right: -8px;
+  padding-right: 8px;
 }
 
 .calendar-grid .cell-content.has-text {
