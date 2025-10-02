@@ -317,12 +317,14 @@ a:focus-visible {
 .calendar-grid .cell-content {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
   text-align: left;
   padding: 4px 2px;
   overflow: auto;
   min-height: 0;
+  gap: 6px;
 }
 
 .calendar-grid .cell-content.has-text {
@@ -360,6 +362,8 @@ a:focus-visible {
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
+  flex: 1;
+  width: 100%;
 }
 
 /* --- Blue Cell Bundle (칩 + 텍스트) --- */
@@ -445,7 +449,7 @@ a:focus-visible {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
 .chip {
@@ -477,16 +481,17 @@ a:focus-visible {
 /* --- Calendar Grid Chips --- */
 .calendar-grid .chips {
   gap: 2px;
+  flex-shrink: 0;
 }
 
 .calendar-grid .chip {
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: 8px;
   gap: 3px;
   line-height: 1.25;
   background: var(--card);
   box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
-  margin: 2px;
+  margin: 1px;
 }
 
 [data-theme="dark"] .calendar-grid .chip {
