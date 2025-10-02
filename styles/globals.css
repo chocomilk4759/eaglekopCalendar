@@ -326,8 +326,8 @@ a:focus-visible {
   overflow-x: hidden;
   min-height: 0;
   gap: 6px;
-  margin-right: -8px;
-  padding-right: 8px;
+  margin-right: -4px;
+  padding-right: 4px;
 }
 
 .calendar-grid .cell-content.has-text {
