@@ -846,7 +846,7 @@ export default function DateInfoModal({
                 value={memo}
                 onChange={(e)=>setMemo(e.target.value)}
                 placeholder="메모를 입력하세요"
-                style={{width:'100%', minHeight:160, borderRadius:10, resize:'none'}}
+                style={{width:'100%', minHeight:140, borderRadius:10, resize:'none'}}
                 disabled={disabled}
               />
             )}
