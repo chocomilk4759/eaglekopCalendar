@@ -6,6 +6,7 @@ import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 import ConfirmModal from './ConfirmModal';
+import AlertModal from './AlertModal';
 
 type Preset = { emoji: string | null; label: string };
 
@@ -330,12 +331,18 @@ export default function DateInfoModal({
         setDisplayImageUrl(null);
         setLinkPanelOpen(false);
         setComboOpen(false);
-        alert('초기화했습니다.');
         onSaved(cleared);
+        setConfirmOpen(false);
+
+        // 성공 알림 모달 표시
+        setAlertMessage({ title: '초기화 완료', message: '해당 날짜의 모든 내용이 삭제되었습니다.' });
+        setAlertOpen(true);
       } catch (e: any) {
-        alert(e?.message ?? '초기화 중 오류');
+        setConfirmOpen(false);
+        // 오류 알림 모달 표시
+        setAlertMessage({ title: '초기화 실패', message: e?.message ?? '초기화 중 오류가 발생했습니다.' });
+        setAlertOpen(true);
       }
-      setConfirmOpen(false);
     });
     setConfirmOpen(true);
   }
@@ -345,6 +352,9 @@ export default function DateInfoModal({
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
 
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
@@ -931,6 +941,14 @@ export default function DateInfoModal({
           message="해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?"
           confirmText="삭제"
           cancelText="취소"
+        />
+
+        {/* 알림 모달 */}
+        <AlertModal
+          open={alertOpen}
+          onClose={() => setAlertOpen(false)}
+          title={alertMessage.title}
+          message={alertMessage.message}
         />
       </div>
     </div>
