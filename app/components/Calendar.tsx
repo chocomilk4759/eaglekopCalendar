@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
 import SearchModal from './SearchModal';
+import ChipActionModal from './ChipActionModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
@@ -127,6 +128,20 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const selectedKeysRef = useRef<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkTargets, setBulkTargets] = useState<Array<{y:number;m:number;d:number}>>([]);
+
+  // 칩 드롭 액션 모달 상태
+  const [chipActionOpen, setChipActionOpen] = useState(false);
+  const [pendingChipDrop, setPendingChipDrop] = useState<{
+    targetY: number;
+    targetM: number;
+    targetD: number;
+    sourceY: number;
+    sourceM: number;
+    sourceD: number;
+    chipIndex: number;
+    item: Item;
+    sourceType: 'modal' | 'cell';
+  } | null>(null);
 
   // 선택 날짜 타이틀(최대 5개 표시)
   function fmtBulkTitle(ts: Array<{y:number;m:number;d:number}>){
@@ -631,6 +646,101 @@ useEffect(() => {
     setModalOpen(true);
   }
 
+  // 칩 드롭 처리
+  async function dropChip(targetY: number, targetM: number, targetD: number, dataStr: string) {
+    if (!canEdit) return;
+    let payload: any;
+    try {
+      payload = JSON.parse(dataStr);
+    } catch {
+      return;
+    }
+    if (payload?.type !== 'chip') return;
+
+    const { sourceDate, chipIndex, item, sourceType } = payload;
+
+    // 동일 날짜로 드롭하면 무시
+    if (sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) return;
+
+    // 모달 열어서 이동/복사 선택
+    setPendingChipDrop({
+      targetY,
+      targetM,
+      targetD,
+      sourceY: sourceDate.y,
+      sourceM: sourceDate.m,
+      sourceD: sourceDate.d,
+      chipIndex,
+      item,
+      sourceType,
+    });
+    setChipActionOpen(true);
+  }
+
+  // 칩 이동 (원본 삭제)
+  async function moveChip() {
+    if (!pendingChipDrop) return;
+    const { targetY, targetM, targetD, sourceY, sourceM, sourceD, chipIndex, item } = pendingChipDrop;
+
+    // 1) 대상 날짜에 칩 추가
+    const targetKey = cellKey(targetY, targetM, targetD);
+    const targetNote = notes[targetKey] || normalizeNote({
+      y: targetY, m: targetM, d: targetD, content: '', items: [], color: null, link: null, image_url: null
+    });
+    const targetItems = [...(targetNote.items || []), item];
+
+    // 2) 원본 날짜에서 칩 제거
+    const sourceKey = cellKey(sourceY, sourceM, sourceD);
+    const sourceNote = notes[sourceKey];
+    if (!sourceNote) return;
+    const sourceItems = [...(sourceNote.items || [])];
+    sourceItems.splice(chipIndex, 1);
+
+    try {
+      // 대상 저장
+      await upsertNote({ ...targetNote, items: targetItems });
+      // 원본 저장
+      await upsertNote({ ...sourceNote, items: sourceItems });
+
+      // 상태 업데이트
+      setNotes(prev => ({
+        ...prev,
+        [targetKey]: { ...targetNote, items: targetItems },
+        [sourceKey]: { ...sourceNote, items: sourceItems },
+      }));
+    } catch (e: any) {
+      alert(e?.message ?? '칩 이동 중 오류');
+    }
+
+    setChipActionOpen(false);
+    setPendingChipDrop(null);
+  }
+
+  // 칩 복사 (원본 유지)
+  async function copyChip() {
+    if (!pendingChipDrop) return;
+    const { targetY, targetM, targetD, item } = pendingChipDrop;
+
+    const targetKey = cellKey(targetY, targetM, targetD);
+    const targetNote = notes[targetKey] || normalizeNote({
+      y: targetY, m: targetM, d: targetD, content: '', items: [], color: null, link: null, image_url: null
+    });
+    const targetItems = [...(targetNote.items || []), item];
+
+    try {
+      await upsertNote({ ...targetNote, items: targetItems });
+      setNotes(prev => ({
+        ...prev,
+        [targetKey]: { ...targetNote, items: targetItems },
+      }));
+    } catch (e: any) {
+      alert(e?.message ?? '칩 복사 중 오류');
+    }
+
+    setChipActionOpen(false);
+    setPendingChipDrop(null);
+  }
+
   // 월 그리드 생성 (최적화: 의존성 최소화)
   const dim = useMemo(() => daysInMonth(ym.y, ym.m), [ym.y, ym.m]);
   const start = useMemo(() => startWeekday(ym.y, ym.m), [ym.y, ym.m]);
@@ -952,8 +1062,11 @@ useEffect(() => {
                       // 노트 복제 드롭
                       dropNoteCopy(c.y, c.m, c.d, json);
                     } else if (json?.type === 'preset') {
-                      // ✅ 프리셋 드롭 → 단 한 번만 호출해서 모달 오픈
+                      // 프리셋 드롭 → 모달 오픈
                       dropPreset(c.y, c.m, c.d, raw);
+                    } else if (json?.type === 'chip') {
+                      // 칩 드롭 → 이동/복사 선택 모달
+                      dropChip(c.y, c.m, c.d, raw);
                     } else {
                       // 다른 타입은 무시
                     }
@@ -1008,7 +1121,24 @@ useEffect(() => {
                     <div className="cell-bundle">
                       <div className="chips">
                         {note.items.map((it: Item, i: number) => (
-                          <span key={i} className="chip">
+                          <span
+                            key={i}
+                            className="chip"
+                            draggable={canEdit}
+                            onDragStart={(e) => {
+                              if (!canEdit || !c.d) return;
+                              e.stopPropagation();
+                              const payload = {
+                                type: 'chip',
+                                sourceType: 'cell',
+                                sourceDate: { y: c.y, m: c.m, d: c.d },
+                                chipIndex: i,
+                                item: it
+                              };
+                              e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                              e.dataTransfer.effectAllowed = 'move';
+                            }}
+                          >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                               <span className="chip-emoji">{it.emoji ?? ''}</span>
                               {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
@@ -1024,7 +1154,24 @@ useEffect(() => {
                   ) : (showChips && note) ? (
                     <div className="chips">
                       {note!.items.map((it: Item, i: number) => (
-                        <span key={i} className="chip">
+                        <span
+                          key={i}
+                          className="chip"
+                          draggable={canEdit}
+                          onDragStart={(e) => {
+                            if (!canEdit || !c.d) return;
+                            e.stopPropagation();
+                            const payload = {
+                              type: 'chip',
+                              sourceType: 'cell',
+                              sourceDate: { y: c.y, m: c.m, d: c.d },
+                              chipIndex: i,
+                              item: it
+                            };
+                            e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                        >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                             <span className="chip-emoji">{it.emoji ?? ''}</span>
                             {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
@@ -1112,6 +1259,18 @@ useEffect(() => {
           }
           openInfo(y, m, d);
         }}
+      />
+
+      {/* ── 칩 이동/복사 선택 모달 ── */}
+      <ChipActionModal
+        open={chipActionOpen}
+        onClose={() => {
+          setChipActionOpen(false);
+          setPendingChipDrop(null);
+        }}
+        onMove={moveChip}
+        onCopy={copyChip}
+        chipLabel={pendingChipDrop?.item ? `${pendingChipDrop.item.emoji ?? ''} ${pendingChipDrop.item.text || pendingChipDrop.item.label}` : ''}
       />
     </>
   );

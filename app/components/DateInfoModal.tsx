@@ -375,6 +375,18 @@ export default function DateInfoModal({
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
     setDragIndex(idx);
+    const item = note.items?.[idx];
+    if (item) {
+      // 칩을 Calendar 셀로 드래그할 수 있도록 payload 추가
+      const payload = {
+        type: 'chip',
+        sourceType: 'modal',
+        sourceDate: { y: date.y, m: date.m, d: date.d },
+        chipIndex: idx,
+        item
+      };
+      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+    }
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain', String(idx));
   }
