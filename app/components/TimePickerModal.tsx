@@ -14,14 +14,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const [hour, setHour] = useState('00');
   const [minute, setMinute] = useState('00');
   const [nextDay, setNextDay] = useState(initialNextDay);
-  const [isDragging, setIsDragging] = useState(false);
 
   const hourRef = useRef<HTMLDivElement>(null);
   const minuteRef = useRef<HTMLDivElement>(null);
-  const dragTarget = useRef<'hour' | 'minute' | null>(null);
-  const lastY = useRef<number>(0);
-  const accumulatedDelta = useRef<number>(0);
-  const dragStartScroll = useRef<number>(0);
 
   // 초기값 파싱
   useEffect(() => {
@@ -38,181 +33,36 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     }
   }, [open, initialTime, initialNextDay]);
 
-  // 초기 스크롤 위치 설정
-  useEffect(() => {
-    if (open && hourRef.current) {
-      const itemHeight = 40;
-      const containerHeight = 120;
-      const centerOffset = (containerHeight - itemHeight) / 2;
-      hourRef.current.scrollTop = parseInt(hour) * itemHeight + centerOffset;
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (open && minuteRef.current) {
-      const itemHeight = 40;
-      const containerHeight = 120;
-      const centerOffset = (containerHeight - itemHeight) / 2;
-      minuteRef.current.scrollTop = parseInt(minute) * itemHeight + centerOffset;
-    }
-  }, [open]);
-
-  // 스크롤 이벤트로 시간 값 업데이트
-  const handleHourScroll = () => {
-    if (!hourRef.current || isDragging) return;
-    const scrollTop = hourRef.current.scrollTop;
+  // 스크롤 위치로부터 보이는 값들을 계산
+  const getVisibleValues = (scrollTop: number, totalCount: number) => {
     const itemHeight = 40;
     const containerHeight = 120;
-    const centerOffset = (containerHeight - itemHeight) / 2;
-    const index = Math.round((scrollTop - centerOffset) / itemHeight);
-    const h = String(((index % 24) + 24) % 24).padStart(2, '0');
+    const bufferCount = 5; // 앞뒤로 여유롭게 렌더링할 항목 수
+
+    const centerIndex = Math.round(scrollTop / itemHeight);
+    const startIndex = Math.max(0, centerIndex - bufferCount);
+    const endIndex = Math.min(totalCount - 1, centerIndex + bufferCount);
+
+    return { centerIndex: centerIndex % totalCount, startIndex, endIndex };
+  };
+
+  // 포인터(선택된 값) 업데이트
+  const handleHourScroll = () => {
+    if (!hourRef.current) return;
+    const { centerIndex } = getVisibleValues(hourRef.current.scrollTop, 24);
+    const h = String(centerIndex).padStart(2, '0');
     if (h !== hour) {
       setHour(h);
     }
   };
 
   const handleMinuteScroll = () => {
-    if (!minuteRef.current || isDragging) return;
-    const scrollTop = minuteRef.current.scrollTop;
-    const itemHeight = 40;
-    const containerHeight = 120;
-    const centerOffset = (containerHeight - itemHeight) / 2;
-    const index = Math.round((scrollTop - centerOffset) / itemHeight);
-    const m = String(((index % 60) + 60) % 60).padStart(2, '0');
+    if (!minuteRef.current) return;
+    const { centerIndex } = getVisibleValues(minuteRef.current.scrollTop, 60);
+    const m = String(centerIndex).padStart(2, '0');
     if (m !== minute) {
       setMinute(m);
     }
-  };
-
-  // 마우스 드래그로 무한 스크롤 (Pointer Lock)
-  const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {
-    const ref = target === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-
-    setIsDragging(true);
-    dragTarget.current = target;
-    lastY.current = e.clientY;
-    accumulatedDelta.current = 0;
-    dragStartScroll.current = ref.current.scrollTop;
-    e.preventDefault();
-
-    // Pointer Lock 요청
-    ref.current.requestPointerLock();
-  };
-
-  useEffect(() => {
-    if (!isDragging || !dragTarget.current) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
-      if (!ref.current) return;
-
-      const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-      const itemHeight = 40;
-      const containerHeight = 120;
-      const centerOffset = (containerHeight - itemHeight) / 2;
-
-      let delta = 0;
-
-      // Pointer Lock이 활성화되어 있으면 movementY 사용
-      if (document.pointerLockElement) {
-        delta = -e.movementY;
-      } else {
-        // Pointer Lock이 아직 활성화 안됐으면 일반 좌표로 델타 계산
-        delta = lastY.current - e.clientY;
-        lastY.current = e.clientY;
-      }
-
-      // 스크롤 업데이트
-      let newScroll = ref.current.scrollTop + delta;
-
-      // 순환 처리
-      const totalScroll = (maxValue + 1) * itemHeight;
-      if (newScroll < centerOffset) {
-        newScroll += totalScroll;
-      } else if (newScroll > totalScroll + centerOffset) {
-        newScroll -= totalScroll;
-      }
-
-      ref.current.scrollTop = newScroll;
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      setIsDragging(false);
-      dragTarget.current = null;
-
-      // Pointer Lock 해제
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
-
-      e.preventDefault();
-      e.stopPropagation();
-    };
-
-    window.addEventListener('mousemove', handleMouseMove, { capture: true });
-    window.addEventListener('mouseup', handleMouseUp, { capture: true });
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove, { capture: true });
-      window.removeEventListener('mouseup', handleMouseUp, { capture: true });
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
-    };
-  }, [isDragging]);
-
-  // 터치 드래그로 무한 스크롤
-  const handleTouchStart = (e: React.TouchEvent, target: 'hour' | 'minute') => {
-    const ref = target === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-
-    setIsDragging(true);
-    dragTarget.current = target;
-    lastY.current = e.touches[0].clientY;
-    accumulatedDelta.current = 0;
-    dragStartScroll.current = ref.current.scrollTop;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !dragTarget.current) return;
-    const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-
-    const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-    const itemHeight = 40;
-    const containerHeight = 120;
-    const centerOffset = (containerHeight - itemHeight) / 2;
-
-    // 델타 계산
-    const currentDelta = lastY.current - e.touches[0].clientY;
-    accumulatedDelta.current += currentDelta;
-    lastY.current = e.touches[0].clientY;
-
-    // 스크롤 업데이트
-    let newScroll = dragStartScroll.current + accumulatedDelta.current;
-
-    // 순환 처리
-    const totalScroll = (maxValue + 1) * itemHeight;
-    while (newScroll < centerOffset) {
-      newScroll += totalScroll;
-      dragStartScroll.current += totalScroll;
-    }
-    while (newScroll > totalScroll + centerOffset) {
-      newScroll -= totalScroll;
-      dragStartScroll.current -= totalScroll;
-    }
-
-    ref.current.scrollTop = newScroll;
-    e.preventDefault();
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    dragTarget.current = null;
-    accumulatedDelta.current = 0;
   };
 
   const handleSave = () => {
@@ -227,7 +77,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
   if (!open) return null;
 
-  // 단일 세트만 표시
+  // 단일 배열 (00~23, 00~59)
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
@@ -261,17 +111,15 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onBlur={(e) => {
               const val = e.target.value;
               const itemHeight = 40;
-              const containerHeight = 120;
-              const centerOffset = (containerHeight - itemHeight) / 2;
               if (val === '') {
                 setHour('00');
-                if (hourRef.current) hourRef.current.scrollTop = centerOffset;
+                if (hourRef.current) hourRef.current.scrollTop = 0;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setHour(formatted);
                 if (hourRef.current) {
-                  hourRef.current.scrollTop = num * itemHeight + centerOffset;
+                  hourRef.current.scrollTop = num * itemHeight;
                 }
               }
             }}
@@ -308,17 +156,15 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onBlur={(e) => {
               const val = e.target.value;
               const itemHeight = 40;
-              const containerHeight = 120;
-              const centerOffset = (containerHeight - itemHeight) / 2;
               if (val === '') {
                 setMinute('00');
-                if (minuteRef.current) minuteRef.current.scrollTop = centerOffset;
+                if (minuteRef.current) minuteRef.current.scrollTop = 0;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setMinute(formatted);
                 if (minuteRef.current) {
-                  minuteRef.current.scrollTop = num * itemHeight + centerOffset;
+                  minuteRef.current.scrollTop = num * itemHeight;
                 }
               }
             }}
@@ -344,10 +190,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
           <div
             ref={hourRef}
             onScroll={handleHourScroll}
-            onMouseDown={(e) => handleMouseDown(e, 'hour')}
-            onTouchStart={(e) => handleTouchStart(e, 'hour')}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             style={{
               height: 120,
               width: 60,
@@ -357,41 +199,43 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               userSelect: 'none',
-              cursor: isDragging && dragTarget.current === 'hour' ? 'grabbing' : 'grab',
               position: 'relative'
             }}
           >
-            <div style={{ height: 40 }} />
-            {hours.map((h) => (
-              <div
-                key={h}
-                onClick={() => {
-                  setHour(h);
-                  if (hourRef.current) {
-                    const itemHeight = 40;
-                    const containerHeight = 120;
-                    const centerOffset = (containerHeight - itemHeight) / 2;
-                    hourRef.current.scrollTop = parseInt(h) * itemHeight + centerOffset;
-                  }
-                }}
-                style={{
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  scrollSnapAlign: 'center',
-                  fontSize: h === hour ? 24 : 16,
-                  fontWeight: h === hour ? 700 : 400,
-                  color: h === hour ? 'var(--text)' : 'var(--text-secondary)',
-                  opacity: h === hour ? 1 : 0.4,
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-              >
-                {h}
-              </div>
-            ))}
-            <div style={{ height: 40 }} />
+            {hours.map((h, i) => {
+              const scrollTop = hourRef.current?.scrollTop ?? 0;
+              const itemHeight = 40;
+              const centerIndex = Math.round(scrollTop / itemHeight);
+              const distanceFromCenter = Math.abs(i - centerIndex);
+              const isCenter = i === centerIndex;
+
+              return (
+                <div
+                  key={`hour-${i}`}
+                  onClick={() => {
+                    setHour(h);
+                    if (hourRef.current) {
+                      hourRef.current.scrollTop = i * itemHeight;
+                    }
+                  }}
+                  style={{
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    scrollSnapAlign: 'center',
+                    fontSize: isCenter ? 24 : Math.max(16, 24 - distanceFromCenter * 4),
+                    fontWeight: isCenter ? 700 : 400,
+                    color: 'var(--text)',
+                    opacity: isCenter ? 1 : Math.max(0.3, 1 - distanceFromCenter * 0.2),
+                    transition: 'all 0.15s ease',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {h}
+                </div>
+              );
+            })}
           </div>
 
           <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)' }}>:</span>
@@ -399,10 +243,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
           <div
             ref={minuteRef}
             onScroll={handleMinuteScroll}
-            onMouseDown={(e) => handleMouseDown(e, 'minute')}
-            onTouchStart={(e) => handleTouchStart(e, 'minute')}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             style={{
               height: 120,
               width: 60,
@@ -412,41 +252,43 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               userSelect: 'none',
-              cursor: isDragging && dragTarget.current === 'minute' ? 'grabbing' : 'grab',
               position: 'relative'
             }}
           >
-            <div style={{ height: 40 }} />
-            {minutes.map((m) => (
-              <div
-                key={m}
-                onClick={() => {
-                  setMinute(m);
-                  if (minuteRef.current) {
-                    const itemHeight = 40;
-                    const containerHeight = 120;
-                    const centerOffset = (containerHeight - itemHeight) / 2;
-                    minuteRef.current.scrollTop = parseInt(m) * itemHeight + centerOffset;
-                  }
-                }}
-                style={{
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  scrollSnapAlign: 'center',
-                  fontSize: m === minute ? 24 : 16,
-                  fontWeight: m === minute ? 700 : 400,
-                  color: m === minute ? 'var(--text)' : 'var(--text-secondary)',
-                  opacity: m === minute ? 1 : 0.4,
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-              >
-                {m}
-              </div>
-            ))}
-            <div style={{ height: 40 }} />
+            {minutes.map((m, i) => {
+              const scrollTop = minuteRef.current?.scrollTop ?? 0;
+              const itemHeight = 40;
+              const centerIndex = Math.round(scrollTop / itemHeight);
+              const distanceFromCenter = Math.abs(i - centerIndex);
+              const isCenter = i === centerIndex;
+
+              return (
+                <div
+                  key={`minute-${i}`}
+                  onClick={() => {
+                    setMinute(m);
+                    if (minuteRef.current) {
+                      minuteRef.current.scrollTop = i * itemHeight;
+                    }
+                  }}
+                  style={{
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    scrollSnapAlign: 'center',
+                    fontSize: isCenter ? 24 : Math.max(16, 24 - distanceFromCenter * 4),
+                    fontWeight: isCenter ? 700 : 400,
+                    color: 'var(--text)',
+                    opacity: isCenter ? 1 : Math.max(0.3, 1 - distanceFromCenter * 0.2),
+                    transition: 'all 0.15s ease',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {m}
+                </div>
+              );
+            })}
           </div>
         </div>
 
