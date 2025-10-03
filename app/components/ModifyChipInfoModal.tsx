@@ -114,93 +114,99 @@ export default function ModifyChipInfoModal({
             {title}
           </div>
         )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
-          <div className="icon-chooser">
-            <button
-              type="button"
-              className="icon-btn"
-              aria-label="아이콘 변경"
-              title={canEdit ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
-              onClick={async ()=>{ if(canEdit){ await ensureOptions(); setIconOpen(v=>!v); } }}
-              disabled={!canEdit}
-              style={{
-                width: 36, height: 36, borderRadius: 18,
-                display: 'grid', placeItems: 'center', lineHeight: 1,
-                border: '1px solid var(--border)', background: '#fff', fontSize: 12,
-                flex: '0 0 36px', cursor: canEdit ? 'pointer':'not-allowed'
-              }}
-            >
-              <span className="emoji-glyph">{localPreset.emoji ?? '•'}</span>
-            </button>
-
-            {iconOpen && (
-              <select
-                className="icon-combo"
-                onChange={(e)=>{
-                  const idx = Number(e.target.value);
-                  if (!Number.isNaN(idx) && options[idx]) {
-                    const picked = options[idx];
-                    setLocalPreset(prev => ({ ...prev, emoji: picked.emoji })); // 아이콘만 변경
-                  }
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* 첫 번째 행: 아이콘 + 텍스트 입력 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* 아이콘 버튼(ADD/EDIT 공통, editor만) */}
+            <div className="icon-chooser">
+              <button
+                type="button"
+                className="icon-btn"
+                aria-label="아이콘 변경"
+                title={canEdit ? '아이콘 선택' : '아이콘은 수정할 수 없습니다'}
+                onClick={async ()=>{ if(canEdit){ await ensureOptions(); setIconOpen(v=>!v); } }}
+                disabled={!canEdit}
+                style={{
+                  width: 36, height: 36, borderRadius: 18,
+                  display: 'grid', placeItems: 'center', lineHeight: 1,
+                  border: '1px solid var(--border)', background: '#fff', fontSize: 12,
+                  flex: '0 0 36px', cursor: canEdit ? 'pointer':'not-allowed'
                 }}
-                defaultValue=""
-                aria-label="아이콘 선택"
-                style={{ cursor:'default' }}
               >
-                <option value="" disabled>아이콘 선택…</option>
-                {options.map((p, i)=>(
-                  <option key={`${p.emoji ?? '•'}-${i}`} value={i}>
-                    {`${p.emoji ?? '•'} ${p.label}`}
-                  </option>
-                ))}
-              </select>
-            )}
+                <span className="emoji-glyph">{localPreset.emoji ?? '•'}</span>
+              </button>
+
+              {iconOpen && (
+                <select
+                  className="icon-combo"
+                  onChange={(e)=>{
+                    const idx = Number(e.target.value);
+                    if (!Number.isNaN(idx) && options[idx]) {
+                      const picked = options[idx];
+                      setLocalPreset(prev => ({ ...prev, emoji: picked.emoji })); // 아이콘만 변경
+                    }
+                  }}
+                  defaultValue=""
+                  aria-label="아이콘 선택"
+                  style={{ cursor:'default' }}
+                >
+                  <option value="" disabled>아이콘 선택…</option>
+                  {options.map((p, i)=>(
+                    <option key={`${p.emoji ?? '•'}-${i}`} value={i}>
+                      {`${p.emoji ?? '•'} ${p.label}`}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            {/* 텍스트만 수정 */}
+            <input
+              ref={inputRef}
+              type="text"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="내용 입력"
+              aria-label="칩 내용"
+              style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12, minWidth: 0 }}
+            />
           </div>
 
-          {/* 텍스트만 수정 */}
-          <input
-            ref={inputRef}
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="내용 입력"
-            aria-label="칩 내용"
-            style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-          />
+          {/* 두 번째 행: 시간 설정 + 액션 버튼들 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* 시간 설정 버튼 */}
+            <button
+              type="button"
+              onClick={() => setTimePickerOpen(true)}
+              aria-label="시간 설정"
+              style={{ fontSize: 12, whiteSpace: 'nowrap', padding: '6px 10px' }}
+            >
+              {startTime ? `${startTime}${nextDay ? '+1' : ''}` : '시간'}
+            </button>
 
-          {/* 시간 설정 버튼 */}
-          <button
-            type="button"
-            onClick={() => setTimePickerOpen(true)}
-            aria-label="시간 설정"
-            style={{ fontSize: 12, whiteSpace: 'nowrap' }}
-          >
-            {startTime ? `${startTime}${nextDay ? '+1' : ''}` : '시간 설정'}
-          </button>
-
-          {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
-          {showRestButton && canEdit && (
-            <button type="button" onClick={onRest} aria-label="휴방 설정" style={{fontSize:12}}>휴방</button>
-          )}
-
-          {/* 액션 */}
-          <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
-            <button onClick={() => onSave(text.trim(), startTime.trim(), nextDay, localPreset)} aria-label="저장">저장</button>
-            {mode === 'add' ? (
-              <button onClick={onClose} aria-label="취소">취소</button>
-            ) : (
-              <>
-                <button
-                  onClick={onDelete}
-                  aria-label="삭제"
-                  style={{ borderColor: '#b12a2a', color: '#b12a2a', fontSize: 12 }}
-                >
-                  삭제
-                </button>
-                <button onClick={onClose} aria-label="닫기" style={{ fontSize: 12 }}>닫기</button>
-              </>
+            {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼 */}
+            {showRestButton && canEdit && (
+              <button type="button" onClick={onRest} aria-label="휴방 설정" style={{fontSize:12, padding: '6px 10px'}}>휴방</button>
             )}
+
+            {/* 액션 버튼들 */}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, fontSize: 12 }}>
+              <button onClick={() => onSave(text.trim(), startTime.trim(), nextDay, localPreset)} aria-label="저장" style={{padding: '6px 12px'}}>저장</button>
+              {mode === 'add' ? (
+                <button onClick={onClose} aria-label="취소" style={{padding: '6px 12px'}}>취소</button>
+              ) : (
+                <>
+                  <button
+                    onClick={onDelete}
+                    aria-label="삭제"
+                    style={{ borderColor: '#b12a2a', color: '#b12a2a', fontSize: 12, padding: '6px 12px' }}
+                  >
+                    삭제
+                  </button>
+                  <button onClick={onClose} aria-label="닫기" style={{ fontSize: 12, padding: '6px 12px' }}>닫기</button>
+                </>
+              )}
+            </div>
           </div>
         </div>
       </div>

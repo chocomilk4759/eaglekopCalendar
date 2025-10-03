@@ -80,23 +80,20 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     onDragStateChange?.(isDragging);
   }, [isDragging, onDragStateChange]);
 
-  // 마우스 드래그 핸들러 (무한 스크롤, Pointer Lock)
-  const handleMouseDown = async (e: React.MouseEvent, target: 'hour' | 'minute') => {
+  // 마우스 드래그 핸들러 (무한 스크롤)
+  const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {
     const ref = target === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
 
     setIsDragging(true);
     dragTarget.current = target;
+    lastY.current = e.clientY;
     accumulatedDelta.current = 0;
     dragStartScroll.current = ref.current.scrollTop;
     e.preventDefault();
 
-    // Pointer Lock 요청
-    try {
-      await ref.current.requestPointerLock();
-    } catch (err) {
-      console.warn('Pointer Lock not supported', err);
-    }
+    // 커서 숨기기
+    document.body.style.cursor = 'none';
   };
 
   useEffect(() => {
@@ -109,16 +106,18 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       const maxValue = dragTarget.current === 'hour' ? 23 : 59;
       const itemHeight = 36;
 
-      // Pointer Lock을 사용하면 movementY 사용
-      const deltaY = e.movementY ? -e.movementY : 0;
+      // 현재 프레임의 델타 계산
+      const currentDelta = lastY.current - e.clientY;
 
       // 델타를 누적에 추가
-      accumulatedDelta.current += deltaY;
+      accumulatedDelta.current += currentDelta;
+
+      // 다음 프레임을 위해 현재 위치 저장
+      lastY.current = e.clientY;
 
       // 스크롤 업데이트 (누적 델타 기반)
       let newScroll = dragStartScroll.current + accumulatedDelta.current;
       const singleCycleScroll = maxValue * itemHeight;
-      const totalScroll = singleCycleScroll * 3; // 3번 반복
 
       // 순환 처리 - 첫 번째 세트나 마지막 세트에 가까우면 중간으로 리셋
       if (newScroll < singleCycleScroll * 0.5) {
@@ -143,10 +142,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       dragTarget.current = null;
       accumulatedDelta.current = 0;
 
-      // Pointer Lock 해제
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
+      // 커서 복원
+      document.body.style.cursor = '';
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -155,11 +152,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-
-      // Pointer Lock 해제
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
+      document.body.style.cursor = '';
     };
   }, [isDragging]);
 
