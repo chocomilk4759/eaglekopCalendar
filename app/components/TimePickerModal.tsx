@@ -41,15 +41,19 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   // 초기 스크롤 위치 설정
   useEffect(() => {
     if (open && hourRef.current) {
-      const itemHeight = 36;
-      hourRef.current.scrollTop = parseInt(hour) * itemHeight;
+      const itemHeight = 40;
+      const containerHeight = 120;
+      const centerOffset = (containerHeight - itemHeight) / 2;
+      hourRef.current.scrollTop = parseInt(hour) * itemHeight + centerOffset;
     }
   }, [open]);
 
   useEffect(() => {
     if (open && minuteRef.current) {
-      const itemHeight = 36;
-      minuteRef.current.scrollTop = parseInt(minute) * itemHeight;
+      const itemHeight = 40;
+      const containerHeight = 120;
+      const centerOffset = (containerHeight - itemHeight) / 2;
+      minuteRef.current.scrollTop = parseInt(minute) * itemHeight + centerOffset;
     }
   }, [open]);
 
@@ -57,10 +61,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const handleHourScroll = () => {
     if (!hourRef.current || isDragging) return;
     const scrollTop = hourRef.current.scrollTop;
-    const itemHeight = 36;
-    const index = Math.round(scrollTop / itemHeight);
-    const h = String(index).padStart(2, '0');
-    if (h !== hour && index >= 0 && index < 24) {
+    const itemHeight = 40;
+    const containerHeight = 120;
+    const centerOffset = (containerHeight - itemHeight) / 2;
+    const index = Math.round((scrollTop - centerOffset) / itemHeight);
+    const h = String(((index % 24) + 24) % 24).padStart(2, '0');
+    if (h !== hour) {
       setHour(h);
     }
   };
@@ -68,10 +74,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const handleMinuteScroll = () => {
     if (!minuteRef.current || isDragging) return;
     const scrollTop = minuteRef.current.scrollTop;
-    const itemHeight = 36;
-    const index = Math.round(scrollTop / itemHeight);
-    const m = String(index).padStart(2, '0');
-    if (m !== minute && index >= 0 && index < 60) {
+    const itemHeight = 40;
+    const containerHeight = 120;
+    const centerOffset = (containerHeight - itemHeight) / 2;
+    const index = Math.round((scrollTop - centerOffset) / itemHeight);
+    const m = String(((index % 60) + 60) % 60).padStart(2, '0');
+    if (m !== minute) {
       setMinute(m);
     }
   };
@@ -98,7 +106,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       if (!ref.current) return;
 
       const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-      const itemHeight = 36;
+      const itemHeight = 40;
+      const containerHeight = 120;
+      const centerOffset = (containerHeight - itemHeight) / 2;
 
       // Pointer Lock의 movementY 사용
       const delta = -e.movementY;
@@ -106,17 +116,20 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       // 스크롤 업데이트
       let newScroll = ref.current.scrollTop + delta;
 
-      // 순환 처리 (0 미만이면 끝으로, 최대값 초과면 처음으로)
-      if (newScroll < 0) {
-        newScroll = maxValue * itemHeight;
-      } else if (newScroll > maxValue * itemHeight) {
-        newScroll = 0;
+      // 순환 처리
+      const totalScroll = (maxValue + 1) * itemHeight;
+      if (newScroll < centerOffset) {
+        newScroll = totalScroll + centerOffset;
+      } else if (newScroll > totalScroll + centerOffset) {
+        newScroll = centerOffset;
       }
 
       ref.current.scrollTop = newScroll;
+      e.preventDefault();
+      e.stopPropagation();
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       setIsDragging(false);
       dragTarget.current = null;
 
@@ -124,14 +137,17 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       if (document.pointerLockElement) {
         document.exitPointerLock();
       }
+
+      e.preventDefault();
+      e.stopPropagation();
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove, { capture: true });
+    window.addEventListener('mouseup', handleMouseUp, { capture: true });
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('mousemove', handleMouseMove, { capture: true });
+      window.removeEventListener('mouseup', handleMouseUp, { capture: true });
       if (document.pointerLockElement) {
         document.exitPointerLock();
       }
@@ -156,7 +172,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     if (!ref.current) return;
 
     const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-    const itemHeight = 36;
+    const itemHeight = 40;
+    const containerHeight = 120;
+    const centerOffset = (containerHeight - itemHeight) / 2;
 
     // 델타 계산
     const currentDelta = lastY.current - e.touches[0].clientY;
@@ -168,11 +186,11 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
     // 순환 처리
     const totalScroll = (maxValue + 1) * itemHeight;
-    while (newScroll < 0) {
+    while (newScroll < centerOffset) {
       newScroll += totalScroll;
       dragStartScroll.current += totalScroll;
     }
-    while (newScroll > totalScroll) {
+    while (newScroll > totalScroll + centerOffset) {
       newScroll -= totalScroll;
       dragStartScroll.current -= totalScroll;
     }
@@ -232,15 +250,18 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             }}
             onBlur={(e) => {
               const val = e.target.value;
+              const itemHeight = 40;
+              const containerHeight = 120;
+              const centerOffset = (containerHeight - itemHeight) / 2;
               if (val === '') {
                 setHour('00');
-                if (hourRef.current) hourRef.current.scrollTop = 0;
+                if (hourRef.current) hourRef.current.scrollTop = centerOffset;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setHour(formatted);
                 if (hourRef.current) {
-                  hourRef.current.scrollTop = num * 36;
+                  hourRef.current.scrollTop = num * itemHeight + centerOffset;
                 }
               }
             }}
@@ -276,15 +297,18 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             }}
             onBlur={(e) => {
               const val = e.target.value;
+              const itemHeight = 40;
+              const containerHeight = 120;
+              const centerOffset = (containerHeight - itemHeight) / 2;
               if (val === '') {
                 setMinute('00');
-                if (minuteRef.current) minuteRef.current.scrollTop = 0;
+                if (minuteRef.current) minuteRef.current.scrollTop = centerOffset;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setMinute(formatted);
                 if (minuteRef.current) {
-                  minuteRef.current.scrollTop = num * 36;
+                  minuteRef.current.scrollTop = num * itemHeight + centerOffset;
                 }
               }
             }}
@@ -315,45 +339,49 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             style={{
-              height: 108,
-              width: 50,
+              height: 120,
+              width: 60,
               overflowY: 'scroll',
               scrollSnapType: 'y mandatory',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
+              borderRadius: 8,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               userSelect: 'none',
-              cursor: isDragging && dragTarget.current === 'hour' ? 'grabbing' : 'grab'
+              cursor: isDragging && dragTarget.current === 'hour' ? 'grabbing' : 'grab',
+              position: 'relative'
             }}
           >
-            <div style={{ height: 36 }} />
+            <div style={{ height: 40 }} />
             {hours.map((h) => (
               <div
                 key={h}
                 onClick={() => {
                   setHour(h);
                   if (hourRef.current) {
-                    hourRef.current.scrollTop = parseInt(h) * 36;
+                    const itemHeight = 40;
+                    const containerHeight = 120;
+                    const centerOffset = (containerHeight - itemHeight) / 2;
+                    hourRef.current.scrollTop = parseInt(h) * itemHeight + centerOffset;
                   }
                 }}
                 style={{
-                  height: 36,
+                  height: 40,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  scrollSnapAlign: 'start',
-                  fontSize: 15,
+                  scrollSnapAlign: 'center',
+                  fontSize: h === hour ? 24 : 16,
                   fontWeight: h === hour ? 700 : 400,
                   color: h === hour ? 'var(--text)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s',
+                  opacity: h === hour ? 1 : 0.4,
+                  transition: 'all 0.2s ease',
                   cursor: 'pointer'
                 }}
               >
                 {h}
               </div>
             ))}
-            <div style={{ height: 36 }} />
+            <div style={{ height: 40 }} />
           </div>
 
           <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)' }}>:</span>
@@ -366,45 +394,49 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
             style={{
-              height: 108,
-              width: 50,
+              height: 120,
+              width: 60,
               overflowY: 'scroll',
               scrollSnapType: 'y mandatory',
-              border: '1px solid var(--border)',
-              borderRadius: 6,
+              borderRadius: 8,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               userSelect: 'none',
-              cursor: isDragging && dragTarget.current === 'minute' ? 'grabbing' : 'grab'
+              cursor: isDragging && dragTarget.current === 'minute' ? 'grabbing' : 'grab',
+              position: 'relative'
             }}
           >
-            <div style={{ height: 36 }} />
+            <div style={{ height: 40 }} />
             {minutes.map((m) => (
               <div
                 key={m}
                 onClick={() => {
                   setMinute(m);
                   if (minuteRef.current) {
-                    minuteRef.current.scrollTop = parseInt(m) * 36;
+                    const itemHeight = 40;
+                    const containerHeight = 120;
+                    const centerOffset = (containerHeight - itemHeight) / 2;
+                    minuteRef.current.scrollTop = parseInt(m) * itemHeight + centerOffset;
                   }
                 }}
                 style={{
-                  height: 36,
+                  height: 40,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  scrollSnapAlign: 'start',
-                  fontSize: 15,
+                  scrollSnapAlign: 'center',
+                  fontSize: m === minute ? 24 : 16,
                   fontWeight: m === minute ? 700 : 400,
                   color: m === minute ? 'var(--text)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s',
+                  opacity: m === minute ? 1 : 0.4,
+                  transition: 'all 0.2s ease',
                   cursor: 'pointer'
                 }}
               >
                 {m}
               </div>
             ))}
-            <div style={{ height: 36 }} />
+            <div style={{ height: 40 }} />
           </div>
         </div>
 
