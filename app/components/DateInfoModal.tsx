@@ -164,12 +164,16 @@ export default function DateInfoModal({
     setComboOpen(false);
 
     const hasImg = !!base.image_url;
+    const hasItems = Array.isArray(base.items) && base.items.length > 0;
     // 뷰포트에 따라 min/max 한계 재계산
     const L = computeLimits(hasImg);
     setLimits(L);
     // 원하는 기본 크기를 한계 내에서 보정
     const wantW = hasImg ? 880 : 550;
-    const wantH = hasImg ? 330 : 315;
+    // 콘텐츠에 따라 높이 자동 조정
+    let wantH = 250; // 기본 최소 높이
+    if (hasImg) wantH = 330;
+    else if (hasItems) wantH += hasItems * 35; // 칩 개수에 따라 증가
     const w = clamp(wantW, L.minW, L.maxW);
     const h = clamp(wantH, L.minH, L.maxH);
     const vw = window.innerWidth, vh = window.innerHeight;
