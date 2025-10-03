@@ -321,6 +321,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     pressTimerRef.current = window.setTimeout(() => {
       setLongReadyKey(k);
+      if (navigator.vibrate) navigator.vibrate(50);
     }, LONGPRESS_MS);
   }
   function onPressEndCell() {
@@ -1107,11 +1108,15 @@ useEffect(() => {
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
                 backgroundColor: baseBgColor,
-                opacity: isDragging ? 0.5 : 1,
-                transition: 'opacity 0.2s',
+                opacity: isDragging ? 0.6 : 1,
+                transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                transition: 'opacity 0.15s, transform 0.15s',
+                boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
               } : {
-                opacity: isDragging ? 0.5 : 1,
-                transition: 'opacity 0.2s',
+                opacity: isDragging ? 0.6 : 1,
+                transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                transition: 'opacity 0.15s, transform 0.15s',
+                boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
               } }
               onClick={(e) => c.d && onCellClick(e, c.y, c.m, c.d, k)}
               onMouseDown={(e) => {
