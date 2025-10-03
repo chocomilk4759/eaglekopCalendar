@@ -131,18 +131,22 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     return <>선택한 날짜: {head}{more}</>;
   }
 
-  // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
-  // Ctrl+F: 검색 모달 열기
+  // Ctrl+F: 검색 모달 열기 (모든 사용자)
   useEffect(() => {
-    if (!canEdit) return;  // 권한 없으면 비활성화
-    function onKeyDown(e: KeyboardEvent){
-      // Ctrl+F: 검색 모달 열기
+    function onSearchKey(e: KeyboardEvent){
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         setSearchOpen(true);
-        return;
       }
+    }
+    window.addEventListener('keydown', onSearchKey);
+    return () => window.removeEventListener('keydown', onSearchKey);
+  }, []);
 
+  // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
+  useEffect(() => {
+    if (!canEdit) return;  // 권한 없으면 비활성화
+    function onKeyDown(e: KeyboardEvent){
       if (e.key === 'Control' && !ctrlSelecting){
         setCtrlSelecting(true);
         selectedKeysRef.current = new Set();
