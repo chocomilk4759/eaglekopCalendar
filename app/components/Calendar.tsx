@@ -405,24 +405,24 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
-    e.stopPropagation(); // 셀의 터치 이벤트 차단
-    clearChipPressTimer();
-    clearPressTimer(); // 셀 롱프레스 타이머도 정리
 
-    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
-    const LONGPRESS_MS = isCoarse ? 550 : 350;
+    // 셀 롱프레스 타이머만 정리 (stopPropagation 제거)
+    clearPressTimer();
+    clearChipPressTimer();
+
+    const LONGPRESS_MS = 550; // 모바일 전용
 
     chipPressTimerRef.current = window.setTimeout(() => {
       setChipDragReady({ cellKey, chipIndex });
-      // 햅틱 피드백 (지원되는 경우)
+      // 햅틱 피드백
       if (navigator.vibrate) navigator.vibrate(50);
     }, LONGPRESS_MS);
   }
 
   function onChipTouchEnd(e: React.TouchEvent) {
-    e.stopPropagation(); // 셀의 터치 이벤트 차단
+    const wasDragging = chipDragReady !== null;
 
-    if (!chipDragReady) {
+    if (!wasDragging) {
       clearChipPressTimer();
       return;
     }
@@ -478,6 +478,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     dropChip(targetParts[0], targetParts[1], targetParts[2], JSON.stringify(payload));
     setChipDragReady(null);
+
+    // 이벤트 전파 차단 (셀 클릭 방지)
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   // 드래그 시작 시 데이터 적재

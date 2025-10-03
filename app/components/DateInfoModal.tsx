@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
+import ConfirmModal from './ConfirmModal';
 
 type Preset = { emoji: string | null; label: string };
 
@@ -310,27 +311,40 @@ export default function DateInfoModal({
     catch (e:any) { alert(e?.message ?? '배경 사용 여부 저장 중 오류'); setUseImageAsBg(!checked); }
   }
 
-  async function clearAll(){
-    if(!canEdit){ setMemo(''); return; }
-    const ok = window.confirm('해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?');
-    if(!ok) return;
-    try{
-      const { error } = await supabase.from('notes').delete()
-        .eq('y', date.y).eq('m', date.m).eq('d', date.d);
-      if(error) throw new Error(error.message);
-      const cleared = normalizeNote({ ...emptyNote });
-      setNote(cleared);
-      setMemo(''); setInitialMemo('');
-      setLinkInput('');
-      setImageUrl(null); setDisplayImageUrl(null);
-      setLinkPanelOpen(false); setComboOpen(false);
-      alert('초기화했습니다.');
-      onSaved(cleared);
-    }catch(e:any){ alert(e?.message ?? '초기화 중 오류'); }
+  function openClearConfirm() {
+    if (!canEdit) {
+      setMemo('');
+      return;
+    }
+    setConfirmAction(() => async () => {
+      try {
+        const { error } = await supabase.from('notes').delete()
+          .eq('y', date.y).eq('m', date.m).eq('d', date.d);
+        if (error) throw new Error(error.message);
+        const cleared = normalizeNote({ ...emptyNote });
+        setNote(cleared);
+        setMemo('');
+        setInitialMemo('');
+        setLinkInput('');
+        setImageUrl(null);
+        setDisplayImageUrl(null);
+        setLinkPanelOpen(false);
+        setComboOpen(false);
+        alert('초기화했습니다.');
+        onSaved(cleared);
+      } catch (e: any) {
+        alert(e?.message ?? '초기화 중 오류');
+      }
+      setConfirmOpen(false);
+    });
+    setConfirmOpen(true);
   }
 
   const [chipModalStartTime, setChipModalStartTime] = useState<string>('');
   const [chipModalNextDay, setChipModalNextDay] = useState<boolean>(false);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
 
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
@@ -836,7 +850,7 @@ export default function DateInfoModal({
             {/* 하단 버튼: [초기화] | [저장 | 이미지삽입, 이미지제거, 링크 | 닫기] */}
             <div className="actions actions--fixed" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginTop:8 }}>
               <div className="actions-left" style={{ marginRight:'auto' }}>
-                <button onClick={clearAll} disabled={disabled} className="btn-plain-danger">초기화</button>
+                <button onClick={openClearConfirm} disabled={disabled} className="btn-plain-danger">초기화</button>
               </div>
 
               <div className="actions-right" style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
@@ -904,6 +918,19 @@ export default function DateInfoModal({
           onDelete={chipModalMode==='edit' ? deleteChip : undefined}
           onClose={()=> setChipModalOpen(false)}
           canEdit={canEdit}
+        />
+
+        {/* 초기화 확인 모달 */}
+        <ConfirmModal
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={() => {
+            if (confirmAction) confirmAction();
+          }}
+          title="초기화 확인"
+          message="해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?"
+          confirmText="삭제"
+          cancelText="취소"
         />
       </div>
     </div>
