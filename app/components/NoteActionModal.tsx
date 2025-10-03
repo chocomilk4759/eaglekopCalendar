@@ -1,17 +1,19 @@
 'use client';
 
-export default function ChipActionModal({
+export default function NoteActionModal({
   open,
   onClose,
-  onMove,
-  onCopy,
-  chipLabel
+  onOverwrite,
+  onMerge,
+  sourceDate,
+  targetDate,
 }: {
   open: boolean;
   onClose: () => void;
-  onMove: () => void;
-  onCopy: () => void;
-  chipLabel: string;
+  onOverwrite: () => void;
+  onMerge: () => void;
+  sourceDate: string;
+  targetDate: string;
 }) {
   if (!open) return null;
 
@@ -33,14 +35,14 @@ export default function ChipActionModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>일정 동작 선택</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>날짜 복사 동작 선택</h3>
         <p style={{ margin: '0 0 20px', fontSize: 14, opacity: 0.8 }}>
-          <strong>{chipLabel}</strong>을(를) 어떻게 처리할까요?
+          <strong>{sourceDate}</strong>의 내용을 <strong>{targetDate}</strong>에 어떻게 복사할까요?
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
-            onClick={onMove}
+            onClick={onOverwrite}
             style={{
               padding: '12px 16px',
               fontSize: 15,
@@ -51,10 +53,10 @@ export default function ChipActionModal({
               cursor: 'pointer',
             }}
           >
-            이동 (원본 삭제)
+            덮어쓰기 (기존 내용 삭제)
           </button>
           <button
-            onClick={onCopy}
+            onClick={onMerge}
             style={{
               padding: '12px 16px',
               fontSize: 15,
@@ -64,7 +66,7 @@ export default function ChipActionModal({
               cursor: 'pointer',
             }}
           >
-            복사 (원본 유지)
+            합치기 (기존 내용 유지)
           </button>
           <button
             onClick={onClose}

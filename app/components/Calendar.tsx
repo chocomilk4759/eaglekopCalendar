@@ -6,6 +6,7 @@ import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
 import SearchModal from './SearchModal';
 import ChipActionModal from './ChipActionModal';
+import NoteActionModal from './NoteActionModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
@@ -141,6 +142,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     chipIndex: number;
     item: Item;
     sourceType: 'modal' | 'cell';
+  } | null>(null);
+
+  // 노트 복사 액션 모달 상태
+  const [noteActionOpen, setNoteActionOpen] = useState(false);
+  const [pendingNoteDrop, setPendingNoteDrop] = useState<{
+    targetY: number;
+    targetM: number;
+    targetD: number;
+    src: Note;
+    dst: Note;
   } | null>(null);
 
   // 선택 날짜 타이틀(최대 5개 표시)
@@ -414,26 +425,60 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const k = cellKey(targetY, targetM, targetD);
     const dst = notes[k] || normalizeNote({ y: targetY, m: targetM, d: targetD, content:'', items:[], color:null, link:null, image_url:null });
 
-    let finalNote: Note;
     if (hasAnyContent(dst)) {
-      const ans = window.prompt('동작 선택: 1) 덮어쓰기  2) 합치기  3) 취소', '2');
-      if (ans === '1') {
-        finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
-      } else if (ans === '2') {
-        finalNote = mergeNotes(src, normalizeNote({ ...dst, y: targetY, m: targetM, d: targetD }));
-      } else {
-        return; // 취소
-      }
+      // 기존 내용이 있으면 모달 열기
+      setPendingNoteDrop({
+        targetY,
+        targetM,
+        targetD,
+        src,
+        dst,
+      });
+      setNoteActionOpen(true);
     } else {
-      finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
+      // 기존 내용 없으면 바로 복사
+      const finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
+      try {
+        const saved = await upsertNote(finalNote);
+        setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+      } catch (e:any) {
+        alert(e?.message ?? '복제 저장 중 오류');
+      }
     }
+  }
+
+  // 노트 덮어쓰기
+  async function overwriteNote() {
+    if (!pendingNoteDrop) return;
+    const { targetY, targetM, targetD, src } = pendingNoteDrop;
+    const finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
 
     try {
       const saved = await upsertNote(finalNote);
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e:any) {
-      alert(e?.message ?? '복제 저장 중 오류');
+      alert(e?.message ?? '덮어쓰기 중 오류');
     }
+
+    setNoteActionOpen(false);
+    setPendingNoteDrop(null);
+  }
+
+  // 노트 합치기
+  async function mergeNote() {
+    if (!pendingNoteDrop) return;
+    const { targetY, targetM, targetD, src, dst } = pendingNoteDrop;
+    const finalNote = mergeNotes(src, normalizeNote({ ...dst, y: targetY, m: targetM, d: targetD }));
+
+    try {
+      const saved = await upsertNote(finalNote);
+      setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+    } catch (e:any) {
+      alert(e?.message ?? '합치기 중 오류');
+    }
+
+    setNoteActionOpen(false);
+    setPendingNoteDrop(null);
   }
 
   // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
@@ -1271,6 +1316,19 @@ useEffect(() => {
         onMove={moveChip}
         onCopy={copyChip}
         chipLabel={pendingChipDrop?.item ? `${pendingChipDrop.item.emoji ?? ''} ${pendingChipDrop.item.text || pendingChipDrop.item.label}` : ''}
+      />
+
+      {/* ── 노트 덮어쓰기/합치기 선택 모달 ── */}
+      <NoteActionModal
+        open={noteActionOpen}
+        onClose={() => {
+          setNoteActionOpen(false);
+          setPendingNoteDrop(null);
+        }}
+        onOverwrite={overwriteNote}
+        onMerge={mergeNote}
+        sourceDate={pendingNoteDrop ? `${pendingNoteDrop.src.y}-${String(pendingNoteDrop.src.m + 1).padStart(2, '0')}-${String(pendingNoteDrop.src.d).padStart(2, '0')}` : ''}
+        targetDate={pendingNoteDrop ? `${pendingNoteDrop.targetY}-${String(pendingNoteDrop.targetM + 1).padStart(2, '0')}-${String(pendingNoteDrop.targetD).padStart(2, '0')}` : ''}
       />
     </>
   );
