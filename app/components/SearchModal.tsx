@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Note } from '@/types/note';
+import { normalizeNote } from '@/types/note';
+import { createClient } from '@/lib/supabaseClient';
 
 interface SearchResult {
   date: { y: number; m: number; d: number };
@@ -18,83 +20,100 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ open, onClose, notes, onSelectDate }: SearchModalProps) {
+  const supabase = useMemo(() => createClient(), []);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  const performSearch = useCallback((searchQuery: string) => {
+  const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
       return;
     }
 
+    setLoading(true);
     const q = searchQuery.toLowerCase();
     const found: SearchResult[] = [];
 
-    Object.entries(notes).forEach(([key, note]) => {
-      if (!note) return;
+    try {
+      // Supabase에서 전체 notes 가져오기
+      const { data: allNotes, error } = await supabase
+        .from('notes')
+        .select('*')
+        .order('y', { ascending: false })
+        .order('m', { ascending: false })
+        .order('d', { ascending: false });
 
-      const { y, m, d } = note;
-      const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-
-      // 날짜 검색
-      if (dateStr.includes(q) || `${m + 1}월 ${d}일`.includes(q)) {
-        found.push({
-          date: { y, m, d },
-          note,
-          matchType: 'date',
-          matchText: dateStr,
-        });
+      if (error) throw error;
+      if (!allNotes) {
+        setResults([]);
+        setLoading(false);
         return;
       }
 
-      // 제목 검색
-      if (note.title && note.title.toLowerCase().includes(q)) {
-        found.push({
-          date: { y, m, d },
-          note,
-          matchType: 'title',
-          matchText: note.title,
-        });
-        return;
-      }
+      allNotes.forEach((row) => {
+        const note = normalizeNote(row);
+        const { y, m, d } = note;
+        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
-      // 내용 검색
-      if (note.content && note.content.toLowerCase().includes(q)) {
-        found.push({
-          date: { y, m, d },
-          note,
-          matchType: 'content',
-          matchText: note.content.substring(0, 100),
-        });
-        return;
-      }
+        // 날짜 검색
+        if (dateStr.includes(q) || `${m + 1}월 ${d}일`.includes(q)) {
+          found.push({
+            date: { y, m, d },
+            note,
+            matchType: 'date',
+            matchText: dateStr,
+          });
+          return;
+        }
 
-      // 칩 검색
-      if (note.items && note.items.length > 0) {
-        for (const item of note.items) {
-          const chipText = item.text || item.label;
-          if (chipText.toLowerCase().includes(q)) {
-            found.push({
-              date: { y, m, d },
-              note,
-              matchType: 'chip',
-              matchText: chipText,
-            });
-            return;
+        // 제목 검색
+        if (note.title && note.title.toLowerCase().includes(q)) {
+          found.push({
+            date: { y, m, d },
+            note,
+            matchType: 'title',
+            matchText: note.title,
+          });
+          return;
+        }
+
+        // 내용 검색
+        if (note.content && note.content.toLowerCase().includes(q)) {
+          found.push({
+            date: { y, m, d },
+            note,
+            matchType: 'content',
+            matchText: note.content.substring(0, 100),
+          });
+          return;
+        }
+
+        // 칩 검색
+        if (note.items && note.items.length > 0) {
+          for (const item of note.items) {
+            const chipText = item.text || item.label;
+            if (chipText.toLowerCase().includes(q)) {
+              found.push({
+                date: { y, m, d },
+                note,
+                matchType: 'chip',
+                matchText: chipText,
+              });
+              return;
+            }
           }
         }
-      }
-    });
+      });
 
-    // 날짜 순으로 정렬 (최신순)
-    found.sort((a, b) => {
-      if (a.date.y !== b.date.y) return b.date.y - a.date.y;
-      if (a.date.m !== b.date.m) return b.date.m - a.date.m;
-      return b.date.d - a.date.d;
-    });
-
-    setResults(found);
-  }, [notes]);
+      setResults(found);
+    } catch (error) {
+      console.error('Search error:', error);
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase]);
 
   useEffect(() => {
     if (open) {
@@ -157,11 +176,15 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         </div>
 
         <div className="search-results">
-          {query.trim() && results.length === 0 && (
+          {loading && (
+            <div className="search-empty">검색 중...</div>
+          )}
+
+          {!loading && query.trim() && results.length === 0 && (
             <div className="search-empty">검색 결과가 없습니다.</div>
           )}
 
-          {results.map((result, idx) => (
+          {!loading && results.map((result, idx) => (
             <div
               key={`${result.date.y}-${result.date.m}-${result.date.d}-${idx}`}
               className="search-result-item"
