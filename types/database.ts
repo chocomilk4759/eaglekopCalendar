@@ -40,6 +40,7 @@ export interface NoteItem {
   text?: string;
   emojiOnly?: boolean;
   startTime?: string; // HH:mm 형식 (예: "14:30")
+  nextDay?: boolean; // 다음날 새벽 시간인 경우 true
 }
 
 // Supabase 응답 타입

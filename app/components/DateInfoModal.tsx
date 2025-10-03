@@ -125,6 +125,7 @@ export default function DateInfoModal({
     setChipModalMode('add');
     setChipEditIndex(null);
     setChipModalStartTime('');
+    setChipModalNextDay(false);
     setChipModalOpen(true);
     onConsumedAddPreset?.();
   }, [open, addChipPreset, canEdit]);
@@ -315,6 +316,7 @@ export default function DateInfoModal({
   }
 
   const [chipModalStartTime, setChipModalStartTime] = useState<string>('');
+  const [chipModalNextDay, setChipModalNextDay] = useState<boolean>(false);
 
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
@@ -323,10 +325,11 @@ export default function DateInfoModal({
     setChipModalMode('edit');
     setChipEditIndex(idx);
     setChipModalStartTime(cur.startTime ?? '');
+    setChipModalNextDay(cur.nextDay ?? false);
     setChipModalOpen(true);
   }
 
-  async function applyAddChip(text: string, startTime: string, overridePreset?: ChipPreset){
+  async function applyAddChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
     if(!canEdit) return;
     const base = overridePreset ?? chipModalPreset;
     const newItem: Item = {
@@ -334,7 +337,8 @@ export default function DateInfoModal({
       label: base.label,
       text: text || undefined,
       emojiOnly: !text,
-      startTime: startTime || undefined
+      startTime: startTime || undefined,
+      nextDay: nextDay || undefined
     };
     const items = [...(note.items || []), newItem];
     try{ await persist({ items }); }
@@ -342,7 +346,7 @@ export default function DateInfoModal({
     setChipModalOpen(false);
   }
 
-  async function applyEditChip(text: string, startTime: string, overridePreset?: ChipPreset){
+  async function applyEditChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
     if(!canEdit || chipEditIndex==null) return;
     const items = [...(note.items || [])];
     const cur = items[chipEditIndex]; if(!cur) return;
@@ -351,7 +355,8 @@ export default function DateInfoModal({
       text: text || undefined,
       emojiOnly: !text,
       emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji,
-      startTime: startTime || undefined
+      startTime: startTime || undefined,
+      nextDay: nextDay || undefined
     };
     try{ await persist({ items }); }
     catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
@@ -689,7 +694,7 @@ export default function DateInfoModal({
                       fontSize:12, background:'var(--card)', color:'inherit',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
-                {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}</span>}
+                {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
                 <span className="chip-emoji">{it.emoji ?? ''}</span>
                 <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
@@ -716,6 +721,7 @@ export default function DateInfoModal({
                   setChipModalMode('add');
                   setChipEditIndex(null);
                   setChipModalStartTime('');
+                  setChipModalNextDay(false);
                   setChipModalOpen(true);
                   e.currentTarget.selectedIndex = 0;
                 }
@@ -829,7 +835,8 @@ export default function DateInfoModal({
           preset={chipModalPreset}
           initialText={chipModalMode==='edit' && chipEditIndex!=null ? (note.items[chipEditIndex]?.text ?? '') : ''}
           initialStartTime={chipModalStartTime}
-          onSave={(t, st, p)=> chipModalMode==='add' ? applyAddChip(t, st, p) : applyEditChip(t, st, p)}
+          initialNextDay={chipModalNextDay}
+          onSave={(t, st, nd, p)=> chipModalMode==='add' ? applyAddChip(t, st, nd, p) : applyEditChip(t, st, nd, p)}
           onDelete={chipModalMode==='edit' ? deleteChip : undefined}
           onClose={()=> setChipModalOpen(false)}
           canEdit={canEdit}

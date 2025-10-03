@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import TimePicker from './TimePicker';
 
 export type ModifyChipMode = 'add' | 'edit';
 export type ChipPreset = { emoji: string | null; label: string };
@@ -12,6 +13,7 @@ export default function ModifyChipInfoModal({
   preset,
   initialText = '',
   initialStartTime = '',
+  initialNextDay = false,
   onSave,
   onDelete,
   onClose,
@@ -25,7 +27,8 @@ export default function ModifyChipInfoModal({
   preset: ChipPreset;            // 아이콘/라벨
   initialText?: string;
   initialStartTime?: string;
-  onSave: (text: string, startTime: string, selectedPreset?: ChipPreset) => void;
+  initialNextDay?: boolean;
+  onSave: (text: string, startTime: string, nextDay: boolean, selectedPreset?: ChipPreset) => void;
   onDelete?: () => void;
   onClose: () => void;
   canEdit?: boolean;
@@ -35,6 +38,7 @@ export default function ModifyChipInfoModal({
 }) {
   const [text, setText] = useState(initialText);
   const [startTime, setStartTime] = useState(initialStartTime);
+  const [nextDay, setNextDay] = useState(initialNextDay);
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
   const [iconOpen, setIconOpen] = useState(false);
   const [options, setOptions] = useState<ChipPreset[]>([]);
@@ -45,10 +49,11 @@ export default function ModifyChipInfoModal({
     if (open) {
       setText(initialText);
       setStartTime(initialStartTime);
+      setNextDay(initialNextDay);
       setLocalPreset(preset);
       setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [open, initialText, initialStartTime, preset]);
+  }, [open, initialText, initialStartTime, initialNextDay, preset]);
 
   // 모달이 닫히면 콤보도 닫기
   useEffect(() => {
@@ -152,15 +157,6 @@ export default function ModifyChipInfoModal({
             style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
           />
 
-          {/* 시작 시간 입력 */}
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            aria-label="시작 시간"
-            style={{ width: 110, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
-          />
-
           {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
           {showRestButton && canEdit && (
             <button type="button" onClick={onRest} aria-label="휴방 설정" style={{fontSize:12}}>휴방</button>
@@ -168,7 +164,7 @@ export default function ModifyChipInfoModal({
 
           {/* 액션 */}
           <div style={{ display: 'flex', gap: 8, fontSize: 12 }}>
-            <button onClick={() => onSave(text.trim(), startTime.trim(), localPreset)} aria-label="저장">저장</button>
+            <button onClick={() => onSave(text.trim(), startTime.trim(), nextDay, localPreset)} aria-label="저장">저장</button>
             {mode === 'add' ? (
               <button onClick={onClose} aria-label="취소">취소</button>
             ) : (
@@ -183,6 +179,22 @@ export default function ModifyChipInfoModal({
                 <button onClick={onClose} aria-label="닫기" style={{ fontSize: 12 }}>닫기</button>
               </>
             )}
+          </div>
+        </div>
+
+        {/* 시간 선택 영역 */}
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <TimePicker value={startTime} onChange={setStartTime} disabled={!canEdit} />
+            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
+              <input
+                type="checkbox"
+                checked={nextDay}
+                onChange={(e) => setNextDay(e.target.checked)}
+                disabled={!canEdit}
+              />
+              +1 (다음날)
+            </label>
           </div>
         </div>
       </div>

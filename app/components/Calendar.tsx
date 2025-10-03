@@ -194,7 +194,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // 일괄 칩 추가
-  function applyBulkAddChip(text: string, startTime: string, preset?: ChipPreset){
+  function applyBulkAddChip(text: string, startTime: string, nextDay: boolean, preset?: ChipPreset){
     const targets = bulkTargets.slice();
     if (!targets.length){ setBulkOpen(false); return; }
     setNotes(prev => {
@@ -203,7 +203,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         const k = `${t.y}-${t.m}-${t.d}`;
         const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
         const items = Array.isArray((n as any).items) ? [ ...(n as any).items ] : [];
-        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined });
+        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined, nextDay: nextDay || undefined });
         (n as any).items = items;
         next[k] = n as any;
       }
@@ -947,7 +947,7 @@ useEffect(() => {
                       <div className="chips">
                         {note.items.map((it: Item, i: number) => (
                           <span key={i} className="chip">
-                            {it.startTime && <span className="chip-time">{it.startTime}</span>}
+                            {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
                             <span className="chip-emoji">{it.emoji ?? ''}</span>
                             <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                           </span>
@@ -961,7 +961,7 @@ useEffect(() => {
                     <div className="chips">
                       {note!.items.map((it: Item, i: number) => (
                         <span key={i} className="chip">
-                          {it.startTime && <span className="chip-time">{it.startTime}</span>}
+                          {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
                           <span className="chip-emoji">{it.emoji ?? ''}</span>
                           <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                         </span>
@@ -995,7 +995,7 @@ useEffect(() => {
         mode="add"
         preset={{ emoji: null, label: '' }}
         initialText=""
-        onSave={(t,st,p)=> applyBulkAddChip(t,st,p)}
+        onSave={(t,st,nd,p)=> applyBulkAddChip(t,st,nd,p)}
         onClose={()=> setBulkOpen(false)}
         canEdit={canEdit}
         title={fmtBulkTitle(bulkTargets)}
