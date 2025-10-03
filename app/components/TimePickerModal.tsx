@@ -8,22 +8,15 @@ interface TimePickerModalProps {
   initialNextDay?: boolean;
   onSave: (time: string, nextDay: boolean) => void;
   onClose: () => void;
-  onDragStateChange?: (isDragging: boolean) => void;
 }
 
-export default function TimePickerModal({ open, initialTime = '00:00', initialNextDay = false, onSave, onClose, onDragStateChange }: TimePickerModalProps) {
+export default function TimePickerModal({ open, initialTime = '00:00', initialNextDay = false, onSave, onClose }: TimePickerModalProps) {
   const [hour, setHour] = useState('00');
   const [minute, setMinute] = useState('00');
   const [nextDay, setNextDay] = useState(initialNextDay);
-  const [isDragging, setIsDragging] = useState(false);
 
   const hourRef = useRef<HTMLDivElement>(null);
   const minuteRef = useRef<HTMLDivElement>(null);
-  const dragStartY = useRef<number>(0);
-  const dragStartScroll = useRef<number>(0);
-  const dragTarget = useRef<'hour' | 'minute' | null>(null);
-  const accumulatedDelta = useRef<number>(0);
-  const lastY = useRef<number>(0);
 
   // 초기값 파싱
   useEffect(() => {
@@ -40,163 +33,42 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     }
   }, [open, initialTime, initialNextDay]);
 
-  // 초기 스크롤 위치 설정 (중간 세트로 시작)
+  // 초기 스크롤 위치 설정
   useEffect(() => {
     if (open && hourRef.current) {
       const itemHeight = 36;
-      // 중간 세트(24개 항목)로 시작
-      hourRef.current.scrollTop = (24 + parseInt(hour)) * itemHeight;
+      hourRef.current.scrollTop = parseInt(hour) * itemHeight;
     }
   }, [open]);
 
   useEffect(() => {
     if (open && minuteRef.current) {
       const itemHeight = 36;
-      // 중간 세트(60개 항목)로 시작
-      minuteRef.current.scrollTop = (60 + parseInt(minute)) * itemHeight;
+      minuteRef.current.scrollTop = parseInt(minute) * itemHeight;
     }
   }, [open]);
 
+  // 스크롤 이벤트로 시간 값 업데이트
   const handleHourScroll = () => {
-    if (!hourRef.current || isDragging) return;
+    if (!hourRef.current) return;
     const scrollTop = hourRef.current.scrollTop;
     const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
-    const h = String(index % 24).padStart(2, '0');
-    if (h !== hour) setHour(h);
+    const h = String(index).padStart(2, '0');
+    if (h !== hour && index >= 0 && index < 24) {
+      setHour(h);
+    }
   };
 
   const handleMinuteScroll = () => {
-    if (!minuteRef.current || isDragging) return;
+    if (!minuteRef.current) return;
     const scrollTop = minuteRef.current.scrollTop;
     const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
-    const m = String(index % 60).padStart(2, '0');
-    if (m !== minute) setMinute(m);
-  };
-
-  // 드래그 상태 변경 시 부모에게 알림
-  useEffect(() => {
-    onDragStateChange?.(isDragging);
-  }, [isDragging, onDragStateChange]);
-
-  // 마우스 드래그 핸들러 (Pointer Lock 무한 스크롤)
-  const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {
-    const ref = target === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-
-    setIsDragging(true);
-    dragTarget.current = target;
-    dragStartScroll.current = ref.current.scrollTop;
-    e.preventDefault();
-
-    // Pointer Lock 요청
-    ref.current.requestPointerLock();
-  };
-
-  useEffect(() => {
-    if (!isDragging || !dragTarget.current) return;
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
-      if (!ref.current) return;
-
-      const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-      const itemHeight = 36;
-
-      // Pointer Lock 모드에서는 movementY 사용
-      const delta = -e.movementY;
-
-      // 스크롤 업데이트
-      let newScroll = ref.current.scrollTop + delta;
-      const singleCycleScroll = (maxValue + 1) * itemHeight;
-
-      // 순환 처리 - 경계를 넘으면 중간 세트로 이동
-      if (newScroll < singleCycleScroll * 0.5) {
-        newScroll += singleCycleScroll;
-      } else if (newScroll > singleCycleScroll * 2.5) {
-        newScroll -= singleCycleScroll;
-      }
-
-      ref.current.scrollTop = newScroll;
-    };
-
-    const handleMouseUp = () => {
-      setIsDragging(false);
-      dragTarget.current = null;
-
-      // Pointer Lock 해제
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
-      if (document.pointerLockElement) {
-        document.exitPointerLock();
-      }
-    };
-  }, [isDragging]);
-
-  // 터치 드래그 핸들러 (무한 스크롤)
-  const handleTouchStart = (e: React.TouchEvent, target: 'hour' | 'minute') => {
-    const ref = target === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-    setIsDragging(true);
-    dragTarget.current = target;
-    lastY.current = e.touches[0].clientY;
-    accumulatedDelta.current = 0;
-    dragStartScroll.current = ref.current.scrollTop;
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || !dragTarget.current) return;
-    const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
-    if (!ref.current) return;
-
-    const maxValue = dragTarget.current === 'hour' ? 23 : 59;
-    const itemHeight = 36;
-
-    // 현재 프레임의 델타 계산
-    const currentDelta = lastY.current - e.touches[0].clientY;
-
-    // 델타를 누적에 추가
-    accumulatedDelta.current += currentDelta;
-
-    // 다음 프레임을 위해 현재 위치 저장
-    lastY.current = e.touches[0].clientY;
-
-    // 스크롤 업데이트 (누적 델타 기반)
-    let newScroll = dragStartScroll.current + accumulatedDelta.current;
-    const singleCycleScroll = maxValue * itemHeight;
-    const totalScroll = singleCycleScroll * 3; // 3번 반복
-
-    // 순환 처리 - 첫 번째 세트나 마지막 세트에 가까우면 중간으로 리셋
-    if (newScroll < singleCycleScroll * 0.5) {
-      // 첫 번째 세트 중반 이전이면 중간 세트로 점프
-      newScroll += singleCycleScroll;
-      dragStartScroll.current += singleCycleScroll;
-      accumulatedDelta.current = newScroll - dragStartScroll.current;
-    } else if (newScroll > singleCycleScroll * 2.5) {
-      // 세 번째 세트 중반 이후면 중간 세트로 점프
-      newScroll -= singleCycleScroll;
-      dragStartScroll.current -= singleCycleScroll;
-      accumulatedDelta.current = newScroll - dragStartScroll.current;
+    const m = String(index).padStart(2, '0');
+    if (m !== minute && index >= 0 && index < 60) {
+      setMinute(m);
     }
-
-    ref.current.scrollTop = newScroll;
-    e.preventDefault();
-  };
-
-  const handleTouchEnd = () => {
-    setIsDragging(false);
-    dragTarget.current = null;
-    accumulatedDelta.current = 0;
   };
 
   const handleSave = () => {
@@ -211,15 +83,11 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
   if (!open) return null;
 
-  // 연속적으로 보이도록 3번 반복
-  const hours = Array.from({ length: 24 * 3 }, (_, i) => String(i % 24).padStart(2, '0'));
-  const minutes = Array.from({ length: 60 * 3 }, (_, i) => String(i % 60).padStart(2, '0'));
+  // 단일 세트만 표시
+  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
   const handleBackdropClick = (e: React.MouseEvent) => {
-    if (isDragging) {
-      e.preventDefault();
-      return;
-    }
     if (e.target === e.currentTarget) {
       onClose();
     }
@@ -250,13 +118,13 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               const val = e.target.value;
               if (val === '') {
                 setHour('00');
-                if (hourRef.current) hourRef.current.scrollTop = 24 * 36;
+                if (hourRef.current) hourRef.current.scrollTop = 0;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setHour(formatted);
                 if (hourRef.current) {
-                  hourRef.current.scrollTop = (24 + num) * 36;
+                  hourRef.current.scrollTop = num * 36;
                 }
               }
             }}
@@ -294,13 +162,13 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               const val = e.target.value;
               if (val === '') {
                 setMinute('00');
-                if (minuteRef.current) minuteRef.current.scrollTop = 60 * 36;
+                if (minuteRef.current) minuteRef.current.scrollTop = 0;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setMinute(formatted);
                 if (minuteRef.current) {
-                  minuteRef.current.scrollTop = (60 + num) * 36;
+                  minuteRef.current.scrollTop = num * 36;
                 }
               }
             }}
@@ -326,10 +194,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
           <div
             ref={hourRef}
             onScroll={handleHourScroll}
-            onMouseDown={(e) => handleMouseDown(e, 'hour')}
-            onTouchStart={(e) => handleTouchStart(e, 'hour')}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             style={{
               height: 108,
               width: 50,
@@ -339,7 +203,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               borderRadius: 6,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              cursor: isDragging && dragTarget.current === 'hour' ? 'grabbing' : 'grab',
               userSelect: 'none'
             }}
           >
@@ -347,6 +210,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             {hours.map((h) => (
               <div
                 key={h}
+                onClick={() => {
+                  setHour(h);
+                  if (hourRef.current) {
+                    hourRef.current.scrollTop = parseInt(h) * 36;
+                  }
+                }}
                 style={{
                   height: 36,
                   display: 'flex',
@@ -356,7 +225,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
                   fontSize: 15,
                   fontWeight: h === hour ? 700 : 400,
                   color: h === hour ? 'var(--text)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s'
+                  transition: 'all 0.15s',
+                  cursor: 'pointer'
                 }}
               >
                 {h}
@@ -370,10 +240,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
           <div
             ref={minuteRef}
             onScroll={handleMinuteScroll}
-            onMouseDown={(e) => handleMouseDown(e, 'minute')}
-            onTouchStart={(e) => handleTouchStart(e, 'minute')}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
             style={{
               height: 108,
               width: 50,
@@ -383,7 +249,6 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               borderRadius: 6,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              cursor: isDragging && dragTarget.current === 'minute' ? 'grabbing' : 'grab',
               userSelect: 'none'
             }}
           >
@@ -391,6 +256,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             {minutes.map((m) => (
               <div
                 key={m}
+                onClick={() => {
+                  setMinute(m);
+                  if (minuteRef.current) {
+                    minuteRef.current.scrollTop = parseInt(m) * 36;
+                  }
+                }}
                 style={{
                   height: 36,
                   display: 'flex',
@@ -400,7 +271,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
                   fontSize: 15,
                   fontWeight: m === minute ? 700 : 400,
                   color: m === minute ? 'var(--text)' : 'var(--text-secondary)',
-                  transition: 'all 0.15s'
+                  transition: 'all 0.15s',
+                  cursor: 'pointer'
                 }}
               >
                 {m}
