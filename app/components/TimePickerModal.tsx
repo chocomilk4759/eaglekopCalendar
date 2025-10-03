@@ -70,7 +70,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     if (m !== minute) setMinute(m);
   };
 
-  // 마우스 드래그 핸들러
+  // 마우스 드래그 핸들러 (무한 스크롤)
   const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {
     const ref = target === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
@@ -87,8 +87,24 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const handleMouseMove = (e: MouseEvent) => {
       const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
       if (!ref.current) return;
-      const deltaY = dragStartY.current - e.clientY;
-      ref.current.scrollTop = dragStartScroll.current + deltaY;
+
+      const maxValue = dragTarget.current === 'hour' ? 23 : 59;
+      const itemHeight = 36;
+
+      // 현재 스크롤 위치 계산
+      let newScroll = dragStartScroll.current + (dragStartY.current - e.clientY);
+
+      // 범위를 벗어나면 반대편으로 순환
+      const maxScroll = maxValue * itemHeight;
+      if (newScroll < 0) {
+        newScroll = maxScroll + (newScroll % (maxScroll + itemHeight));
+        dragStartScroll.current = newScroll - (dragStartY.current - e.clientY);
+      } else if (newScroll > maxScroll) {
+        newScroll = newScroll % (maxScroll + itemHeight);
+        dragStartScroll.current = newScroll - (dragStartY.current - e.clientY);
+      }
+
+      ref.current.scrollTop = newScroll;
     };
 
     const handleMouseUp = () => {
@@ -105,7 +121,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     };
   }, [isDragging]);
 
-  // 터치 드래그 핸들러
+  // 터치 드래그 핸들러 (무한 스크롤)
   const handleTouchStart = (e: React.TouchEvent, target: 'hour' | 'minute') => {
     const ref = target === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
@@ -119,8 +135,24 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     if (!isDragging || !dragTarget.current) return;
     const ref = dragTarget.current === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
-    const deltaY = dragStartY.current - e.touches[0].clientY;
-    ref.current.scrollTop = dragStartScroll.current + deltaY;
+
+    const maxValue = dragTarget.current === 'hour' ? 23 : 59;
+    const itemHeight = 36;
+
+    // 현재 스크롤 위치 계산
+    let newScroll = dragStartScroll.current + (dragStartY.current - e.touches[0].clientY);
+
+    // 범위를 벗어나면 반대편으로 순환
+    const maxScroll = maxValue * itemHeight;
+    if (newScroll < 0) {
+      newScroll = maxScroll + (newScroll % (maxScroll + itemHeight));
+      dragStartScroll.current = newScroll - (dragStartY.current - e.touches[0].clientY);
+    } else if (newScroll > maxScroll) {
+      newScroll = newScroll % (maxScroll + itemHeight);
+      dragStartScroll.current = newScroll - (dragStartY.current - e.touches[0].clientY);
+    }
+
+    ref.current.scrollTop = newScroll;
     e.preventDefault();
   };
 
@@ -145,7 +177,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
   return (
-    <div className="modal" onClick={onClose} style={{ zIndex: 1001 }}>
+    <div className="modal" onClick={(e) => { if (!isDragging) onClose(); }} style={{ zIndex: 1001 }}>
       <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '16px', minWidth: 240, maxWidth: 280 }}>
         <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>시작 시간</h3>
 
@@ -155,15 +187,22 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             type="text"
             value={hour}
             onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-              const num = parseInt(val || '0');
+              const val = e.target.value.replace(/\D/g, '');
+              if (val === '') {
+                setHour('00');
+                if (hourRef.current) hourRef.current.scrollTop = 0;
+                return;
+              }
+              const num = parseInt(val);
               if (num >= 0 && num <= 23) {
-                setHour(val.padStart(2, '0'));
+                const formatted = String(num).padStart(2, '0');
+                setHour(formatted);
                 if (hourRef.current) {
                   hourRef.current.scrollTop = num * 36;
                 }
               }
             }}
+            onFocus={(e) => e.target.select()}
             style={{
               width: 45,
               padding: '6px',
@@ -180,15 +219,22 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             type="text"
             value={minute}
             onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-              const num = parseInt(val || '0');
+              const val = e.target.value.replace(/\D/g, '');
+              if (val === '') {
+                setMinute('00');
+                if (minuteRef.current) minuteRef.current.scrollTop = 0;
+                return;
+              }
+              const num = parseInt(val);
               if (num >= 0 && num <= 59) {
-                setMinute(val.padStart(2, '0'));
+                const formatted = String(num).padStart(2, '0');
+                setMinute(formatted);
                 if (minuteRef.current) {
                   minuteRef.current.scrollTop = num * 36;
                 }
               }
             }}
+            onFocus={(e) => e.target.select()}
             style={{
               width: 45,
               padding: '6px',
