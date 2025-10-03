@@ -177,6 +177,20 @@ export default function DateInfoModal({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, initial?.id]);
 
+  // ── note prop이 변경되면 모달 내용 갱신 (칩 이동/복사 시) ────────────
+  useEffect(() => {
+    if (!open) return;
+    if (!initial) return;
+    // initial.id가 동일하지만 items가 변경된 경우 갱신
+    const base = initial;
+    setNote(base);
+    setMemo(base.content || '');
+    setTitleInput(((base as any)?.title ?? '') as string);
+    setLinkInput(base.link ?? '');
+    setImageUrl(base.image_url ?? null);
+    setUseImageAsBg(!!(base as any)?.use_image_as_bg);
+  }, [open, initial]);
+
   useEffect(() => {
     if (!open) return;
     
