@@ -224,10 +224,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 2 && deltaTime < 500) {
       if (deltaX > 0) {
         // 오른쪽 스와이프: 이전 달
-        goPrev();
+        setYM(prevOf(ym));
       } else {
         // 왼쪽 스와이프: 다음 달
-        goNext();
+        setYM(nextOf(ym));
       }
     }
   }
@@ -261,10 +261,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY) * 3) {
       if (deltaX > 0) {
         // 오른쪽 드래그: 이전 달
-        goPrev();
+        setYM(prevOf(ym));
       } else {
         // 왼쪽 드래그: 다음 달
-        goNext();
+        setYM(nextOf(ym));
       }
     }
   }
