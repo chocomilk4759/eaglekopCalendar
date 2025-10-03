@@ -314,6 +314,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pressKeyRef = useRef<string|null>(null);
   const pulseTimerRef = useRef<number|undefined>(undefined);           // ★ 펄스 자동 종료 타이머
 
+  // ----- 칩 터치 드래그 상태 -----
+  const [chipDragReady, setChipDragReady] = useState<{
+    cellKey: string;
+    chipIndex: number;
+  } | null>(null);
+  const chipPressTimerRef = useRef<number|undefined>(undefined);
+
   
   function triggerPulse(k: string) {
     const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
@@ -347,6 +354,87 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onPressEndCell() {
     clearPressTimer();
     setLongReadyKey(null);
+  }
+
+  // 칩 터치 드래그 핸들러
+  function clearChipPressTimer() {
+    if (chipPressTimerRef.current) {
+      window.clearTimeout(chipPressTimerRef.current);
+      chipPressTimerRef.current = undefined;
+    }
+  }
+
+  function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
+    if (!canEdit) return;
+    clearChipPressTimer();
+
+    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
+    const LONGPRESS_MS = isCoarse ? 550 : 350;
+
+    chipPressTimerRef.current = window.setTimeout(() => {
+      setChipDragReady({ cellKey, chipIndex });
+      // 햅틱 피드백 (지원되는 경우)
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, LONGPRESS_MS);
+  }
+
+  function onChipTouchEnd(e: React.TouchEvent) {
+    if (!chipDragReady) {
+      clearChipPressTimer();
+      return;
+    }
+
+    clearChipPressTimer();
+
+    // 터치 종료 시 해당 위치의 셀 찾기
+    const touch = e.changedTouches[0];
+    if (!touch) {
+      setChipDragReady(null);
+      return;
+    }
+
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!element) {
+      setChipDragReady(null);
+      return;
+    }
+
+    // 가장 가까운 .cell 요소 찾기
+    const cellElement = element.closest('.cell');
+    if (!cellElement) {
+      setChipDragReady(null);
+      return;
+    }
+
+    // data-cell-key 속성에서 셀 키 추출
+    const targetCellKey = cellElement.getAttribute('data-cell-key');
+    if (!targetCellKey || targetCellKey === chipDragReady.cellKey) {
+      setChipDragReady(null);
+      return;
+    }
+
+    const sourceParts = chipDragReady.cellKey.split('-').map(Number);
+    const targetParts = targetCellKey.split('-').map(Number);
+
+    const sourceNote = notes[chipDragReady.cellKey];
+    if (!sourceNote || !sourceNote.items?.[chipDragReady.chipIndex]) {
+      setChipDragReady(null);
+      return;
+    }
+
+    const item = sourceNote.items[chipDragReady.chipIndex];
+
+    // 칩 드롭 처리
+    const payload = {
+      type: 'chip',
+      sourceType: 'cell',
+      sourceDate: { y: sourceParts[0], m: sourceParts[1], d: sourceParts[2] },
+      chipIndex: chipDragReady.chipIndex,
+      item
+    };
+
+    dropChip(targetParts[0], targetParts[1], targetParts[2], JSON.stringify(payload));
+    setChipDragReady(null);
   }
 
   // 드래그 시작 시 데이터 적재
@@ -1078,6 +1166,7 @@ useEffect(() => {
             <div
               key={idx}
               className={`${cn} ${isPicked ? 'sel' : ''}`}
+              data-cell-key={k}
               draggable={canEdit && !!c.d }
               style={ bg ? {
                 backgroundImage: `url(${bg})`,
@@ -1168,7 +1257,7 @@ useEffect(() => {
                         {note.items.map((it: Item, i: number) => (
                           <span
                             key={i}
-                            className="chip"
+                            className={`chip ${chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 'dragging' : ''}`}
                             draggable={canEdit}
                             onDragStart={(e) => {
                               if (!canEdit || !c.d) return;
@@ -1182,6 +1271,19 @@ useEffect(() => {
                               };
                               e.dataTransfer.setData('application/json', JSON.stringify(payload));
                               e.dataTransfer.effectAllowed = 'move';
+                            }}
+                            onTouchStart={(e) => {
+                              if (!canEdit || !c.d) return;
+                              e.stopPropagation();
+                              onChipTouchStart(e, k, i, it);
+                            }}
+                            onTouchEnd={(e) => {
+                              if (!canEdit || !c.d) return;
+                              e.stopPropagation();
+                              onChipTouchEnd(e);
+                            }}
+                            style={{
+                              opacity: chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 0.4 : 1,
                             }}
                           >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
@@ -1201,7 +1303,7 @@ useEffect(() => {
                       {note!.items.map((it: Item, i: number) => (
                         <span
                           key={i}
-                          className="chip"
+                          className={`chip ${chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 'dragging' : ''}`}
                           draggable={canEdit}
                           onDragStart={(e) => {
                             if (!canEdit || !c.d) return;
@@ -1215,6 +1317,19 @@ useEffect(() => {
                             };
                             e.dataTransfer.setData('application/json', JSON.stringify(payload));
                             e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          onTouchStart={(e) => {
+                            if (!canEdit || !c.d) return;
+                            e.stopPropagation();
+                            onChipTouchStart(e, k, i, it);
+                          }}
+                          onTouchEnd={(e) => {
+                            if (!canEdit || !c.d) return;
+                            e.stopPropagation();
+                            onChipTouchEnd(e);
+                          }}
+                          style={{
+                            opacity: chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 0.4 : 1,
                           }}
                         >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
