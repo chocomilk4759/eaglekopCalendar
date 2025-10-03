@@ -1252,7 +1252,59 @@ a:focus-visible {
 
 
 /* =====================================================================================
-  12. PRINT (인쇄)
+  12. SKELETON UI (스켈레톤 로딩)
+===================================================================================== */
+.skeleton-grid {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.skeleton-cell {
+  padding: 8px;
+  min-height: 100px;
+  pointer-events: none;
+}
+
+.skeleton-date {
+  width: 24px;
+  height: 14px;
+  background: var(--border, #e0e0e0);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.skeleton-chip {
+  width: 80%;
+  height: 20px;
+  background: var(--border, #e0e0e0);
+  border-radius: 8px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-chip:nth-child(2) {
+  width: 60%;
+  animation-delay: 0.1s;
+}
+
+/* =====================================================================================
+  13. PRINT (인쇄)
 ===================================================================================== */
 @media print {
   button, input, textarea, .link-ico, .top-ribbon, .toolbar {

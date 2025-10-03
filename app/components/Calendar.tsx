@@ -759,11 +759,34 @@ useEffect(() => {
       </div>
       {/* ==================== /상단 컨테이너 ==================== */}
 
-      {/* 요일/달력 그리드 (로딩 시 미세 페이드) */}
+      {/* 스켈레톤 UI (로딩 중) */}
+      {loading && (
+        <div className={`grid calendar-grid ${canShowSeven ? 'seven' : 'auto'} skeleton-grid`}>
+          {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
+            <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
+          ))}
+          {Array.from({ length: canShowSeven ? 35 : 31 }).map((_, idx) => (
+            <div key={idx} className="cell skeleton-cell">
+              <div className="skeleton-date"></div>
+              <div className="skeleton-chips">
+                <div className="skeleton-chip"></div>
+                <div className="skeleton-chip"></div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* 요일/달력 그리드 */}
       <div
         ref={gridRef}
         className={`grid calendar-grid ${canShowSeven ? 'seven' : 'auto'}`}
-        style={{ opacity: loading ? 0.96 : 1, transition: 'opacity .12s linear' }}
+        style={{
+          opacity: loading ? 0 : 1,
+          transition: 'opacity 0.3s ease-in-out',
+          position: loading ? 'absolute' : 'relative',
+          visibility: loading ? 'hidden' : 'visible'
+        }}
       >
         {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
           <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
