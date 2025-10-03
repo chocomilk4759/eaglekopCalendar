@@ -642,18 +642,18 @@ export default function DateInfoModal({
             disabled={disabled}
           />
 
-          <div className="flag-buttons" aria-label="날짜 강조 색상" style={{ userSelect:'none' }}>
-            <button
-              className={`rest-btn ${isRest ? 'active' : ''}`}
-              onClick={toggleRest}
-              title="휴(휴방)"
-              aria-label="휴(휴방)"
-              disabled={disabled}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-                <path d="M6 6 L18 18 M18 6 L6 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
+          <div className="flag-buttons" aria-label="날짜 강조 색상" style={{ userSelect:'none', display:'flex', alignItems:'center', gap:12 }}>
+            <label style={{ display:'flex', alignItems:'center', gap:6, fontSize:13, cursor: disabled ? 'not-allowed' : 'pointer' }}>
+              <span style={{ opacity: disabled ? 0.5 : 1 }}>휴방</span>
+              <input
+                type="checkbox"
+                checked={isRest}
+                onChange={toggleRest}
+                disabled={disabled}
+                aria-label="휴방 설정"
+                style={{ cursor: disabled ? 'not-allowed' : 'pointer', transform:'scale(1.2)' }}
+              />
+            </label>
             <button className={`flag-btn red ${note.color==='red'?'active':''}`}
                     onClick={()=>toggleFlag('red')}
                     title="빨간날" aria-label="빨간날로 표시"
