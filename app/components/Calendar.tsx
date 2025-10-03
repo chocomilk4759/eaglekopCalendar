@@ -120,8 +120,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pendingRef = useRef<'seven'|'compact'|null>(null);
   const tRef = useRef<number|undefined>(undefined);
 
-  // ---------- 모바일 스와이프 ----------
-  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  // ---------- 모바일 스와이프 (제거됨 - 드래그와 충돌) ----------
+  // const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
 
   // ---------- Ctrl 다중 선택 ----------
   const [ctrlSelecting, setCtrlSelecting] = useState(false);
@@ -222,47 +222,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     }
   }, [canEdit]);
 
-  // 스와이프 핸들러
-  function onTouchStart(e: React.TouchEvent) {
-    // 칩이나 셀 드래그 중이면 스와이프 무시
-    if (chipDragReady || longReadyKey) return;
-
-    if (e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    touchStartRef.current = {
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now()
-    };
-  }
-
-  function onTouchEnd(e: React.TouchEvent) {
-    // 칩이나 셀 드래그 중이면 스와이프 무시
-    if (chipDragReady || longReadyKey) {
-      touchStartRef.current = null;
-      return;
-    }
-
-    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
-
-    const touch = e.changedTouches[0];
-    const deltaX = touch.clientX - touchStartRef.current.x;
-    const deltaY = touch.clientY - touchStartRef.current.y;
-    const deltaTime = Date.now() - touchStartRef.current.time;
-
-    touchStartRef.current = null;
-
-    // 수평 스와이프 판정: 최소 50px 이동, 세로 이동보다 가로 이동이 2배 이상, 500ms 이내
-    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 2 && deltaTime < 500) {
-      if (deltaX > 0) {
-        // 오른쪽 스와이프: 이전 달
-        setYM(prevOf(ym));
-      } else {
-        // 왼쪽 스와이프: 다음 달
-        setYM(nextOf(ym));
-      }
-    }
-  }
+  // 스와이프 핸들러 (제거됨 - 드래그와 충돌)
+  // function onTouchStart(e: React.TouchEvent) { ... }
+  // function onTouchEnd(e: React.TouchEvent) { ... }
 
   // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
   function onCellClick(e: React.MouseEvent, y:number, m:number, d:number, key:string){
@@ -644,6 +606,39 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e:any) {
       alert(e?.message ?? '합치기 중 오류');
+    }
+
+    setNoteActionOpen(false);
+    setPendingNoteDrop(null);
+  }
+
+  // 노트 이동 (원본 삭제)
+  async function moveNote() {
+    if (!pendingNoteDrop) return;
+    const { targetY, targetM, targetD, src } = pendingNoteDrop;
+    const finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
+
+    try {
+      // 대상에 저장
+      const saved = await upsertNote(finalNote);
+
+      // 원본 삭제
+      const { error } = await supabase.from('notes').delete()
+        .eq('y', src.y).eq('m', src.m).eq('d', src.d);
+      if (error) throw new Error(error.message);
+
+      // 상태 업데이트
+      const sourceKey = cellKey(src.y, src.m, src.d);
+      const targetKey = cellKey(saved.y, saved.m, saved.d);
+
+      setNotes(prev => {
+        const next = { ...prev };
+        delete next[sourceKey]; // 원본 삭제
+        next[targetKey] = saved; // 대상 설정
+        return next;
+      });
+    } catch (e:any) {
+      alert(e?.message ?? '이동 중 오류');
     }
 
     setNoteActionOpen(false);
@@ -1208,8 +1203,6 @@ useEffect(() => {
           position: loading ? 'absolute' : 'relative',
           visibility: loading ? 'hidden' : 'visible'
         }}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
       >
         {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
           <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
@@ -1530,13 +1523,14 @@ useEffect(() => {
         chipLabel={pendingChipDrop?.item ? `${pendingChipDrop.item.emoji ?? ''} ${pendingChipDrop.item.text || pendingChipDrop.item.label}` : ''}
       />
 
-      {/* ── 노트 덮어쓰기/합치기 선택 모달 ── */}
+      {/* ── 노트 이동/덮어쓰기/합치기 선택 모달 ── */}
       <NoteActionModal
         open={noteActionOpen}
         onClose={() => {
           setNoteActionOpen(false);
           setPendingNoteDrop(null);
         }}
+        onMove={moveNote}
         onOverwrite={overwriteNote}
         onMerge={mergeNote}
         sourceDate={pendingNoteDrop ? `${pendingNoteDrop.src.y}-${String(pendingNoteDrop.src.m + 1).padStart(2, '0')}-${String(pendingNoteDrop.src.d).padStart(2, '0')}` : ''}

@@ -3,6 +3,7 @@
 export default function NoteActionModal({
   open,
   onClose,
+  onMove,
   onOverwrite,
   onMerge,
   sourceDate,
@@ -10,6 +11,7 @@ export default function NoteActionModal({
 }: {
   open: boolean;
   onClose: () => void;
+  onMove: () => void;
   onOverwrite: () => void;
   onMerge: () => void;
   sourceDate: string;
@@ -35,14 +37,14 @@ export default function NoteActionModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>날짜 복사 동작 선택</h3>
+        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>날짜 동작 선택</h3>
         <p style={{ margin: '0 0 20px', fontSize: 14, opacity: 0.8 }}>
-          <strong>{sourceDate}</strong>의 내용을 <strong>{targetDate}</strong>에 어떻게 복사할까요?
+          <strong>{sourceDate}</strong>의 내용을 <strong>{targetDate}</strong>에 어떻게 처리할까요?
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
-            onClick={onOverwrite}
+            onClick={onMove}
             style={{
               padding: '12px 16px',
               fontSize: 15,
@@ -53,7 +55,20 @@ export default function NoteActionModal({
               cursor: 'pointer',
             }}
           >
-            덮어쓰기 (기존 내용 삭제)
+            이동 (원본 삭제)
+          </button>
+          <button
+            onClick={onOverwrite}
+            style={{
+              padding: '12px 16px',
+              fontSize: 15,
+              borderRadius: 8,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              cursor: 'pointer',
+            }}
+          >
+            복사 후 덮어쓰기
           </button>
           <button
             onClick={onMerge}
@@ -66,7 +81,7 @@ export default function NoteActionModal({
               cursor: 'pointer',
             }}
           >
-            합치기 (기존 내용 유지)
+            복사 후 합치기
           </button>
           <button
             onClick={onClose}
