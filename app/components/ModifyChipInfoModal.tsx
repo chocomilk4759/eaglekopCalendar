@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
-import TimePicker from './TimePicker';
+import TimePickerModal from './TimePickerModal';
 
 export type ModifyChipMode = 'add' | 'edit';
 export type ChipPreset = { emoji: string | null; label: string };
@@ -41,6 +41,7 @@ export default function ModifyChipInfoModal({
   const [nextDay, setNextDay] = useState(initialNextDay);
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
   const [iconOpen, setIconOpen] = useState(false);
+  const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [options, setOptions] = useState<ChipPreset[]>([]);
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -157,6 +158,16 @@ export default function ModifyChipInfoModal({
             style={{ flex: 1, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, fontSize: 12 }}
           />
 
+          {/* 시간 설정 버튼 */}
+          <button
+            type="button"
+            onClick={() => setTimePickerOpen(true)}
+            aria-label="시간 설정"
+            style={{ fontSize: 12, whiteSpace: 'nowrap' }}
+          >
+            {startTime ? `${startTime}${nextDay ? '+1' : ''}` : '시간 설정'}
+          </button>
+
           {/* ★ Ctrl 다중 선택 모달일 때만: '휴방' 버튼을 입력창과 저장 사이에 배치 */}
           {showRestButton && canEdit && (
             <button type="button" onClick={onRest} aria-label="휴방 설정" style={{fontSize:12}}>휴방</button>
@@ -181,23 +192,19 @@ export default function ModifyChipInfoModal({
             )}
           </div>
         </div>
-
-        {/* 시간 선택 영역 */}
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <TimePicker value={startTime} onChange={setStartTime} disabled={!canEdit} />
-            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
-              <input
-                type="checkbox"
-                checked={nextDay}
-                onChange={(e) => setNextDay(e.target.checked)}
-                disabled={!canEdit}
-              />
-              +1 (다음날)
-            </label>
-          </div>
-        </div>
       </div>
+
+      {/* 시간 설정 모달 */}
+      <TimePickerModal
+        open={timePickerOpen}
+        initialTime={startTime}
+        initialNextDay={nextDay}
+        onSave={(time, nd) => {
+          setStartTime(time);
+          setNextDay(nd);
+        }}
+        onClose={() => setTimePickerOpen(false)}
+      />
     </div>
   );
 }
