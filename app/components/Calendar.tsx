@@ -715,9 +715,10 @@ useEffect(() => {
                   if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
                 }}
                 onClick={jumpGo}
-                style={{ fontSize: 14 }}
+                title="이동"
+                aria-label="이동"
               >
-                이동
+                ➜
               </button>
               <button
                 onClick={() => setSearchOpen(true)}
