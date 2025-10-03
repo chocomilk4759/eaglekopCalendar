@@ -224,6 +224,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // 스와이프 핸들러
   function onTouchStart(e: React.TouchEvent) {
+    // 칩이나 셀 드래그 중이면 스와이프 무시
+    if (chipDragReady || longReadyKey) return;
+
     if (e.touches.length !== 1) return;
     const touch = e.touches[0];
     touchStartRef.current = {
@@ -234,6 +237,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   function onTouchEnd(e: React.TouchEvent) {
+    // 칩이나 셀 드래그 중이면 스와이프 무시
+    if (chipDragReady || longReadyKey) {
+      touchStartRef.current = null;
+      return;
+    }
+
     if (!touchStartRef.current || e.changedTouches.length !== 1) return;
 
     const touch = e.changedTouches[0];
@@ -356,6 +365,74 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setLongReadyKey(null);
   }
 
+  // 셀 터치 종료 시 드롭 처리 (모바일 날짜 드래그)
+  function onCellTouchEnd(e: React.TouchEvent, currentKey: string) {
+    if (!longReadyKey) {
+      onPressEndCell();
+      return;
+    }
+
+    // 터치 종료 위치에서 대상 셀 찾기
+    const touch = e.changedTouches[0];
+    if (!touch) {
+      setLongReadyKey(null);
+      clearPressTimer();
+      return;
+    }
+
+    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!element) {
+      setLongReadyKey(null);
+      clearPressTimer();
+      return;
+    }
+
+    const cellElement = element.closest('.cell');
+    if (!cellElement) {
+      setLongReadyKey(null);
+      clearPressTimer();
+      return;
+    }
+
+    const targetCellKey = cellElement.getAttribute('data-cell-key');
+    if (!targetCellKey || targetCellKey === longReadyKey) {
+      setLongReadyKey(null);
+      clearPressTimer();
+      return;
+    }
+
+    // 드래그한 셀의 노트 가져오기
+    const sourceNote = notes[longReadyKey];
+    if (!sourceNote || !hasAnyContent(sourceNote)) {
+      setLongReadyKey(null);
+      clearPressTimer();
+      return;
+    }
+
+    const targetParts = targetCellKey.split('-').map(Number);
+
+    // 노트 복사 처리
+    const payload = {
+      type: 'note-copy',
+      note: {
+        y: sourceNote.y,
+        m: sourceNote.m,
+        d: sourceNote.d,
+        content: sourceNote.content ?? '',
+        items: Array.isArray(sourceNote.items) ? sourceNote.items : [],
+        color: sourceNote.color ?? null,
+        link: sourceNote.link ?? null,
+        image_url: sourceNote.image_url ?? null,
+        title: (sourceNote as any)?.title ?? null,
+        use_image_as_bg: (sourceNote as any)?.use_image_as_bg ?? false,
+      }
+    };
+
+    dropNoteCopy(targetParts[0], targetParts[1], targetParts[2], payload);
+    setLongReadyKey(null);
+    clearPressTimer();
+  }
+
   // 칩 터치 드래그 핸들러
   function clearChipPressTimer() {
     if (chipPressTimerRef.current) {
@@ -366,7 +443,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
+    e.stopPropagation(); // 셀의 터치 이벤트 차단
     clearChipPressTimer();
+    clearPressTimer(); // 셀 롱프레스 타이머도 정리
 
     const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
     const LONGPRESS_MS = isCoarse ? 550 : 350;
@@ -379,6 +458,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   function onChipTouchEnd(e: React.TouchEvent) {
+    e.stopPropagation(); // 셀의 터치 이벤트 차단
+
     if (!chipDragReady) {
       clearChipPressTimer();
       return;
@@ -1176,11 +1257,27 @@ useEffect(() => {
                 backgroundColor: baseBgColor
               } : undefined }
               onClick={(e) => c.d && onCellClick(e, c.y, c.m, c.d, k)}
-              onMouseDown={() => { if (canEdit && c.d) onPressStartCell(k); }}
+              onMouseDown={(e) => {
+                // 칩을 클릭한 경우 셀 드래그 무시
+                if ((e.target as HTMLElement).closest('.chip')) return;
+                if (canEdit && c.d) onPressStartCell(k);
+              }}
               onMouseUp={onPressEndCell}
               onMouseLeave={onPressEndCell}
-              onTouchStart={() => { if (canEdit && c.d) onPressStartCell(k); }}
-              onTouchEnd={onPressEndCell}
+              onTouchStart={(e) => {
+                // 칩을 터치한 경우 셀 드래그 무시
+                if ((e.target as HTMLElement).closest('.chip')) return;
+                if (canEdit && c.d) onPressStartCell(k);
+              }}
+              onTouchEnd={(e) => {
+                // 칩을 터치한 경우 무시
+                if ((e.target as HTMLElement).closest('.chip')) return;
+                if (canEdit && c.d) {
+                  onCellTouchEnd(e, k);
+                } else {
+                  onPressEndCell();
+                }
+              }}
               onDragStart={(e) => { if (canEdit && c.d) onCellDragStart(e, k, note || null); }}
               onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
