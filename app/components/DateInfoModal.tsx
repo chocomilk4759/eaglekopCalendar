@@ -689,13 +689,15 @@ export default function DateInfoModal({
                     onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
-                      display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 4,
+                      display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
                       fontSize:12, background:'var(--card)', color:'inherit',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
-                {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
-                <span className="chip-emoji">{it.emoji ?? ''}</span>
+                <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                  <span className="chip-emoji">{it.emoji ?? ''}</span>
+                  {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                </span>
                 <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
             ))}
