@@ -651,9 +651,8 @@ export default function DateInfoModal({
     <div
       className="modal"
       onClick={onClose}
-      onDragOver={(e) => {
-        // 칩 드래그를 위해 모달 배경에서도 dragover 허용
-        e.preventDefault();
+      style={{
+        pointerEvents: 'none', // 모달 배경은 이벤트 통과
       }}
     >
       <div
@@ -667,13 +666,9 @@ export default function DateInfoModal({
           maxWidth: limits.maxW, maxHeight: limits.maxH,
           resize:'both',
           overflow:'auto',
-          pointerEvents: 'auto',
+          pointerEvents: 'auto', // 모달 시트만 이벤트 받음
         }}
         onClick={(e)=>e.stopPropagation()}
-        onDragOver={(e) => {
-          // 칩이 모달 밖으로 나갈 수 있도록 허용
-          e.preventDefault();
-        }}
       >
         {/* 상단(드래그 핸들) */}
         <div className="date-head drag-handle" onMouseDown={onDragDown} style={{cursor:'move', userSelect:'none'}}>
