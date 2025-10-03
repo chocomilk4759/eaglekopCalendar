@@ -176,8 +176,18 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (isDragging) {
+      e.preventDefault();
+      return;
+    }
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal" onClick={(e) => { if (!isDragging) onClose(); }} style={{ zIndex: 1001 }}>
+    <div className="modal" onMouseDown={handleBackdropClick} style={{ zIndex: 1001 }}>
       <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '16px', minWidth: 240, maxWidth: 280 }}>
         <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>시작 시간</h3>
 
@@ -189,12 +199,21 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '');
               if (val === '') {
-                setHour('00');
-                if (hourRef.current) hourRef.current.scrollTop = 0;
+                setHour('');
                 return;
               }
               const num = parseInt(val);
               if (num >= 0 && num <= 23) {
+                setHour(val);
+              }
+            }}
+            onBlur={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                setHour('00');
+                if (hourRef.current) hourRef.current.scrollTop = 0;
+              } else {
+                const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setHour(formatted);
                 if (hourRef.current) {
@@ -202,7 +221,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
                 }
               }
             }}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => {
+              e.target.select();
+            }}
             style={{
               width: 45,
               padding: '6px',
@@ -212,6 +233,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               borderRadius: 6,
               fontWeight: 600
             }}
+            placeholder="00"
             maxLength={2}
           />
           <span style={{ fontSize: 18, fontWeight: 600 }}>:</span>
@@ -221,12 +243,21 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '');
               if (val === '') {
-                setMinute('00');
-                if (minuteRef.current) minuteRef.current.scrollTop = 0;
+                setMinute('');
                 return;
               }
               const num = parseInt(val);
               if (num >= 0 && num <= 59) {
+                setMinute(val);
+              }
+            }}
+            onBlur={(e) => {
+              const val = e.target.value;
+              if (val === '') {
+                setMinute('00');
+                if (minuteRef.current) minuteRef.current.scrollTop = 0;
+              } else {
+                const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setMinute(formatted);
                 if (minuteRef.current) {
@@ -234,7 +265,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
                 }
               }
             }}
-            onFocus={(e) => e.target.select()}
+            onFocus={(e) => {
+              e.target.select();
+            }}
             style={{
               width: 45,
               padding: '6px',
@@ -244,6 +277,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               borderRadius: 6,
               fontWeight: 600
             }}
+            placeholder="00"
             maxLength={2}
           />
         </div>
