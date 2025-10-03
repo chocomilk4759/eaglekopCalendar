@@ -423,10 +423,13 @@ export default function DateInfoModal({
         chipIndex: idx,
         item
       };
-      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      const payloadStr = JSON.stringify(payload);
+      e.dataTransfer.setData('application/json', payloadStr);
+      e.dataTransfer.setData('text/plain', payloadStr);
+      // 모바일 fallback용으로 window 객체에 임시 저장
+      (window as any).__draggedModalChip = payload;
     }
     e.dataTransfer.effectAllowed='move';
-    e.dataTransfer.setData('text/plain', String(idx));
   }
 
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){

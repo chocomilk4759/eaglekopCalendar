@@ -285,8 +285,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pressKeyRef = useRef<string|null>(null);
   const pulseTimerRef = useRef<number|undefined>(undefined);
 
-  // ----- 드래그 중인 칩 데이터 (모바일용 fallback) -----
+  // ----- 드래그 중인 데이터 (모바일용 fallback) -----
   const draggedChipDataRef = useRef<any>(null);
+  const draggedNoteDataRef = useRef<any>(null);
 
 
   
@@ -347,14 +348,18 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         use_image_as_bg: (note as any)?.use_image_as_bg ?? false,
       }
     };
+    const payloadStr = JSON.stringify(payload);
     try {
-      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      e.dataTransfer.setData('application/json', payloadStr);
+      e.dataTransfer.setData('text/plain', payloadStr);
       e.dataTransfer.effectAllowed = 'copy';
     } catch {}
+    draggedNoteDataRef.current = payload;
   }
   function onCellDragEnd() {
     setLongReadyKey(null);
     clearPressTimer();
+    draggedNoteDataRef.current = null;
   }
 
   // 내용 존재 여부 판단
@@ -1089,6 +1094,7 @@ useEffect(() => {
           const isPicked = selectedKeys.has(k);
           const linkUrl = safeUrl(note?.link ?? null);
           const linkTitle = note?.link ?? undefined;
+          const isDragging = longReadyKey === k;
           return (
             <div
               key={idx}
@@ -1100,8 +1106,13 @@ useEffect(() => {
                 backgroundSize: '80% 80%',
                 backgroundPosition: 'center',
                 backgroundRepeat: 'no-repeat',
-                backgroundColor: baseBgColor
-              } : undefined }
+                backgroundColor: baseBgColor,
+                opacity: isDragging ? 0.5 : 1,
+                transition: 'opacity 0.2s',
+              } : {
+                opacity: isDragging ? 0.5 : 1,
+                transition: 'opacity 0.2s',
+              } }
               onClick={(e) => c.d && onCellClick(e, c.y, c.m, c.d, k)}
               onMouseDown={(e) => {
                 // 칩을 클릭한 경우 셀 드래그 무시
@@ -1124,14 +1135,29 @@ useEffect(() => {
                     raw = e.dataTransfer.getData('text/plain');
                   }
 
-                  // fallback: ref에서 가져오기
-                  if (!raw && draggedChipDataRef.current) {
-                    const payload = draggedChipDataRef.current;
-                    if (payload.type === 'chip') {
+                  // fallback: ref 또는 window 객체에서 가져오기
+                  if (!raw) {
+                    // Calendar 내부 chip 드래그
+                    if (draggedChipDataRef.current) {
+                      const payload = draggedChipDataRef.current;
                       dropChip(c.y, c.m, c.d, JSON.stringify(payload));
+                      draggedChipDataRef.current = null;
+                      return;
                     }
-                    draggedChipDataRef.current = null;
-                    return;
+                    // Calendar 내부 cell 드래그
+                    else if (draggedNoteDataRef.current) {
+                      const payload = draggedNoteDataRef.current;
+                      dropNoteCopy(c.y, c.m, c.d, payload);
+                      draggedNoteDataRef.current = null;
+                      return;
+                    }
+                    // DateInfoModal에서 chip 드래그
+                    else if ((window as any).__draggedModalChip) {
+                      const payload = (window as any).__draggedModalChip;
+                      dropChip(c.y, c.m, c.d, JSON.stringify(payload));
+                      (window as any).__draggedModalChip = null;
+                      return;
+                    }
                   }
 
                   try {
@@ -1144,10 +1170,12 @@ useEffect(() => {
                       dropChip(c.y, c.m, c.d, raw);
                     }
                   } catch (err) {
-                    alert('드롭 에러: ' + err);
+                    // 에러 무시
                   }
 
                   draggedChipDataRef.current = null;
+                  draggedNoteDataRef.current = null;
+                  (window as any).__draggedModalChip = null;
                 }
               }}
             >
