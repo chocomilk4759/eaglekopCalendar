@@ -703,20 +703,29 @@ useEffect(() => {
 
   // 칩 드롭 처리
   async function dropChip(targetY: number, targetM: number, targetD: number, dataStr: string) {
+    alert('dropChip 호출됨');
     if (!canEdit) return;
     let payload: any;
     try {
       payload = JSON.parse(dataStr);
     } catch {
+      alert('JSON 파싱 실패');
       return;
     }
-    if (payload?.type !== 'chip') return;
+    if (payload?.type !== 'chip') {
+      alert('chip 타입 아님: ' + payload?.type);
+      return;
+    }
 
     const { sourceDate, chipIndex, item, sourceType } = payload;
 
     // 동일 날짜로 드롭하면 무시
-    if (sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) return;
+    if (sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
+      alert('동일 날짜');
+      return;
+    }
 
+    alert('모달 열기 시도');
     // 모달 열어서 이동/복사 선택
     setPendingChipDrop({
       targetY,
@@ -1111,6 +1120,7 @@ useEffect(() => {
               onDrop={(e) => {
                 if (canEdit && c.d) {
                   e.preventDefault();
+                  alert('드롭 이벤트 발생');
                   const raw = e.dataTransfer.getData('application/json');
                   try {
                     const json = JSON.parse(raw);
@@ -1126,8 +1136,8 @@ useEffect(() => {
                     } else {
                       // 다른 타입은 무시
                     }
-                  } catch {
-                    // 파싱 실패 시 무시
+                  } catch (err) {
+                    alert('드롭 에러: ' + err);
                   }
                 }
               }}
@@ -1193,6 +1203,7 @@ useEffect(() => {
                               };
                               e.dataTransfer.setData('application/json', JSON.stringify(payload));
                               e.dataTransfer.effectAllowed = 'move';
+                              alert('드래그 시작');
                             }}
                           >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
@@ -1226,6 +1237,7 @@ useEffect(() => {
                             };
                             e.dataTransfer.setData('application/json', JSON.stringify(payload));
                             e.dataTransfer.effectAllowed = 'move';
+                            console.log('Chip drag started (chips):', payload);
                           }}
                         >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
