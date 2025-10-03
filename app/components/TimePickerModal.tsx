@@ -40,18 +40,20 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     }
   }, [open, initialTime, initialNextDay]);
 
-  // 초기 스크롤 위치 설정
+  // 초기 스크롤 위치 설정 (중간 세트로 시작)
   useEffect(() => {
     if (open && hourRef.current) {
       const itemHeight = 36;
-      hourRef.current.scrollTop = parseInt(hour) * itemHeight;
+      // 중간 세트(24개 항목)로 시작
+      hourRef.current.scrollTop = (24 + parseInt(hour)) * itemHeight;
     }
   }, [open]);
 
   useEffect(() => {
     if (open && minuteRef.current) {
       const itemHeight = 36;
-      minuteRef.current.scrollTop = parseInt(minute) * itemHeight;
+      // 중간 세트(60개 항목)로 시작
+      minuteRef.current.scrollTop = (60 + parseInt(minute)) * itemHeight;
     }
   }, [open]);
 
@@ -60,7 +62,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const scrollTop = hourRef.current.scrollTop;
     const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
-    const h = String(index).padStart(2, '0');
+    const h = String(index % 24).padStart(2, '0');
     if (h !== hour) setHour(h);
   };
 
@@ -69,7 +71,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const scrollTop = minuteRef.current.scrollTop;
     const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
-    const m = String(index).padStart(2, '0');
+    const m = String(index % 60).padStart(2, '0');
     if (m !== minute) setMinute(m);
   };
 
@@ -115,20 +117,19 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
       // 스크롤 업데이트 (누적 델타 기반)
       let newScroll = dragStartScroll.current + accumulatedDelta.current;
-      const maxScroll = maxValue * itemHeight;
+      const singleCycleScroll = maxValue * itemHeight;
+      const totalScroll = singleCycleScroll * 3; // 3번 반복
 
-      // 순환 처리 - 누적 델타도 함께 조정
-      if (newScroll < 0) {
-        const cycles = Math.ceil(Math.abs(newScroll) / (maxScroll + itemHeight));
-        const adjustment = cycles * (maxScroll + itemHeight);
-        newScroll += adjustment;
-        dragStartScroll.current += adjustment;
+      // 순환 처리 - 첫 번째 세트나 마지막 세트에 가까우면 중간으로 리셋
+      if (newScroll < singleCycleScroll * 0.5) {
+        // 첫 번째 세트 중반 이전이면 중간 세트로 점프
+        newScroll += singleCycleScroll;
+        dragStartScroll.current += singleCycleScroll;
         accumulatedDelta.current = newScroll - dragStartScroll.current;
-      } else if (newScroll > maxScroll) {
-        const cycles = Math.floor(newScroll / (maxScroll + itemHeight));
-        const adjustment = cycles * (maxScroll + itemHeight);
-        newScroll -= adjustment;
-        dragStartScroll.current -= adjustment;
+      } else if (newScroll > singleCycleScroll * 2.5) {
+        // 세 번째 세트 중반 이후면 중간 세트로 점프
+        newScroll -= singleCycleScroll;
+        dragStartScroll.current -= singleCycleScroll;
         accumulatedDelta.current = newScroll - dragStartScroll.current;
       }
 
@@ -192,20 +193,19 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
     // 스크롤 업데이트 (누적 델타 기반)
     let newScroll = dragStartScroll.current + accumulatedDelta.current;
-    const maxScroll = maxValue * itemHeight;
+    const singleCycleScroll = maxValue * itemHeight;
+    const totalScroll = singleCycleScroll * 3; // 3번 반복
 
-    // 순환 처리 - 누적 델타도 함께 조정
-    if (newScroll < 0) {
-      const cycles = Math.ceil(Math.abs(newScroll) / (maxScroll + itemHeight));
-      const adjustment = cycles * (maxScroll + itemHeight);
-      newScroll += adjustment;
-      dragStartScroll.current += adjustment;
+    // 순환 처리 - 첫 번째 세트나 마지막 세트에 가까우면 중간으로 리셋
+    if (newScroll < singleCycleScroll * 0.5) {
+      // 첫 번째 세트 중반 이전이면 중간 세트로 점프
+      newScroll += singleCycleScroll;
+      dragStartScroll.current += singleCycleScroll;
       accumulatedDelta.current = newScroll - dragStartScroll.current;
-    } else if (newScroll > maxScroll) {
-      const cycles = Math.floor(newScroll / (maxScroll + itemHeight));
-      const adjustment = cycles * (maxScroll + itemHeight);
-      newScroll -= adjustment;
-      dragStartScroll.current -= adjustment;
+    } else if (newScroll > singleCycleScroll * 2.5) {
+      // 세 번째 세트 중반 이후면 중간 세트로 점프
+      newScroll -= singleCycleScroll;
+      dragStartScroll.current -= singleCycleScroll;
       accumulatedDelta.current = newScroll - dragStartScroll.current;
     }
 
@@ -231,8 +231,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
   if (!open) return null;
 
-  const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
-  const minutes = Array.from({ length: 60 }, (_, i) => String(i).padStart(2, '0'));
+  // 연속적으로 보이도록 3번 반복
+  const hours = Array.from({ length: 24 * 3 }, (_, i) => String(i % 24).padStart(2, '0'));
+  const minutes = Array.from({ length: 60 * 3 }, (_, i) => String(i % 60).padStart(2, '0'));
 
   const handleBackdropClick = (e: React.MouseEvent) => {
     if (isDragging) {
@@ -269,13 +270,13 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               const val = e.target.value;
               if (val === '') {
                 setHour('00');
-                if (hourRef.current) hourRef.current.scrollTop = 0;
+                if (hourRef.current) hourRef.current.scrollTop = 24 * 36;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setHour(formatted);
                 if (hourRef.current) {
-                  hourRef.current.scrollTop = num * 36;
+                  hourRef.current.scrollTop = (24 + num) * 36;
                 }
               }
             }}
@@ -313,13 +314,13 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               const val = e.target.value;
               if (val === '') {
                 setMinute('00');
-                if (minuteRef.current) minuteRef.current.scrollTop = 0;
+                if (minuteRef.current) minuteRef.current.scrollTop = 60 * 36;
               } else {
                 const num = parseInt(val);
                 const formatted = String(num).padStart(2, '0');
                 setMinute(formatted);
                 if (minuteRef.current) {
-                  minuteRef.current.scrollTop = num * 36;
+                  minuteRef.current.scrollTop = (60 + num) * 36;
                 }
               }
             }}
