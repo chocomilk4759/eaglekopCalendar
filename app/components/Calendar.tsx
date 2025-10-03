@@ -971,8 +971,10 @@ useEffect(() => {
                       <div className="chips">
                         {note.items.map((it: Item, i: number) => (
                           <span key={i} className="chip">
-                            {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
-                            <span className="chip-emoji">{it.emoji ?? ''}</span>
+                            <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                              <span className="chip-emoji">{it.emoji ?? ''}</span>
+                              {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                            </span>
                             <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                           </span>
                         ))}
@@ -985,8 +987,10 @@ useEffect(() => {
                     <div className="chips">
                       {note!.items.map((it: Item, i: number) => (
                         <span key={i} className="chip">
-                          {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
-                          <span className="chip-emoji">{it.emoji ?? ''}</span>
+                          <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                            <span className="chip-emoji">{it.emoji ?? ''}</span>
+                            {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                          </span>
                           <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                         </span>
                       ))}

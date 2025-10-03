@@ -400,20 +400,6 @@ a:focus-visible {
   transform: none;
 }
 
-/* --- Background Image Styles --- */
-.calendar-grid .cell.has-bgimg .cell-top .cell-date,
-.calendar-grid .cell.has-bgimg .cell-top .cell-title,
-.calendar-grid .cell.has-bgimg .cell-content-text,
-.calendar-grid .cell.has-bgimg .cell-rest,
-.calendar-grid .cell.has-bgimg .chips .chip-text {
-  -webkit-text-stroke: 0.6px rgba(0, 0, 0, 0.9);
-  text-shadow:
-    0 1px 0 rgba(0, 0, 0, 0.9),
-    1px 0 0 rgba(0, 0, 0, 0.9),
-    0 -1px 0 rgba(0, 0, 0, 0.9),
-    -1px 0 0 rgba(0, 0, 0, 0.9);
-}
-
 /* --- Long-press Pulse Effect --- */
 @keyframes calendarPulse {
   0% {
