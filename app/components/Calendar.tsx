@@ -8,6 +8,7 @@ import SearchModal from './SearchModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
+import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -84,6 +85,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [searchOpen, setSearchOpen] = useState(false);
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
+  // ---- 공휴일 데이터
+  const [holidays, setHolidays] = useState<Map<string, HolidayInfo>>(new Map());
   // 앱/캐시 버전이 바뀌면 month LS 캐시 무해화
   useEffect(() => {
     const VER = 'cal-cache-0.16.0';
@@ -170,6 +173,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     window.addEventListener('keyup', onKeyUp);
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
   }, [ctrlSelecting, canEdit]);
+
+  // 공휴일 데이터 로드
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const holidayMap = await getHolidays(ym.y, ym.m + 1);
+      if (!cancelled) setHolidays(holidayMap);
+    })();
+    return () => { cancelled = true; };
+  }, [ym.y, ym.m]);
 
   // 월 전환 시 선택 상태 초기화
   useEffect(() => {
@@ -676,10 +689,21 @@ useEffect(() => {
   // - note.title 이 설정되어 있으면 그 값을 사용
   // - 설정하지 않으면 '', 7칸 미만일 때는 요일만 노출
   // - 7칸 미만 + title 존재 → "요일:타이틀"
-  function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean) {
+  // - 공휴일이면 공휴일명 추가
+  function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean, y: number, m: number, d: number) {
     const rawTitle = (((note as any)?.title) ?? '').trim();  // title 컬럼 사용
-    if (!showWeekday) return rawTitle;
+    const holiday = isHoliday(y, m, d, holidays);
+
+    if (!showWeekday) {
+      // 7칸 모드: 공휴일명 또는 타이틀
+      return holiday ? holiday.dateName : rawTitle;
+    }
+
     const day = DAY_NAMES[weekday];
+    if (holiday) {
+      // 공휴일이 있으면 요일:공휴일명 형식
+      return `${day}:${holiday.dateName}`;
+    }
     return rawTitle ? `${day}:${rawTitle}` : day;
   }
 
@@ -914,8 +938,8 @@ useEffect(() => {
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
-                  <div className={`cell-title ${c.w===0?'sun': (c.w===6?'sat':'')}`}>
-                    {cellTitleOf(note || null, c.w, !canShowSeven)}
+                  <div className={`cell-title ${(c.w===0 || isHoliday(c.y, c.m, c.d, holidays))?'sun': (c.w===6?'sat':'')}`}>
+                    {cellTitleOf(note || null, c.w, !canShowSeven, c.y, c.m, c.d)}
                   </div>
                   <div className="cell-link">
                     {linkUrl && (
