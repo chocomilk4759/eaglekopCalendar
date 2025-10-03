@@ -14,9 +14,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const [hour, setHour] = useState('00');
   const [minute, setMinute] = useState('00');
   const [nextDay, setNextDay] = useState(initialNextDay);
+  const [isDragging, setIsDragging] = useState(false);
 
   const hourRef = useRef<HTMLDivElement>(null);
   const minuteRef = useRef<HTMLDivElement>(null);
+  const dragStartY = useRef<number>(0);
+  const dragStartScroll = useRef<number>(0);
 
   // 초기값 파싱
   useEffect(() => {
@@ -36,34 +39,88 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   // 초기 스크롤 위치 설정
   useEffect(() => {
     if (open && hourRef.current) {
-      const itemHeight = 40;
+      const itemHeight = 36;
       hourRef.current.scrollTop = parseInt(hour) * itemHeight;
     }
   }, [open]);
 
   useEffect(() => {
     if (open && minuteRef.current) {
-      const itemHeight = 40;
+      const itemHeight = 36;
       minuteRef.current.scrollTop = parseInt(minute) * itemHeight;
     }
   }, [open]);
 
   const handleHourScroll = () => {
-    if (!hourRef.current) return;
+    if (!hourRef.current || isDragging) return;
     const scrollTop = hourRef.current.scrollTop;
-    const itemHeight = 40;
+    const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
     const h = String(index).padStart(2, '0');
     if (h !== hour) setHour(h);
   };
 
   const handleMinuteScroll = () => {
-    if (!minuteRef.current) return;
+    if (!minuteRef.current || isDragging) return;
     const scrollTop = minuteRef.current.scrollTop;
-    const itemHeight = 40;
+    const itemHeight = 36;
     const index = Math.round(scrollTop / itemHeight);
     const m = String(index).padStart(2, '0');
     if (m !== minute) setMinute(m);
+  };
+
+  // 드래그 핸들러
+  const handleMouseDown = (e: React.MouseEvent, ref: React.RefObject<HTMLDivElement>) => {
+    if (!ref.current) return;
+    setIsDragging(true);
+    dragStartY.current = e.clientY;
+    dragStartScroll.current = ref.current.scrollTop;
+    e.preventDefault();
+  };
+
+  const handleMouseMove = (e: MouseEvent, ref: React.RefObject<HTMLDivElement>) => {
+    if (!isDragging || !ref.current) return;
+    const deltaY = dragStartY.current - e.clientY;
+    ref.current.scrollTop = dragStartScroll.current + deltaY;
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  useEffect(() => {
+    if (!isDragging) return;
+    const onMove = (e: MouseEvent) => {
+      if (hourRef.current?.contains(e.target as Node)) {
+        handleMouseMove(e, hourRef);
+      } else if (minuteRef.current?.contains(e.target as Node)) {
+        handleMouseMove(e, minuteRef);
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
+
+  // 터치 핸들러
+  const handleTouchStart = (e: React.TouchEvent, ref: React.RefObject<HTMLDivElement>) => {
+    if (!ref.current) return;
+    setIsDragging(true);
+    dragStartY.current = e.touches[0].clientY;
+    dragStartScroll.current = ref.current.scrollTop;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent, ref: React.RefObject<HTMLDivElement>) => {
+    if (!isDragging || !ref.current) return;
+    const deltaY = dragStartY.current - e.touches[0].clientY;
+    ref.current.scrollTop = dragStartScroll.current + deltaY;
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
   };
 
   const handleSave = () => {
@@ -83,105 +140,153 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
   return (
     <div className="modal" onClick={onClose} style={{ zIndex: 1001 }}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '20px', minWidth: 280 }}>
-        <h3 style={{ margin: '0 0 16px 0', fontSize: 16 }}>시작 시간 설정</h3>
+      <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '16px', minWidth: 240, maxWidth: 280 }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 600 }}>시작 시간</h3>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
-          {/* 시간 선택 */}
+        {/* 직접 입력 (PC) */}
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+          <input
+            type="text"
+            value={hour}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+              const num = parseInt(val || '0');
+              if (num >= 0 && num <= 23) {
+                setHour(val.padStart(2, '0'));
+                if (hourRef.current) {
+                  hourRef.current.scrollTop = num * 36;
+                }
+              }
+            }}
+            style={{
+              width: 45,
+              padding: '6px',
+              textAlign: 'center',
+              fontSize: 16,
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              fontWeight: 600
+            }}
+            maxLength={2}
+          />
+          <span style={{ fontSize: 18, fontWeight: 600 }}>:</span>
+          <input
+            type="text"
+            value={minute}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+              const num = parseInt(val || '0');
+              if (num >= 0 && num <= 59) {
+                setMinute(val.padStart(2, '0'));
+                if (minuteRef.current) {
+                  minuteRef.current.scrollTop = num * 36;
+                }
+              }
+            }}
+            style={{
+              width: 45,
+              padding: '6px',
+              textAlign: 'center',
+              fontSize: 16,
+              border: '1px solid var(--border)',
+              borderRadius: 6,
+              fontWeight: 600
+            }}
+            maxLength={2}
+          />
+        </div>
+
+        {/* 드래그 스크롤 선택 */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
           <div
             ref={hourRef}
             onScroll={handleHourScroll}
+            onMouseDown={(e) => handleMouseDown(e, hourRef)}
+            onTouchStart={(e) => handleTouchStart(e, hourRef)}
+            onTouchMove={(e) => handleTouchMove(e, hourRef)}
+            onTouchEnd={handleTouchEnd}
             style={{
-              height: 160,
-              width: 70,
+              height: 108,
+              width: 50,
               overflowY: 'scroll',
               scrollSnapType: 'y mandatory',
               border: '1px solid var(--border)',
-              borderRadius: 8,
+              borderRadius: 6,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              position: 'relative'
+              cursor: 'grab',
+              userSelect: 'none'
             }}
           >
-            <div style={{ height: 60 }} />
+            <div style={{ height: 36 }} />
             {hours.map((h) => (
               <div
                 key={h}
-                onClick={() => {
-                  setHour(h);
-                  if (hourRef.current) {
-                    hourRef.current.scrollTo({ top: parseInt(h) * 40, behavior: 'smooth' });
-                  }
-                }}
                 style={{
-                  height: 40,
+                  height: 36,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   scrollSnapAlign: 'start',
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: h === hour ? 700 : 400,
                   color: h === hour ? 'var(--text)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.15s'
                 }}
               >
                 {h}
               </div>
             ))}
-            <div style={{ height: 60 }} />
+            <div style={{ height: 36 }} />
           </div>
 
-          <span style={{ fontSize: 24, fontWeight: 700, color: 'var(--text)' }}>:</span>
+          <span style={{ fontSize: 20, fontWeight: 600, color: 'var(--text)' }}>:</span>
 
-          {/* 분 선택 */}
           <div
             ref={minuteRef}
             onScroll={handleMinuteScroll}
+            onMouseDown={(e) => handleMouseDown(e, minuteRef)}
+            onTouchStart={(e) => handleTouchStart(e, minuteRef)}
+            onTouchMove={(e) => handleTouchMove(e, minuteRef)}
+            onTouchEnd={handleTouchEnd}
             style={{
-              height: 160,
-              width: 70,
+              height: 108,
+              width: 50,
               overflowY: 'scroll',
               scrollSnapType: 'y mandatory',
               border: '1px solid var(--border)',
-              borderRadius: 8,
+              borderRadius: 6,
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
-              position: 'relative'
+              cursor: 'grab',
+              userSelect: 'none'
             }}
           >
-            <div style={{ height: 60 }} />
+            <div style={{ height: 36 }} />
             {minutes.map((m) => (
               <div
                 key={m}
-                onClick={() => {
-                  setMinute(m);
-                  if (minuteRef.current) {
-                    minuteRef.current.scrollTo({ top: parseInt(m) * 40, behavior: 'smooth' });
-                  }
-                }}
                 style={{
-                  height: 40,
+                  height: 36,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   scrollSnapAlign: 'start',
-                  fontSize: 18,
+                  fontSize: 15,
                   fontWeight: m === minute ? 700 : 400,
                   color: m === minute ? 'var(--text)' : 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.15s'
                 }}
               >
                 {m}
               </div>
             ))}
-            <div style={{ height: 60 }} />
+            <div style={{ height: 36 }} />
           </div>
         </div>
 
         {/* 다음날 체크박스 */}
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, fontSize: 14, justifyContent: 'center' }}>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12, fontSize: 13, justifyContent: 'center' }}>
           <input
             type="checkbox"
             checked={nextDay}
@@ -191,10 +296,10 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
         </label>
 
         {/* 액션 버튼 */}
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button onClick={handleClear} style={{ fontSize: 13 }}>시간 제거</button>
-          <button onClick={handleSave} style={{ fontSize: 13 }}>확인</button>
-          <button onClick={onClose} style={{ fontSize: 13 }}>취소</button>
+        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+          <button onClick={handleClear} style={{ fontSize: 12, padding: '6px 10px' }}>제거</button>
+          <button onClick={handleSave} style={{ fontSize: 12, padding: '6px 10px' }}>확인</button>
+          <button onClick={onClose} style={{ fontSize: 12, padding: '6px 10px' }}>취소</button>
         </div>
 
         <style jsx>{`
