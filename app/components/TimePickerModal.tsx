@@ -103,35 +103,35 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       const maxValue = dragTarget.current === 'hour' ? 23 : 59;
       const itemHeight = 36;
 
-      // 델타 누적
-      const deltaY = lastY.current - e.clientY;
-      accumulatedDelta.current += deltaY;
+      // 현재 프레임의 델타 계산
+      const currentDelta = lastY.current - e.clientY;
+
+      // 델타를 누적에 추가
+      accumulatedDelta.current += currentDelta;
+
+      // 다음 프레임을 위해 현재 위치 저장
       lastY.current = e.clientY;
 
-      // 스크롤 업데이트
+      // 스크롤 업데이트 (누적 델타 기반)
       let newScroll = dragStartScroll.current + accumulatedDelta.current;
       const maxScroll = maxValue * itemHeight;
 
-      // 순환 처리
-      while (newScroll < 0) {
-        newScroll += (maxScroll + itemHeight);
-        dragStartScroll.current += (maxScroll + itemHeight);
-      }
-      while (newScroll > maxScroll) {
-        newScroll -= (maxScroll + itemHeight);
-        dragStartScroll.current -= (maxScroll + itemHeight);
+      // 순환 처리 - 누적 델타도 함께 조정
+      if (newScroll < 0) {
+        const cycles = Math.ceil(Math.abs(newScroll) / (maxScroll + itemHeight));
+        const adjustment = cycles * (maxScroll + itemHeight);
+        newScroll += adjustment;
+        dragStartScroll.current += adjustment;
+        accumulatedDelta.current = newScroll - dragStartScroll.current;
+      } else if (newScroll > maxScroll) {
+        const cycles = Math.floor(newScroll / (maxScroll + itemHeight));
+        const adjustment = cycles * (maxScroll + itemHeight);
+        newScroll -= adjustment;
+        dragStartScroll.current -= adjustment;
+        accumulatedDelta.current = newScroll - dragStartScroll.current;
       }
 
       ref.current.scrollTop = newScroll;
-
-      // 커서가 화면 경계에 가까워지면 중앙으로 리셋
-      const threshold = 100;
-      const centerY = window.innerHeight / 2;
-
-      if (e.clientY < threshold || e.clientY > window.innerHeight - threshold) {
-        // 마우스를 중앙으로 이동 (Pointer Lock API 미사용 대체)
-        lastY.current = centerY;
-      }
 
       e.preventDefault();
     };
@@ -174,23 +174,32 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const maxValue = dragTarget.current === 'hour' ? 23 : 59;
     const itemHeight = 36;
 
-    // 델타 누적
-    const deltaY = lastY.current - e.touches[0].clientY;
-    accumulatedDelta.current += deltaY;
+    // 현재 프레임의 델타 계산
+    const currentDelta = lastY.current - e.touches[0].clientY;
+
+    // 델타를 누적에 추가
+    accumulatedDelta.current += currentDelta;
+
+    // 다음 프레임을 위해 현재 위치 저장
     lastY.current = e.touches[0].clientY;
 
-    // 스크롤 업데이트
+    // 스크롤 업데이트 (누적 델타 기반)
     let newScroll = dragStartScroll.current + accumulatedDelta.current;
     const maxScroll = maxValue * itemHeight;
 
-    // 순환 처리
-    while (newScroll < 0) {
-      newScroll += (maxScroll + itemHeight);
-      dragStartScroll.current += (maxScroll + itemHeight);
-    }
-    while (newScroll > maxScroll) {
-      newScroll -= (maxScroll + itemHeight);
-      dragStartScroll.current -= (maxScroll + itemHeight);
+    // 순환 처리 - 누적 델타도 함께 조정
+    if (newScroll < 0) {
+      const cycles = Math.ceil(Math.abs(newScroll) / (maxScroll + itemHeight));
+      const adjustment = cycles * (maxScroll + itemHeight);
+      newScroll += adjustment;
+      dragStartScroll.current += adjustment;
+      accumulatedDelta.current = newScroll - dragStartScroll.current;
+    } else if (newScroll > maxScroll) {
+      const cycles = Math.floor(newScroll / (maxScroll + itemHeight));
+      const adjustment = cycles * (maxScroll + itemHeight);
+      newScroll -= adjustment;
+      dragStartScroll.current -= adjustment;
+      accumulatedDelta.current = newScroll - dragStartScroll.current;
     }
 
     ref.current.scrollTop = newScroll;
