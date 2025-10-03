@@ -4,30 +4,22 @@
 ===================================================================================== */
 
 /* =====================================================================================
-  0. 모바일 기본 동작 차단
+  0. 모바일 터치 동작 최적화 (드래그 앤 드롭용)
 ===================================================================================== */
-* {
-  /* 텍스트 선택 방지 (드래그 중) */
+/* 캘린더 그리드에서 브라우저 기본 롱프레스 차단 */
+.calendar-grid .cell,
+.calendar-grid .chip {
+  /* 터치 콜아웃(컨텍스트 메뉴) 방지 */
+  -webkit-touch-callout: none;
+
+  /* 텍스트 선택 방지 */
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
 
-  /* 터치 콜아웃(컨텍스트 메뉴) 방지 */
-  -webkit-touch-callout: none;
-
   /* 탭 하이라이트 제거 */
   -webkit-tap-highlight-color: transparent;
-}
-
-/* 입력 필드와 텍스트 영역은 선택 가능하게 */
-input,
-textarea,
-[contenteditable="true"] {
-  -webkit-user-select: text;
-  -moz-user-select: text;
-  -ms-user-select: text;
-  user-select: text;
 }
 
 /* =====================================================================================

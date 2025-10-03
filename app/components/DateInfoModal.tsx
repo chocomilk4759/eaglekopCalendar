@@ -428,6 +428,13 @@ export default function DateInfoModal({
     e.dataTransfer.effectAllowed='move';
     e.dataTransfer.setData('text/plain', String(idx));
   }
+
+  // 터치 이벤트 핸들러 (모바일용)
+  function onChipTouchStart(e: React.TouchEvent<HTMLSpanElement>) {
+    if (!canEdit) return;
+    // 브라우저 기본 동작 차단 (컨텍스트 메뉴 등)
+    e.preventDefault();
+  }
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){
     if(!canEdit) return;
     // 모달 내부 칩 재정렬만 허용 (JSON 페이로드가 없는 경우)
@@ -774,6 +781,7 @@ export default function DateInfoModal({
                     onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
                     onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
+                    onTouchStart={(e)=> { if(!disabled) onChipTouchStart(e); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',

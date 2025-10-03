@@ -315,8 +315,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onPressStartCell(k: string) {
     clearPressTimer();
     pressKeyRef.current = k;
-    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
-    const LONGPRESS_MS = isCoarse ? 300 : 350; // 모바일 300ms로 단축
+    // 터치스크린 감지: 여러 방법 시도
+    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobile = isCoarse || isTouchDevice;
+    const LONGPRESS_MS = isMobile ? 200 : 350;
+
     pressTimerRef.current = window.setTimeout(() => {
       setLongReadyKey(k);
       triggerPulse(k);
@@ -413,11 +417,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
 
+    // 브라우저 기본 동작 차단 (매우 중요!)
+    e.preventDefault();
+
     // 셀 롱프레스 타이머만 정리
     clearPressTimer();
     clearChipPressTimer();
 
-    const LONGPRESS_MS = 300; // 300ms로 단축 (더 빠른 반응)
+    const LONGPRESS_MS = 200; // 200ms로 단축 (브라우저 기본 동작보다 빠르게)
 
     chipPressTimerRef.current = window.setTimeout(() => {
       setChipDragReady({ cellKey, chipIndex });
@@ -1272,12 +1279,10 @@ useEffect(() => {
                 // 칩을 터치한 경우 셀 드래그 무시
                 if ((e.target as HTMLElement).closest('.chip')) return;
                 if (canEdit && c.d) {
+                  // 브라우저 기본 동작 차단
+                  e.preventDefault();
                   onPressStartCell(k);
                 }
-              }}
-              onContextMenu={(e) => {
-                // 컨텍스트 메뉴 완전 차단
-                e.preventDefault();
               }}
               onTouchEnd={(e) => {
                 // 칩 드래그 중이면 셀 이벤트 무시
