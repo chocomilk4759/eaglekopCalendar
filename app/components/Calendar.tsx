@@ -285,6 +285,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pressKeyRef = useRef<string|null>(null);
   const pulseTimerRef = useRef<number|undefined>(undefined);
 
+  // ----- 드래그 중인 칩 데이터 (모바일용 fallback) -----
+  const draggedChipDataRef = useRef<any>(null);
+
 
   
   function triggerPulse(k: string) {
@@ -703,17 +706,14 @@ useEffect(() => {
 
   // 칩 드롭 처리
   async function dropChip(targetY: number, targetM: number, targetD: number, dataStr: string) {
-    alert('dropChip 호출됨');
     if (!canEdit) return;
     let payload: any;
     try {
       payload = JSON.parse(dataStr);
     } catch {
-      alert('JSON 파싱 실패');
       return;
     }
     if (payload?.type !== 'chip') {
-      alert('chip 타입 아님: ' + payload?.type);
       return;
     }
 
@@ -721,11 +721,9 @@ useEffect(() => {
 
     // 동일 날짜로 드롭하면 무시
     if (sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
-      alert('동일 날짜');
       return;
     }
 
-    alert('모달 열기 시도');
     // 모달 열어서 이동/복사 선택
     setPendingChipDrop({
       targetY,
@@ -1120,25 +1118,36 @@ useEffect(() => {
               onDrop={(e) => {
                 if (canEdit && c.d) {
                   e.preventDefault();
-                  alert('드롭 이벤트 발생');
-                  const raw = e.dataTransfer.getData('application/json');
+
+                  let raw = e.dataTransfer.getData('application/json');
+                  if (!raw) {
+                    raw = e.dataTransfer.getData('text/plain');
+                  }
+
+                  // fallback: ref에서 가져오기
+                  if (!raw && draggedChipDataRef.current) {
+                    const payload = draggedChipDataRef.current;
+                    if (payload.type === 'chip') {
+                      dropChip(c.y, c.m, c.d, JSON.stringify(payload));
+                    }
+                    draggedChipDataRef.current = null;
+                    return;
+                  }
+
                   try {
                     const json = JSON.parse(raw);
                     if (json?.type === 'note-copy') {
-                      // 노트 복제 드롭
                       dropNoteCopy(c.y, c.m, c.d, json);
                     } else if (json?.type === 'preset') {
-                      // 프리셋 드롭 → 모달 오픈
                       dropPreset(c.y, c.m, c.d, raw);
                     } else if (json?.type === 'chip') {
-                      // 칩 드롭 → 이동/복사 선택 모달
                       dropChip(c.y, c.m, c.d, raw);
-                    } else {
-                      // 다른 타입은 무시
                     }
                   } catch (err) {
                     alert('드롭 에러: ' + err);
                   }
+
+                  draggedChipDataRef.current = null;
                 }
               }}
             >
@@ -1201,9 +1210,11 @@ useEffect(() => {
                                 chipIndex: i,
                                 item: it
                               };
-                              e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                              const payloadStr = JSON.stringify(payload);
+                              e.dataTransfer.setData('application/json', payloadStr);
+                              e.dataTransfer.setData('text/plain', payloadStr);
                               e.dataTransfer.effectAllowed = 'move';
-                              alert('드래그 시작');
+                              draggedChipDataRef.current = payload;
                             }}
                           >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
@@ -1235,9 +1246,11 @@ useEffect(() => {
                               chipIndex: i,
                               item: it
                             };
-                            e.dataTransfer.setData('application/json', JSON.stringify(payload));
+                            const payloadStr = JSON.stringify(payload);
+                            e.dataTransfer.setData('application/json', payloadStr);
+                            e.dataTransfer.setData('text/plain', payloadStr);
                             e.dataTransfer.effectAllowed = 'move';
-                            console.log('Chip drag started (chips):', payload);
+                            draggedChipDataRef.current = payload;
                           }}
                         >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
