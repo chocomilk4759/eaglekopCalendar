@@ -282,11 +282,19 @@ a:focus-visible {
 }
 
 .calendar-grid .cell-title.sun {
-  color: var(--sun) !important;
+  color: var(--sun);
 }
 
 .calendar-grid .cell-title.sat {
-  color: var(--sat) !important;
+  color: var(--sat);
+}
+
+/* 플래그 색상이 있으면 흰색 우선 적용 */
+.cell.flag-red .cell-title.sun,
+.cell.flag-blue .cell-title.sun,
+.cell.flag-red .cell-title.sat,
+.cell.flag-blue .cell-title.sat {
+  color: #fff !important;
 }
 
 .calendar-grid .cell-link {
