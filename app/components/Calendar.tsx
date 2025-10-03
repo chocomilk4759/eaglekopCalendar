@@ -194,7 +194,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // 일괄 칩 추가
-  function applyBulkAddChip(text: string, preset?: ChipPreset){
+  function applyBulkAddChip(text: string, startTime: string, preset?: ChipPreset){
     const targets = bulkTargets.slice();
     if (!targets.length){ setBulkOpen(false); return; }
     setNotes(prev => {
@@ -203,7 +203,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         const k = `${t.y}-${t.m}-${t.d}`;
         const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
         const items = Array.isArray((n as any).items) ? [ ...(n as any).items ] : [];
-        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '' });
+        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined });
         (n as any).items = items;
         next[k] = n as any;
       }
@@ -995,7 +995,7 @@ useEffect(() => {
         mode="add"
         preset={{ emoji: null, label: '' }}
         initialText=""
-        onSave={(t,p)=> applyBulkAddChip(t,p)}
+        onSave={(t,st,p)=> applyBulkAddChip(t,st,p)}
         onClose={()=> setBulkOpen(false)}
         canEdit={canEdit}
         title={fmtBulkTitle(bulkTargets)}
