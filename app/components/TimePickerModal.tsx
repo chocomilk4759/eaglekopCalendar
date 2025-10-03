@@ -8,9 +8,10 @@ interface TimePickerModalProps {
   initialNextDay?: boolean;
   onSave: (time: string, nextDay: boolean) => void;
   onClose: () => void;
+  onDragStateChange?: (isDragging: boolean) => void;
 }
 
-export default function TimePickerModal({ open, initialTime = '00:00', initialNextDay = false, onSave, onClose }: TimePickerModalProps) {
+export default function TimePickerModal({ open, initialTime = '00:00', initialNextDay = false, onSave, onClose, onDragStateChange }: TimePickerModalProps) {
   const [hour, setHour] = useState('00');
   const [minute, setMinute] = useState('00');
   const [nextDay, setNextDay] = useState(initialNextDay);
@@ -69,6 +70,11 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const m = String(index).padStart(2, '0');
     if (m !== minute) setMinute(m);
   };
+
+  // 드래그 상태 변경 시 부모에게 알림
+  useEffect(() => {
+    onDragStateChange?.(isDragging);
+  }, [isDragging, onDragStateChange]);
 
   // 마우스 드래그 핸들러 (무한 스크롤)
   const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {

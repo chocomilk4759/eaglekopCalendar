@@ -42,6 +42,7 @@ export default function ModifyChipInfoModal({
   const [localPreset, setLocalPreset] = useState<ChipPreset>(preset);
   const [iconOpen, setIconOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
+  const [isChildDragging, setIsChildDragging] = useState(false);
   const [options, setOptions] = useState<ChipPreset[]>([]);
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -95,8 +96,18 @@ export default function ModifyChipInfoModal({
 
   if (!open) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (isChildDragging) {
+      e.preventDefault();
+      return;
+    }
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="modal" onClick={onClose}>
+    <div className="modal" onMouseDown={handleBackdropClick}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         {title && (
           <div style={{marginBottom:8, fontSize:12, fontWeight:700, opacity:.85}}>
@@ -204,6 +215,7 @@ export default function ModifyChipInfoModal({
           setNextDay(nd);
         }}
         onClose={() => setTimePickerOpen(false)}
+        onDragStateChange={setIsChildDragging}
       />
     </div>
   );
