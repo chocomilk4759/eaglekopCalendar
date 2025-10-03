@@ -236,7 +236,6 @@ a:focus-visible {
 .cell.flag-blue .cell-title {
   color: #fff !important;
   overflow: auto;
-  -webkit-text-stroke: 1px #fff;
 }
 
 /* --- Cell Inner Structure --- */
