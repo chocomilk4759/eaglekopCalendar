@@ -945,7 +945,8 @@ useEffect(() => {
         open={searchOpen}
         onClose={() => setSearchOpen(false)}
         notes={notes}
-        onSelectDate={(y, m, d) => {
+        onSelectDate={async (y, m, d) => {
+          await prefetchMonth(y, m);
           setYM({ y, m });
           openInfo(y, m, d);
         }}
