@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
+import SearchModal from './SearchModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
@@ -80,6 +81,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
   const [presetToAdd, setPresetToAdd] = useState<{ emoji: string | null; label: string } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
   // 앱/캐시 버전이 바뀌면 month LS 캐시 무해화
@@ -130,9 +132,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
+  // Ctrl+F: 검색 모달 열기
   useEffect(() => {
     if (!canEdit) return;  // 권한 없으면 비활성화
     function onKeyDown(e: KeyboardEvent){
+      // Ctrl+F: 검색 모달 열기
+      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+        e.preventDefault();
+        setSearchOpen(true);
+        return;
+      }
+
       if (e.key === 'Control' && !ctrlSelecting){
         setCtrlSelecting(true);
         selectedKeysRef.current = new Set();
@@ -916,6 +926,17 @@ useEffect(() => {
         title={fmtBulkTitle(bulkTargets)}
         onRest={applyBulkRest}
         showRestButton={true}
+      />
+
+      {/* ── 검색 모달 (Ctrl+F) ── */}
+      <SearchModal
+        open={searchOpen}
+        onClose={() => setSearchOpen(false)}
+        notes={notes}
+        onSelectDate={(y, m, d) => {
+          setYM({ y, m });
+          openInfo(y, m, d);
+        }}
       />
     </>
   );
