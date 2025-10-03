@@ -719,6 +719,22 @@ useEffect(() => {
                 이동
               </button>
             </div>
+
+            <button
+              onClick={() => setSearchOpen(true)}
+              title="검색 (Ctrl+F)"
+              aria-label="검색"
+              style={{
+                padding: '8px 16px',
+                fontSize: 16,
+                borderRadius: 8,
+                border: '1px solid var(--border-color, #ccc)',
+                background: 'var(--bg-secondary, #f5f5f5)',
+                cursor: 'pointer',
+              }}
+            >
+              🔍 검색
+            </button>
           </div>
         </div>
 
