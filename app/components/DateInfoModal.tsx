@@ -232,9 +232,9 @@ export default function DateInfoModal({
     const vw = Math.max(320, window.innerWidth);
     const vh = Math.max(320, window.innerHeight);
     const baseMinW = hasImg ? 540 : 420;
-    const baseMinH = 320;
+    const baseMinH = hasImg ? 320 : 200; // 이미지 없으면 200px까지 줄일 수 있음
     const minW = Math.max(320, Math.min(baseMinW, vw - margin*2));
-    const minH = Math.max(260, Math.min(baseMinH, vh - margin*2));
+    const minH = Math.max(180, Math.min(baseMinH, vh - margin*2)); // 최소 180px
     const maxW = Math.max(minW, Math.min(1100, vw - margin*2));
     const maxH = Math.max(minH, Math.min(900, vh - margin*2));
     return { minW, minH, maxW, maxH, margin };
