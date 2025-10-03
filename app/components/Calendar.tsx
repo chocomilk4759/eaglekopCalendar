@@ -118,6 +118,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pendingRef = useRef<'seven'|'compact'|null>(null);
   const tRef = useRef<number|undefined>(undefined);
 
+  // ---------- 모바일 스와이프 ----------
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  // ---------- PC 마우스 제스처 (우클릭 드래그) ----------
+  const mouseGestureRef = useRef<{ x: number; y: number; active: boolean } | null>(null);
+
   // ---------- Ctrl 다중 선택 ----------
   const [ctrlSelecting, setCtrlSelecting] = useState(false);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
@@ -192,6 +198,81 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setSelectedKeys(new Set());
     }
   }, [canEdit]);
+
+  // 스와이프 핸들러
+  function onTouchStart(e: React.TouchEvent) {
+    if (e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }
+
+  function onTouchEnd(e: React.TouchEvent) {
+    if (!touchStartRef.current || e.changedTouches.length !== 1) return;
+
+    const touch = e.changedTouches[0];
+    const deltaX = touch.clientX - touchStartRef.current.x;
+    const deltaY = touch.clientY - touchStartRef.current.y;
+    const deltaTime = Date.now() - touchStartRef.current.time;
+
+    touchStartRef.current = null;
+
+    // 수평 스와이프 판정: 최소 50px 이동, 세로 이동보다 가로 이동이 2배 이상, 500ms 이내
+    if (Math.abs(deltaX) > 50 && Math.abs(deltaX) > Math.abs(deltaY) * 2 && deltaTime < 500) {
+      if (deltaX > 0) {
+        // 오른쪽 스와이프: 이전 달
+        goPrev();
+      } else {
+        // 왼쪽 스와이프: 다음 달
+        goNext();
+      }
+    }
+  }
+
+  // 마우스 제스처 핸들러 (우클릭 드래그)
+  function onMouseDown(e: React.MouseEvent) {
+    // 우클릭(버튼 2)만 처리
+    if (e.button !== 2) return;
+    e.preventDefault();
+    mouseGestureRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      active: true
+    };
+  }
+
+  function onMouseMove(e: React.MouseEvent) {
+    if (!mouseGestureRef.current?.active) return;
+    // 마우스 이동 중에는 아무것도 하지 않음 (mouseUp에서 판정)
+  }
+
+  function onMouseUp(e: React.MouseEvent) {
+    if (!mouseGestureRef.current?.active) return;
+
+    const deltaX = e.clientX - mouseGestureRef.current.x;
+    const deltaY = e.clientY - mouseGestureRef.current.y;
+
+    mouseGestureRef.current = null;
+
+    // 수평 제스처 판정: 최소 80px 이동, 세로 이동보다 가로 이동이 3배 이상 (ㄱ 자 제스처 무시)
+    if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY) * 3) {
+      if (deltaX > 0) {
+        // 오른쪽 드래그: 이전 달
+        goPrev();
+      } else {
+        // 왼쪽 드래그: 다음 달
+        goNext();
+      }
+    }
+  }
+
+  function onContextMenu(e: React.MouseEvent) {
+    // 우클릭 컨텍스트 메뉴 비활성화
+    e.preventDefault();
+  }
 
   // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
   function onCellClick(e: React.MouseEvent, y:number, m:number, d:number, key:string){
@@ -848,6 +929,12 @@ useEffect(() => {
           position: loading ? 'absolute' : 'relative',
           visibility: loading ? 'hidden' : 'visible'
         }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onContextMenu={onContextMenu}
       >
         {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
           <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
