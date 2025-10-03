@@ -707,7 +707,7 @@ useEffect(() => {
               ▶
             </button>
 
-            <div className="jump">
+            <div className="jump" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
               <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
               <button
                 onMouseEnter={() => {
