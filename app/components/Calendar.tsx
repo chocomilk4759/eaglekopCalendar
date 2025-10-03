@@ -707,34 +707,36 @@ useEffect(() => {
               ▶
             </button>
 
-            <div className="jump">
-              <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div className="jump">
+                <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
+                <button
+                  onMouseEnter={() => {
+                    const d = new Date(jump);
+                    if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
+                  }}
+                  onClick={jumpGo}
+                >
+                  이동
+                </button>
+              </div>
+
               <button
-                onMouseEnter={() => {
-                  const d = new Date(jump);
-                  if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
+                onClick={() => setSearchOpen(true)}
+                title="검색 (Ctrl+F)"
+                aria-label="검색"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: 16,
+                  borderRadius: 8,
+                  border: '1px solid var(--border-color, #ccc)',
+                  background: 'var(--bg-secondary, #f5f5f5)',
+                  cursor: 'pointer',
                 }}
-                onClick={jumpGo}
               >
-                이동
+                🔍 검색
               </button>
             </div>
-
-            <button
-              onClick={() => setSearchOpen(true)}
-              title="검색 (Ctrl+F)"
-              aria-label="검색"
-              style={{
-                padding: '8px 16px',
-                fontSize: 16,
-                borderRadius: 8,
-                border: '1px solid var(--border-color, #ccc)',
-                background: 'var(--bg-secondary, #f5f5f5)',
-                cursor: 'pointer',
-              }}
-            >
-              🔍 검색
-            </button>
           </div>
         </div>
 
