@@ -85,30 +85,14 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     const ref = target === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
 
+    setIsDragging(true);
     dragTarget.current = target;
-    dragStartY.current = e.clientY;
     dragStartScroll.current = ref.current.scrollTop;
     e.preventDefault();
 
     // Pointer Lock 요청
     ref.current.requestPointerLock();
   };
-
-  useEffect(() => {
-    const handlePointerLockChange = () => {
-      if (document.pointerLockElement) {
-        setIsDragging(true);
-      } else {
-        setIsDragging(false);
-        dragTarget.current = null;
-      }
-    };
-
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-    return () => {
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
-    };
-  }, []);
 
   useEffect(() => {
     if (!isDragging || !dragTarget.current) return;
@@ -127,10 +111,10 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       let newScroll = ref.current.scrollTop + delta;
       const singleCycleScroll = (maxValue + 1) * itemHeight;
 
-      // 순환 처리
-      if (newScroll < 0) {
+      // 순환 처리 - 경계를 넘으면 중간 세트로 이동
+      if (newScroll < singleCycleScroll * 0.5) {
         newScroll += singleCycleScroll;
-      } else if (newScroll >= singleCycleScroll * 3) {
+      } else if (newScroll > singleCycleScroll * 2.5) {
         newScroll -= singleCycleScroll;
       }
 
@@ -138,6 +122,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     };
 
     const handleMouseUp = () => {
+      setIsDragging(false);
+      dragTarget.current = null;
+
       // Pointer Lock 해제
       if (document.pointerLockElement) {
         document.exitPointerLock();
@@ -150,6 +137,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
     };
   }, [isDragging]);
 
@@ -350,10 +340,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               cursor: isDragging && dragTarget.current === 'hour' ? 'grabbing' : 'grab',
-              userSelect: 'none',
-              pointerEvents: isDragging && dragTarget.current === 'hour' ? 'none' : 'auto'
+              userSelect: 'none'
             }}
-            onWheel={(e) => e.stopPropagation()}
           >
             <div style={{ height: 36 }} />
             {hours.map((h) => (
@@ -396,10 +384,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
               scrollbarWidth: 'none',
               msOverflowStyle: 'none',
               cursor: isDragging && dragTarget.current === 'minute' ? 'grabbing' : 'grab',
-              userSelect: 'none',
-              pointerEvents: isDragging && dragTarget.current === 'minute' ? 'none' : 'auto'
+              userSelect: 'none'
             }}
-            onWheel={(e) => e.stopPropagation()}
           >
             <div style={{ height: 36 }} />
             {minutes.map((m) => (
