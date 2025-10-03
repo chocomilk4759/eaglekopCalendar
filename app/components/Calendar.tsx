@@ -316,7 +316,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     clearPressTimer();
     pressKeyRef.current = k;
     const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
-    const LONGPRESS_MS = isCoarse ? 550 : 350;
+    const LONGPRESS_MS = isCoarse ? 300 : 350; // 모바일 300ms로 단축
     pressTimerRef.current = window.setTimeout(() => {
       setLongReadyKey(k);
       triggerPulse(k);
@@ -406,11 +406,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
 
-    // 셀 롱프레스 타이머만 정리 (stopPropagation 제거)
+    // 브라우저 기본 동작 방지 (컨텍스트 메뉴, 텍스트 선택 등)
+    e.preventDefault();
+
+    // 셀 롱프레스 타이머만 정리
     clearPressTimer();
     clearChipPressTimer();
 
-    const LONGPRESS_MS = 550; // 모바일 전용
+    const LONGPRESS_MS = 300; // 300ms로 단축 (더 빠른 반응)
 
     chipPressTimerRef.current = window.setTimeout(() => {
       setChipDragReady({ cellKey, chipIndex });
@@ -1264,7 +1267,10 @@ useEffect(() => {
               onTouchStart={(e) => {
                 // 칩을 터치한 경우 셀 드래그 무시
                 if ((e.target as HTMLElement).closest('.chip')) return;
-                if (canEdit && c.d) onPressStartCell(k);
+                if (canEdit && c.d) {
+                  e.preventDefault(); // 브라우저 기본 동작 방지
+                  onPressStartCell(k);
+                }
               }}
               onTouchEnd={(e) => {
                 // 칩을 터치한 경우 무시
@@ -1368,12 +1374,10 @@ useEffect(() => {
                             }}
                             onTouchStart={(e) => {
                               if (!canEdit || !c.d) return;
-                              e.stopPropagation();
                               onChipTouchStart(e, k, i, it);
                             }}
                             onTouchEnd={(e) => {
                               if (!canEdit || !c.d) return;
-                              e.stopPropagation();
                               onChipTouchEnd(e);
                             }}
                             style={{
@@ -1414,12 +1418,10 @@ useEffect(() => {
                           }}
                           onTouchStart={(e) => {
                             if (!canEdit || !c.d) return;
-                            e.stopPropagation();
                             onChipTouchStart(e, k, i, it);
                           }}
                           onTouchEnd={(e) => {
                             if (!canEdit || !c.d) return;
-                            e.stopPropagation();
                             onChipTouchEnd(e);
                           }}
                           style={{
