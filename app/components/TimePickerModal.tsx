@@ -91,6 +91,8 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
     setIsDragging(true);
     dragTarget.current = target;
+    lastY.current = e.clientY;
+    accumulatedDelta.current = 0;
     dragStartScroll.current = ref.current.scrollTop;
     e.preventDefault();
 
@@ -110,8 +112,16 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       const containerHeight = 120;
       const centerOffset = (containerHeight - itemHeight) / 2;
 
-      // Pointer Lock의 movementY 사용
-      const delta = -e.movementY;
+      let delta = 0;
+
+      // Pointer Lock이 활성화되어 있으면 movementY 사용
+      if (document.pointerLockElement) {
+        delta = -e.movementY;
+      } else {
+        // Pointer Lock이 아직 활성화 안됐으면 일반 좌표로 델타 계산
+        delta = lastY.current - e.clientY;
+        lastY.current = e.clientY;
+      }
 
       // 스크롤 업데이트
       let newScroll = ref.current.scrollTop + delta;
