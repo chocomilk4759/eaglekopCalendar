@@ -417,18 +417,15 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
 
-    // 브라우저 기본 동작 차단 (매우 중요!)
     e.preventDefault();
 
-    // 셀 롱프레스 타이머만 정리
     clearPressTimer();
     clearChipPressTimer();
 
-    const LONGPRESS_MS = 200; // 200ms로 단축 (브라우저 기본 동작보다 빠르게)
+    const LONGPRESS_MS = 200;
 
     chipPressTimerRef.current = window.setTimeout(() => {
       setChipDragReady({ cellKey, chipIndex });
-      // 햅틱 피드백
       if (navigator.vibrate) navigator.vibrate(50);
     }, LONGPRESS_MS);
   }
@@ -1276,12 +1273,15 @@ useEffect(() => {
               onMouseUp={onPressEndCell}
               onMouseLeave={onPressEndCell}
               onTouchStart={(e) => {
-                // 칩을 터치한 경우 셀 드래그 무시
                 if ((e.target as HTMLElement).closest('.chip')) return;
                 if (canEdit && c.d) {
-                  // 브라우저 기본 동작 차단
                   e.preventDefault();
                   onPressStartCell(k);
+                }
+              }}
+              onTouchMove={(e) => {
+                if (longReadyKey !== null) {
+                  e.preventDefault();
                 }
               }}
               onTouchEnd={(e) => {
@@ -1435,6 +1435,11 @@ useEffect(() => {
                           onTouchStart={(e) => {
                             if (!canEdit || !c.d) return;
                             onChipTouchStart(e, k, i, it);
+                          }}
+                          onTouchMove={(e) => {
+                            if (chipDragReady !== null) {
+                              e.preventDefault();
+                            }
                           }}
                           onTouchEnd={(e) => {
                             if (!canEdit || !c.d) return;

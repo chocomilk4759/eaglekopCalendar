@@ -782,6 +782,7 @@ export default function DateInfoModal({
                     onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     onTouchStart={(e)=> { if(!disabled) onChipTouchStart(e); }}
+                    onTouchMove={(e)=> { if(!disabled) e.preventDefault(); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
