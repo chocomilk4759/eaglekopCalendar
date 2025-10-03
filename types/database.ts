@@ -39,6 +39,7 @@ export interface NoteItem {
   label: string;
   text?: string;
   emojiOnly?: boolean;
+  startTime?: string; // HH:mm 형식 (예: "14:30")
 }
 
 // Supabase 응답 타입

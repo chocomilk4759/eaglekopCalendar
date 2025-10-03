@@ -481,6 +481,12 @@ a:focus-visible {
   text-overflow: ellipsis;
 }
 
+.chip-time {
+  font-size: 11px;
+  opacity: 0.7;
+  font-weight: 600;
+}
+
 /* --- Calendar Grid Chips --- */
 .calendar-grid .chips {
   gap: 2px;

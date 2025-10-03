@@ -947,6 +947,7 @@ useEffect(() => {
                       <div className="chips">
                         {note.items.map((it: Item, i: number) => (
                           <span key={i} className="chip">
+                            {it.startTime && <span className="chip-time">{it.startTime}</span>}
                             <span className="chip-emoji">{it.emoji ?? ''}</span>
                             <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                           </span>
@@ -960,6 +961,7 @@ useEffect(() => {
                     <div className="chips">
                       {note!.items.map((it: Item, i: number) => (
                         <span key={i} className="chip">
+                          {it.startTime && <span className="chip-time">{it.startTime}</span>}
                           <span className="chip-emoji">{it.emoji ?? ''}</span>
                           <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                         </span>

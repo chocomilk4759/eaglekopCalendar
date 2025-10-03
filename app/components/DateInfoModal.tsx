@@ -124,6 +124,7 @@ export default function DateInfoModal({
     setChipModalPreset({ emoji: addChipPreset.emoji ?? null, label: addChipPreset.label });
     setChipModalMode('add');
     setChipEditIndex(null);
+    setChipModalStartTime('');
     setChipModalOpen(true);
     onConsumedAddPreset?.();
   }, [open, addChipPreset, canEdit]);
@@ -313,23 +314,27 @@ export default function DateInfoModal({
     }catch(e:any){ alert(e?.message ?? '초기화 중 오류'); }
   }
 
+  const [chipModalStartTime, setChipModalStartTime] = useState<string>('');
+
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
     const cur = note.items?.[idx]; if(!cur) return;
     setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
     setChipModalMode('edit');
     setChipEditIndex(idx);
+    setChipModalStartTime(cur.startTime ?? '');
     setChipModalOpen(true);
   }
 
-  async function applyAddChip(text: string, overridePreset?: ChipPreset){
+  async function applyAddChip(text: string, startTime: string, overridePreset?: ChipPreset){
     if(!canEdit) return;
     const base = overridePreset ?? chipModalPreset;
     const newItem: Item = {
       emoji: base.emoji ?? null,
       label: base.label,
       text: text || undefined,
-      emojiOnly: !text
+      emojiOnly: !text,
+      startTime: startTime || undefined
     };
     const items = [...(note.items || []), newItem];
     try{ await persist({ items }); }
@@ -337,7 +342,7 @@ export default function DateInfoModal({
     setChipModalOpen(false);
   }
 
-  async function applyEditChip(text: string, overridePreset?: ChipPreset){
+  async function applyEditChip(text: string, startTime: string, overridePreset?: ChipPreset){
     if(!canEdit || chipEditIndex==null) return;
     const items = [...(note.items || [])];
     const cur = items[chipEditIndex]; if(!cur) return;
@@ -345,7 +350,8 @@ export default function DateInfoModal({
       ...cur,
       text: text || undefined,
       emojiOnly: !text,
-      emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji
+      emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji,
+      startTime: startTime || undefined
     };
     try{ await persist({ items }); }
     catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
@@ -678,11 +684,12 @@ export default function DateInfoModal({
                     onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
-                      display:'inline-flex', alignItems:'center', justifyContent:'center',
+                      display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 4,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
                       fontSize:12, background:'var(--card)', color:'inherit',
                       ...(dragIndex===idx ? { opacity:.6 } : null)
                     }}>
+                {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}</span>}
                 <span className="chip-emoji">{it.emoji ?? ''}</span>
                 <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
@@ -708,6 +715,7 @@ export default function DateInfoModal({
                   setChipModalPreset({ emoji: p.emoji ?? null, label: p.label });
                   setChipModalMode('add');
                   setChipEditIndex(null);
+                  setChipModalStartTime('');
                   setChipModalOpen(true);
                   e.currentTarget.selectedIndex = 0;
                 }
@@ -820,7 +828,8 @@ export default function DateInfoModal({
           mode={chipModalMode}
           preset={chipModalPreset}
           initialText={chipModalMode==='edit' && chipEditIndex!=null ? (note.items[chipEditIndex]?.text ?? '') : ''}
-          onSave={(t, p)=> chipModalMode==='add' ? applyAddChip(t, p) : applyEditChip(t, p)}
+          initialStartTime={chipModalStartTime}
+          onSave={(t, st, p)=> chipModalMode==='add' ? applyAddChip(t, st, p) : applyEditChip(t, st, p)}
           onDelete={chipModalMode==='edit' ? deleteChip : undefined}
           onClose={()=> setChipModalOpen(false)}
           canEdit={canEdit}
