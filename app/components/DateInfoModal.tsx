@@ -720,7 +720,14 @@ export default function DateInfoModal({
             value={titleInput}
             onChange={(e)=>setTitleInput(e.target.value)}
             placeholder="셀 타이틀"
-            style={{ marginLeft: 12, padding:'6px 8px', borderRadius:8, minWidth:180 }}
+            style={{
+              marginLeft: 12,
+              padding:'6px 8px',
+              borderRadius:8,
+              minWidth: 'min(180px, 40vw)',
+              maxWidth: '100%',
+              fontSize: 14,
+            }}
             aria-label="셀 상단 타이틀"
             disabled={disabled}
           />
