@@ -333,8 +333,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // 드래그 시작 시 데이터 적재
   function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
-    if (longReadyKey !== k) { e.preventDefault(); return; }
-    if (!note) { e.preventDefault(); return; }
+    // 모바일: longReadyKey 체크 우회 (항상 허용)
+    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobile = isCoarse || isTouchDevice;
+
+    if (!isMobile && longReadyKey !== k) { e.preventDefault(); return; }
+    if (!note || !hasAnyContent(note)) { e.preventDefault(); return; }
     // 복제 페이로드(필요 필드만)
     const payload = {
       type: 'note-copy',
@@ -1126,7 +1131,15 @@ useEffect(() => {
               }}
               onMouseUp={onPressEndCell}
               onMouseLeave={onPressEndCell}
-              onDragStart={(e) => { if (canEdit && c.d) onCellDragStart(e, k, note || null); }}
+              onDragStart={(e) => {
+                if (!canEdit || !c.d) return;
+                // 칩을 드래그하는 경우 셀 드래그 무시
+                if ((e.target as HTMLElement).closest('.chip')) {
+                  e.stopPropagation();
+                  return;
+                }
+                onCellDragStart(e, k, note || null);
+              }}
               onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
                 if (canEdit && c.d) e.preventDefault();
