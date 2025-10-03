@@ -283,14 +283,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [dragPulseKey, setDragPulseKey] = useState<string|null>(null); // ★ 펄스(반짝) 표시 대상 셀
   const pressTimerRef = useRef<number|undefined>(undefined);
   const pressKeyRef = useRef<string|null>(null);
-  const pulseTimerRef = useRef<number|undefined>(undefined);           // ★ 펄스 자동 종료 타이머
-
-  // ----- 칩 터치 드래그 상태 -----
-  const [chipDragReady, setChipDragReady] = useState<{
-    cellKey: string;
-    chipIndex: number;
-  } | null>(null);
-  const chipPressTimerRef = useRef<number|undefined>(undefined);
+  const pulseTimerRef = useRef<number|undefined>(undefined);
 
   
   function triggerPulse(k: string) {
@@ -323,7 +316,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     pressTimerRef.current = window.setTimeout(() => {
       setLongReadyKey(k);
-      triggerPulse(k);
     }, LONGPRESS_MS);
   }
   function onPressEndCell() {
@@ -331,169 +323,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setLongReadyKey(null);
   }
 
-  // 셀 터치 종료 시 드롭 처리 (모바일 날짜 드래그)
-  function onCellTouchEnd(e: React.TouchEvent, currentKey: string) {
-    const wasDragging = longReadyKey !== null;
 
-    if (!wasDragging) {
-      onPressEndCell();
-      return;
-    }
-
-    // 터치 종료 위치에서 대상 셀 찾기
-    const touch = e.changedTouches[0];
-    if (!touch) {
-      setLongReadyKey(null);
-      clearPressTimer();
-      return;
-    }
-
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!element) {
-      setLongReadyKey(null);
-      clearPressTimer();
-      return;
-    }
-
-    const cellElement = element.closest('.cell');
-    if (!cellElement) {
-      setLongReadyKey(null);
-      clearPressTimer();
-      return;
-    }
-
-    const targetCellKey = cellElement.getAttribute('data-cell-key');
-    if (!targetCellKey || targetCellKey === longReadyKey) {
-      // 동일한 셀로 드롭하면 그냥 취소
-      setLongReadyKey(null);
-      clearPressTimer();
-      return;
-    }
-
-    // 드래그한 셀의 노트 가져오기
-    const sourceNote = notes[longReadyKey];
-    if (!sourceNote || !hasAnyContent(sourceNote)) {
-      setLongReadyKey(null);
-      clearPressTimer();
-      return;
-    }
-
-    const targetParts = targetCellKey.split('-').map(Number);
-
-    // 노트 복사 처리
-    const payload = {
-      type: 'note-copy',
-      note: {
-        y: sourceNote.y,
-        m: sourceNote.m,
-        d: sourceNote.d,
-        content: sourceNote.content ?? '',
-        items: Array.isArray(sourceNote.items) ? sourceNote.items : [],
-        color: sourceNote.color ?? null,
-        link: sourceNote.link ?? null,
-        image_url: sourceNote.image_url ?? null,
-        title: (sourceNote as any)?.title ?? null,
-        use_image_as_bg: (sourceNote as any)?.use_image_as_bg ?? false,
-      }
-    };
-
-    dropNoteCopy(targetParts[0], targetParts[1], targetParts[2], payload);
-    setLongReadyKey(null);
-    clearPressTimer();
-
-    // 이벤트 전파 차단 (셀 클릭 방지)
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  // 칩 터치 드래그 핸들러
-  function clearChipPressTimer() {
-    if (chipPressTimerRef.current) {
-      window.clearTimeout(chipPressTimerRef.current);
-      chipPressTimerRef.current = undefined;
-    }
-  }
-
-  function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
-    if (!canEdit) return;
-
-    e.preventDefault();
-
-    clearPressTimer();
-    clearChipPressTimer();
-
-    const LONGPRESS_MS = 200;
-
-    chipPressTimerRef.current = window.setTimeout(() => {
-      setChipDragReady({ cellKey, chipIndex });
-      if (navigator.vibrate) navigator.vibrate(50);
-    }, LONGPRESS_MS);
-  }
-
-  function onChipTouchEnd(e: React.TouchEvent) {
-    const wasDragging = chipDragReady !== null;
-
-    if (!wasDragging) {
-      clearChipPressTimer();
-      return;
-    }
-
-    clearChipPressTimer();
-
-    // 터치 종료 시 해당 위치의 셀 찾기
-    const touch = e.changedTouches[0];
-    if (!touch) {
-      setChipDragReady(null);
-      return;
-    }
-
-    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-    if (!element) {
-      setChipDragReady(null);
-      return;
-    }
-
-    // 가장 가까운 .cell 요소 찾기
-    const cellElement = element.closest('.cell');
-    if (!cellElement) {
-      setChipDragReady(null);
-      return;
-    }
-
-    // data-cell-key 속성에서 셀 키 추출
-    const targetCellKey = cellElement.getAttribute('data-cell-key');
-    if (!targetCellKey || targetCellKey === chipDragReady.cellKey) {
-      setChipDragReady(null);
-      return;
-    }
-
-    const sourceParts = chipDragReady.cellKey.split('-').map(Number);
-    const targetParts = targetCellKey.split('-').map(Number);
-
-    const sourceNote = notes[chipDragReady.cellKey];
-    if (!sourceNote || !sourceNote.items?.[chipDragReady.chipIndex]) {
-      setChipDragReady(null);
-      return;
-    }
-
-    const item = sourceNote.items[chipDragReady.chipIndex];
-
-    // 칩 드롭 처리
-    const payload = {
-      type: 'chip',
-      sourceType: 'cell',
-      sourceDate: { y: sourceParts[0], m: sourceParts[1], d: sourceParts[2] },
-      chipIndex: chipDragReady.chipIndex,
-      item
-    };
-
-    dropChip(targetParts[0], targetParts[1], targetParts[2], JSON.stringify(payload));
-    setChipDragReady(null);
-
-    // 이벤트 전파 차단 (셀 클릭 방지)
-    e.preventDefault();
-    e.stopPropagation();
-  }
 
   // 드래그 시작 시 데이터 적재
   function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
@@ -1272,31 +1102,6 @@ useEffect(() => {
               }}
               onMouseUp={onPressEndCell}
               onMouseLeave={onPressEndCell}
-              onTouchStart={(e) => {
-                if ((e.target as HTMLElement).closest('.chip')) return;
-                if (canEdit && c.d) {
-                  e.preventDefault();
-                  onPressStartCell(k);
-                }
-              }}
-              onTouchMove={(e) => {
-                if (longReadyKey !== null) {
-                  e.preventDefault();
-                }
-              }}
-              onTouchEnd={(e) => {
-                // 칩 드래그 중이면 셀 이벤트 무시
-                if (chipDragReady) return;
-
-                // 칩을 터치한 경우는 칩 핸들러가 처리
-                if ((e.target as HTMLElement).closest('.chip')) return;
-
-                if (canEdit && c.d) {
-                  onCellTouchEnd(e, k);
-                } else {
-                  onPressEndCell();
-                }
-              }}
               onDragStart={(e) => { if (canEdit && c.d) onCellDragStart(e, k, note || null); }}
               onDragEnd={onCellDragEnd}
               onDragOver={(e) => {
@@ -1373,7 +1178,7 @@ useEffect(() => {
                         {note.items.map((it: Item, i: number) => (
                           <span
                             key={i}
-                            className={`chip ${chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 'dragging' : ''}`}
+                            className="chip"
                             draggable={canEdit}
                             onDragStart={(e) => {
                               if (!canEdit || !c.d) return;
@@ -1387,17 +1192,6 @@ useEffect(() => {
                               };
                               e.dataTransfer.setData('application/json', JSON.stringify(payload));
                               e.dataTransfer.effectAllowed = 'move';
-                            }}
-                            onTouchStart={(e) => {
-                              if (!canEdit || !c.d) return;
-                              onChipTouchStart(e, k, i, it);
-                            }}
-                            onTouchEnd={(e) => {
-                              if (!canEdit || !c.d) return;
-                              onChipTouchEnd(e);
-                            }}
-                            style={{
-                              opacity: chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 0.4 : 1,
                             }}
                           >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
@@ -1417,7 +1211,7 @@ useEffect(() => {
                       {note!.items.map((it: Item, i: number) => (
                         <span
                           key={i}
-                          className={`chip ${chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 'dragging' : ''}`}
+                          className="chip"
                           draggable={canEdit}
                           onDragStart={(e) => {
                             if (!canEdit || !c.d) return;
@@ -1432,21 +1226,8 @@ useEffect(() => {
                             e.dataTransfer.setData('application/json', JSON.stringify(payload));
                             e.dataTransfer.effectAllowed = 'move';
                           }}
-                          onTouchStart={(e) => {
-                            if (!canEdit || !c.d) return;
-                            onChipTouchStart(e, k, i, it);
-                          }}
-                          onTouchMove={(e) => {
-                            if (chipDragReady !== null) {
-                              e.preventDefault();
-                            }
-                          }}
-                          onTouchEnd={(e) => {
-                            if (!canEdit || !c.d) return;
-                            onChipTouchEnd(e);
-                          }}
                           style={{
-                            opacity: chipDragReady?.cellKey === k && chipDragReady?.chipIndex === i ? 0.4 : 1,
+                            opacity: 1,
                           }}
                         >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
