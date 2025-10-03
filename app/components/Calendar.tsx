@@ -715,6 +715,7 @@ useEffect(() => {
                   if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
                 }}
                 onClick={jumpGo}
+                style={{ fontSize: 14 }}
               >
                 이동
               </button>
