@@ -413,9 +413,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onChipTouchStart(e: React.TouchEvent, cellKey: string, chipIndex: number, item: Item) {
     if (!canEdit) return;
 
-    // 브라우저 기본 동작 방지 (컨텍스트 메뉴, 텍스트 선택 등)
-    e.preventDefault();
-
     // 셀 롱프레스 타이머만 정리
     clearPressTimer();
     clearChipPressTimer();
@@ -1275,9 +1272,12 @@ useEffect(() => {
                 // 칩을 터치한 경우 셀 드래그 무시
                 if ((e.target as HTMLElement).closest('.chip')) return;
                 if (canEdit && c.d) {
-                  e.preventDefault(); // 브라우저 기본 동작 방지
                   onPressStartCell(k);
                 }
+              }}
+              onContextMenu={(e) => {
+                // 컨텍스트 메뉴 완전 차단
+                e.preventDefault();
               }}
               onTouchEnd={(e) => {
                 // 칩 드래그 중이면 셀 이벤트 무시
