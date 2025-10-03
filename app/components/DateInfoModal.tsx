@@ -724,7 +724,7 @@ export default function DateInfoModal({
               marginLeft: 12,
               padding:'6px 8px',
               borderRadius:8,
-              minWidth: 'min(180px, 40vw)',
+              minWidth: 'min(160px, 40vw)',
               maxWidth: '100%',
               fontSize: 14,
             }}
