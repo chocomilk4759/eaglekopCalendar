@@ -80,20 +80,19 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     onDragStateChange?.(isDragging);
   }, [isDragging, onDragStateChange]);
 
-  // 마우스 드래그 핸들러 (무한 스크롤)
+  // 마우스 드래그 핸들러 (Pointer Lock 무한 스크롤)
   const handleMouseDown = (e: React.MouseEvent, target: 'hour' | 'minute') => {
     const ref = target === 'hour' ? hourRef : minuteRef;
     if (!ref.current) return;
 
     setIsDragging(true);
     dragTarget.current = target;
-    lastY.current = e.clientY;
-    accumulatedDelta.current = 0;
+    dragStartY.current = e.clientY;
     dragStartScroll.current = ref.current.scrollTop;
     e.preventDefault();
 
-    // 커서 숨기기
-    document.body.style.cursor = 'none';
+    // Pointer Lock 요청
+    ref.current.requestPointerLock();
   };
 
   useEffect(() => {
@@ -106,44 +105,32 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       const maxValue = dragTarget.current === 'hour' ? 23 : 59;
       const itemHeight = 36;
 
-      // 현재 프레임의 델타 계산
-      const currentDelta = lastY.current - e.clientY;
+      // Pointer Lock 모드에서는 movementY 사용
+      const delta = -e.movementY;
 
-      // 델타를 누적에 추가
-      accumulatedDelta.current += currentDelta;
+      // 스크롤 업데이트
+      let newScroll = ref.current.scrollTop + delta;
+      const singleCycleScroll = (maxValue + 1) * itemHeight;
 
-      // 다음 프레임을 위해 현재 위치 저장
-      lastY.current = e.clientY;
-
-      // 스크롤 업데이트 (누적 델타 기반)
-      let newScroll = dragStartScroll.current + accumulatedDelta.current;
-      const singleCycleScroll = maxValue * itemHeight;
-
-      // 순환 처리 - 첫 번째 세트나 마지막 세트에 가까우면 중간으로 리셋
-      if (newScroll < singleCycleScroll * 0.5) {
-        // 첫 번째 세트 중반 이전이면 중간 세트로 점프
+      // 순환 처리
+      if (newScroll < 0) {
         newScroll += singleCycleScroll;
-        dragStartScroll.current += singleCycleScroll;
-        accumulatedDelta.current = newScroll - dragStartScroll.current;
-      } else if (newScroll > singleCycleScroll * 2.5) {
-        // 세 번째 세트 중반 이후면 중간 세트로 점프
+      } else if (newScroll >= singleCycleScroll * 3) {
         newScroll -= singleCycleScroll;
-        dragStartScroll.current -= singleCycleScroll;
-        accumulatedDelta.current = newScroll - dragStartScroll.current;
       }
 
       ref.current.scrollTop = newScroll;
-
       e.preventDefault();
     };
 
     const handleMouseUp = () => {
       setIsDragging(false);
       dragTarget.current = null;
-      accumulatedDelta.current = 0;
 
-      // 커서 복원
-      document.body.style.cursor = '';
+      // Pointer Lock 해제
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -152,7 +139,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
+      if (document.pointerLockElement) {
+        document.exitPointerLock();
+      }
     };
   }, [isDragging]);
 
