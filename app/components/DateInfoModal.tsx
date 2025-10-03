@@ -648,7 +648,14 @@ export default function DateInfoModal({
   if(!open) return null;
 
   return (
-    <div className="modal" onClick={onClose}>
+    <div
+      className="modal"
+      onClick={onClose}
+      onDragOver={(e) => {
+        // 칩 드래그를 위해 모달 배경에서도 dragover 허용
+        e.preventDefault();
+      }}
+    >
       <div
         ref={sheetRef}
         className="sheet modal-draggable"
@@ -659,9 +666,14 @@ export default function DateInfoModal({
           minWidth: limits.minW, minHeight: limits.minH,
           maxWidth: limits.maxW, maxHeight: limits.maxH,
           resize:'both',
-          overflow:'auto'
+          overflow:'auto',
+          pointerEvents: 'auto',
         }}
         onClick={(e)=>e.stopPropagation()}
+        onDragOver={(e) => {
+          // 칩이 모달 밖으로 나갈 수 있도록 허용
+          e.preventDefault();
+        }}
       >
         {/* 상단(드래그 핸들) */}
         <div className="date-head drag-handle" onMouseDown={onDragDown} style={{cursor:'move', userSelect:'none'}}>
