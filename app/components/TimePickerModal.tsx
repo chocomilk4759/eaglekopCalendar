@@ -119,9 +119,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       // 순환 처리
       const totalScroll = (maxValue + 1) * itemHeight;
       if (newScroll < centerOffset) {
-        newScroll = totalScroll + centerOffset;
+        newScroll += totalScroll;
       } else if (newScroll > totalScroll + centerOffset) {
-        newScroll = centerOffset;
+        newScroll -= totalScroll;
       }
 
       ref.current.scrollTop = newScroll;
