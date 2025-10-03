@@ -946,8 +946,41 @@ useEffect(() => {
         onClose={() => setSearchOpen(false)}
         notes={notes}
         onSelectDate={async (y, m, d) => {
-          await prefetchMonth(y, m);
-          setYM({ y, m });
+          // 현재 월과 다르면 데이터 로드 후 월 변경
+          if (ym.y !== y || ym.m !== m) {
+            const k = `${y}-${m}`;
+            let cached = monthCache.get(k) || loadMonthLS(y, m);
+
+            // 캐시에 없으면 서버에서 가져오기
+            if (!cached) {
+              const { data, error } = await supabase
+                .from('notes')
+                .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
+                .eq('y', y).eq('m', m);
+
+              if (!error && data) {
+                cached = data;
+                setMonthCache((prev) => {
+                  const next = new Map(prev);
+                  next.set(k, data);
+                  return next;
+                });
+                saveMonthLS(y, m, data);
+              }
+            }
+
+            // notes 상태 업데이트
+            if (cached) {
+              const map: Record<string, Note> = {};
+              (cached as any[]).forEach((row: any) => {
+                const n = normalizeNote(row);
+                map[cellKey(n.y, n.m, n.d)] = n;
+              });
+              setNotes(map);
+            }
+
+            setYM({ y, m });
+          }
           openInfo(y, m, d);
         }}
       />
