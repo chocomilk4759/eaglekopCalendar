@@ -329,7 +329,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // 셀 터치 종료 시 드롭 처리 (모바일 날짜 드래그)
   function onCellTouchEnd(e: React.TouchEvent, currentKey: string) {
-    if (!longReadyKey) {
+    const wasDragging = longReadyKey !== null;
+
+    if (!wasDragging) {
       onPressEndCell();
       return;
     }
@@ -358,6 +360,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     const targetCellKey = cellElement.getAttribute('data-cell-key');
     if (!targetCellKey || targetCellKey === longReadyKey) {
+      // 동일한 셀로 드롭하면 그냥 취소
       setLongReadyKey(null);
       clearPressTimer();
       return;
@@ -393,6 +396,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     dropNoteCopy(targetParts[0], targetParts[1], targetParts[2], payload);
     setLongReadyKey(null);
     clearPressTimer();
+
+    // 이벤트 전파 차단 (셀 클릭 방지)
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   // 칩 터치 드래그 핸들러
@@ -1273,8 +1280,12 @@ useEffect(() => {
                 }
               }}
               onTouchEnd={(e) => {
-                // 칩을 터치한 경우 무시
+                // 칩 드래그 중이면 셀 이벤트 무시
+                if (chipDragReady) return;
+
+                // 칩을 터치한 경우는 칩 핸들러가 처리
                 if ((e.target as HTMLElement).closest('.chip')) return;
+
                 if (canEdit && c.d) {
                   onCellTouchEnd(e, k);
                 } else {
