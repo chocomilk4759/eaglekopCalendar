@@ -165,6 +165,11 @@ export default function DateInfoModal({
 
     const hasImg = !!base.image_url;
     const itemsCount = Array.isArray(base.items) ? base.items.length : 0;
+    // 모바일 감지
+    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    const isMobile = isCoarse || isTouchDevice;
+
     // 뷰포트에 따라 min/max 한계 재계산
     const L = computeLimits(hasImg);
     setLimits(L);
@@ -176,7 +181,9 @@ export default function DateInfoModal({
       wantH = 330;
     } else {
       // 칩 개수와 메모 여부에 따라 조정
-      if (itemsCount > 0) wantH += 20; // Math.min(itemsCount * 25, 100); // 칩당 25px, 최대 100px 추가
+      if (itemsCount > 0) wantH += 20;
+      // 모바일일 경우 추가 높이
+      if (isMobile) wantH += 20;
     }
     const w = clamp(wantW, L.minW, L.maxW);
     const h = clamp(wantH, L.minH, L.maxH);
