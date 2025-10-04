@@ -40,7 +40,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       '알림': '🔔',
       '축구': '⚽',
       '야구': '⚾',
-      'F1': '🏁',
+      '그랑프리': '🏁',
       '촌지': '🥎',
       '대회': '🏆',
       '게임': '🎮',
