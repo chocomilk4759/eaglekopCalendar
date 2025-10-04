@@ -6,7 +6,7 @@ import PresetsDockMount from './components/PresetsDockMount';
 
 export const metadata: Metadata = {
   title: 'Eaglekop Calendar',
-  description: 'Calendar',
+  description: '이글콥 캘린더 - 코푸땅과 벤치단의 일대기',
   icons: {
     icon: [
       { url: '/favicon.ico?v=2' },                    // 루트 파비콘 (레거시 호환)
