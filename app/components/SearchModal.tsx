@@ -120,7 +120,9 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         if (note.items && note.items.length > 0) {
           for (const item of note.items) {
             const chipText = item.text || item.label;
-            if (chipText.toLowerCase().includes(q)) {
+            const chipEmoji = item.emoji || '';
+            // 텍스트 또는 이모지로 검색
+            if (chipText.toLowerCase().includes(q) || chipEmoji.includes(q)) {
               found.push({
                 date: { y, m, d },
                 note,
