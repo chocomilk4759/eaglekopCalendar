@@ -35,8 +35,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
     // 검색어 대치 맵
     const replacements: Record<string, string> = {
-      '엄악중심': '음악중심',
-      // 필요한 대치 단어 추가 가능
+      '엄악': '음악',
     };
 
     // 검색어 변환
