@@ -36,6 +36,22 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     // 검색어 대치 맵
     const replacements: Record<string, string> = {
       '엄악': '음악',
+      '공지': '📢',
+      '알림': '🔔',
+      '축구': '⚽',
+      '야구': '⚾',
+      'F1': '🏁',
+      '촌지': '🥎',
+      '대회': '🏆',
+      '게임': '🎮',
+      '함께': '📺',
+      '같이': '📺',
+      '합방': '🤼‍♂️',
+      '저챗': '👄',
+      '노가리': '👄',
+      '광고': '🍚',
+      '노래': '🎤',
+      '컨텐츠': '💙',
     };
 
     // 검색어 변환
