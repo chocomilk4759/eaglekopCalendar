@@ -32,7 +32,19 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     }
 
     setLoading(true);
-    const q = searchQuery.toLowerCase();
+
+    // 검색어 대치 맵
+    const replacements: Record<string, string> = {
+      '엄악중심': '음악중심',
+      // 필요한 대치 단어 추가 가능
+    };
+
+    // 검색어 변환
+    let q = searchQuery.toLowerCase();
+    Object.entries(replacements).forEach(([from, to]) => {
+      q = q.replace(from.toLowerCase(), to.toLowerCase());
+    });
+
     const found: SearchResult[] = [];
 
     try {
