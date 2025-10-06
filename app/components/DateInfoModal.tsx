@@ -503,33 +503,40 @@ export default function DateInfoModal({
     const chipCenterX = rect.left + rect.width / 2;
     const isLeftHalf = mouseX < chipCenterX;
 
-    const items = [...(note.items || [])];
-    const [moved] = items.splice(from, 1);
-
-    // 삽입 위치 결정
-    let insertIdx = targetIdx;
-
-    // 오른쪽 절반이면 다음 위치에 삽입
-    if (!isLeftHalf) {
-      insertIdx = targetIdx + 1;
-    }
-
-    // from이 target보다 앞에 있으면 인덱스 보정
-    const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
-    items.splice(adjustedTarget, 0, moved);
-
-    // ✅ 낙관적 업데이트: 즉시 UI 반영
-    setNote(prev => ({ ...prev, items }));
+    // ⚡ 즉시 드래그 상태 초기화 (다음 드래그 허용)
     setDragIndex(null);
     setDragOverIndex(null);
 
-    // 백그라운드에서 DB 저장
+    // ✅ 최신 상태 기반으로 업데이트 및 DB 저장
+    let newItems: typeof note.items;
+
+    setNote(prev => {
+      const items = [...(prev.items || [])];
+      const [moved] = items.splice(from, 1);
+
+      // 삽입 위치 결정
+      let insertIdx = targetIdx;
+
+      // 오른쪽 절반이면 다음 위치에 삽입
+      if (!isLeftHalf) {
+        insertIdx = targetIdx + 1;
+      }
+
+      // from이 target보다 앞에 있으면 인덱스 보정
+      const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
+      items.splice(adjustedTarget, 0, moved);
+
+      newItems = items;  // 저장할 데이터 캡처
+      return { ...prev, items };
+    });
+
+    // 백그라운드에서 DB 저장 (계산된 최신 상태 사용)
     try{
-      await persist({ items });
+      await persist({ items: newItems! });
     }
     catch(e:any){
-      // 저장 실패 시 원래 상태로 롤백
-      setNote(prev => ({ ...prev, items: note.items }));
+      // 저장 실패 시 알림만 (UI는 이미 업데이트됨)
+      console.error('순서 변경 저장 실패:', e);
       alert(e?.message ?? '순서 변경 중 오류');
     }
   }
@@ -541,22 +548,29 @@ export default function DateInfoModal({
     const from = dragIndex;
     if(from === null) return;
 
-    const items = [...(note.items || [])];
-    const [moved] = items.splice(from, 1);
-    items.push(moved);
-
-    // ✅ 낙관적 업데이트: 즉시 UI 반영
-    setNote(prev => ({ ...prev, items }));
+    // ⚡ 즉시 드래그 상태 초기화 (다음 드래그 허용)
     setDragIndex(null);
     setDragOverIndex(null);
 
-    // 백그라운드에서 DB 저장
+    // ✅ 최신 상태 기반으로 업데이트 및 DB 저장
+    let newItems: typeof note.items;
+
+    setNote(prev => {
+      const items = [...(prev.items || [])];
+      const [moved] = items.splice(from, 1);
+      items.push(moved);
+
+      newItems = items;  // 저장할 데이터 캡처
+      return { ...prev, items };
+    });
+
+    // 백그라운드에서 DB 저장 (계산된 최신 상태 사용)
     try{
-      await persist({ items });
+      await persist({ items: newItems! });
     }
     catch(e:any){
-      // 저장 실패 시 원래 상태로 롤백
-      setNote(prev => ({ ...prev, items: note.items }));
+      // 저장 실패 시 알림만 (UI는 이미 업데이트됨)
+      console.error('순서 변경 저장 실패:', e);
       alert(e?.message ?? '순서 변경 중 오류');
     }
   }
