@@ -433,8 +433,11 @@ export default function DateInfoModal({
     setConfirmChipDeleteOpen(true);
   }
 
+  const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
+
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
+    setDraggedChipIndex(idx);
     const item = note.items?.[idx];
     if (item) {
       // 칩을 Calendar 셀로 드래그할 수 있도록 payload 추가
@@ -457,6 +460,33 @@ export default function DateInfoModal({
   function onDragEndChip(){
     // 드래그 종료 시 window 객체 정리
     (window as any).__draggedModalChip = null;
+    setDraggedChipIndex(null);
+  }
+
+  function onDragOverChip(e: React.DragEvent<HTMLSpanElement>) {
+    if (!canEdit || draggedChipIndex === null) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }
+
+  async function onDropChip(e: React.DragEvent<HTMLSpanElement>, targetIdx: number) {
+    e.preventDefault();
+    if (!canEdit || draggedChipIndex === null || draggedChipIndex === targetIdx) {
+      setDraggedChipIndex(null);
+      return;
+    }
+
+    const items = [...(note.items || [])];
+    const [draggedItem] = items.splice(draggedChipIndex, 1);
+    items.splice(targetIdx, 0, draggedItem);
+
+    try {
+      await persist({ items });
+      setDraggedChipIndex(null);
+    } catch (e: any) {
+      alert(e?.message ?? '칩 순서 변경 중 오류');
+      setDraggedChipIndex(null);
+    }
   }
 
   const normUrl = (u: string) => {
@@ -754,15 +784,19 @@ export default function DateInfoModal({
           <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}>
             {note.items.map((it:Item, idx:number)=>(
               <span key={idx} className="chip"
-                    title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동/복사 가능' : '보기 전용'}
+                    title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
                     onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
                     draggable={!disabled}
                     onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
                     onDragEnd={onDragEndChip}
+                    onDragOver={onDragOverChip}
+                    onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
-                      fontSize:12, background:'var(--card)', color:'inherit'
+                      fontSize:12, background:'var(--card)', color:'inherit',
+                      opacity: draggedChipIndex === idx ? 0.5 : 1,
+                      cursor: disabled ? 'default' : 'grab'
                     }}>
                 <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                   <span className="chip-emoji">{it.emoji ?? ''}</span>
