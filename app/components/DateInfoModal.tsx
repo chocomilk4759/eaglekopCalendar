@@ -513,21 +513,24 @@ export default function DateInfoModal({
       const items = [...(prev.items || [])];
 
       // 유효성 검증
-      if (from >= items.length) return prev;
+      if (from >= items.length || targetIdx >= items.length) return prev;
 
       const [moved] = items.splice(from, 1);
 
-      // 삽입 위치 결정
+      // 삽입 위치 계산
       let insertIdx = targetIdx;
+
+      // from을 제거했으므로 targetIdx 보정
+      if (from < targetIdx) {
+        insertIdx = targetIdx - 1;
+      }
 
       // 오른쪽 절반이면 다음 위치에 삽입
       if (!isLeftHalf) {
-        insertIdx = targetIdx + 1;
+        insertIdx = insertIdx + 1;
       }
 
-      // from이 target보다 앞에 있으면 인덱스 보정
-      const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
-      items.splice(adjustedTarget, 0, moved);
+      items.splice(insertIdx, 0, moved);
 
       return { ...prev, items };
     });
