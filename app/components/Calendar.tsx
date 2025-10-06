@@ -111,6 +111,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   const ymKey = `${ym.y}-${ym.m}`;
   const [loading, setLoading] = useState(false);
+  const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
   // 그리드 칼럼 수 관찰 → 7칸 가능 여부
   const gridRef = useRef<HTMLDivElement>(null);
@@ -204,12 +205,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
   }, [ctrlSelecting, canEdit]);
 
-  // 공휴일 데이터 로드
+  // 공휴일 데이터 로드 (DB 로드보다 먼저 실행)
   useEffect(() => {
     let cancelled = false;
+    setLoadingHolidays(true);
     (async () => {
       const holidayMap = await getHolidays(ym.y, ym.m + 1);
-      if (!cancelled) setHolidays(holidayMap);
+      if (!cancelled) {
+        setHolidays(holidayMap);
+        setLoadingHolidays(false);
+      }
     })();
     return () => { cancelled = true; };
   }, [ym.y, ym.m]);
@@ -529,8 +534,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     };
   }, [canShowSeven]);
 
-  // 해당 월의 노트 불러오기 (SWR: 캐시 즉시 → 백그라운드 갱신)
+  // 해당 월의 노트 불러오기 (공휴일 데이터 로드 후 실행)
   useEffect(() => {
+    // 공휴일 데이터 로딩 중이면 대기
+    if (loadingHolidays) return;
+
     let alive = true;
 
     const run = async () => {
@@ -552,7 +560,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           .from('notes')
           .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
           .eq('y', ym.y)
-          .eq('m', ym.m); 
+          .eq('m', ym.m);
 
         if (!alive) return;
         if (error) {
@@ -584,7 +592,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ymKey]);
+  }, [ymKey, loadingHolidays]);
 
   function shallowEqualObj(a: Record<string,string>, b: Record<string,string>) {
     const ak = Object.keys(a), bk = Object.keys(b);
