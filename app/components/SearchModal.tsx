@@ -24,6 +24,67 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [replacements, setReplacements] = useState<Record<string, string>>({});
+
+  // search_mappings 테이블에서 검색 키워드 맵 로드
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      const { data, error } = await supabase
+        .from('search_mappings')
+        .select('keyword, target, enabled')
+        .eq('enabled', true)
+        .order('sort_order', { ascending: true });
+
+      if (cancelled) return;
+
+      const map: Record<string, string> = {};
+
+      if (!error && data) {
+        // search_mappings에서 키워드 추출
+        data.forEach((mapping) => {
+          const keyword = (mapping.keyword || '').trim();
+          const target = (mapping.target || '').trim();
+
+          if (keyword && target) {
+            map[keyword.toLowerCase()] = target.toLowerCase();
+          }
+        });
+      }
+
+      // 하드코딩 폴백 (DB 연결 실패 시 대비)
+      if (Object.keys(map).length === 0) {
+        const fallbackMappings = [
+          { keyword: '엄악', target: '음악' },
+          { keyword: '공지', target: '📢' },
+          { keyword: '알림', target: '🔔' },
+          { keyword: '축구', target: '⚽' },
+          { keyword: '야구', target: '⚾' },
+          { keyword: '그랑프리', target: '🏁' },
+          { keyword: '촌지', target: '🥎' },
+          { keyword: '대회', target: '🏆' },
+          { keyword: '게임', target: '🎮' },
+          { keyword: '함께', target: '📺' },
+          { keyword: '같이', target: '📺' },
+          { keyword: '합방', target: '🤼‍♂️' },
+          { keyword: '저챗', target: '👄' },
+          { keyword: '노가리', target: '👄' },
+          { keyword: '광고', target: '🍚' },
+          { keyword: '노래', target: '🎤' },
+          { keyword: '컨텐츠', target: '💙' },
+        ];
+
+        fallbackMappings.forEach(({ keyword, target }) => {
+          map[keyword.toLowerCase()] = target.toLowerCase();
+        });
+      }
+
+      setReplacements(map);
+    })();
+
+    return () => { cancelled = true; };
+  }, [supabase]);
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -33,31 +94,15 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
     setLoading(true);
 
-    // 검색어 대치 맵
-    const replacements: Record<string, string> = {
-      '엄악': '음악',
-      '공지': '📢',
-      '알림': '🔔',
-      '축구': '⚽',
-      '야구': '⚾',
-      '그랑프리': '🏁',
-      '촌지': '🥎',
-      '대회': '🏆',
-      '게임': '🎮',
-      '함께': '📺',
-      '같이': '📺',
-      '합방': '🤼‍♂️',
-      '저챗': '👄',
-      '노가리': '👄',
-      '광고': '🍚',
-      '노래': '🎤',
-      '컨텐츠': '💙',
-    };
+    // 검색어 확장: 원본 + 매핑된 키워드들
+    const baseQuery = searchQuery.toLowerCase().trim();
+    const searchTerms = new Set<string>([baseQuery]);
 
-    // 검색어 변환
-    let q = searchQuery.toLowerCase();
+    // replacements에서 매칭되는 모든 변환 키워드 추가
     Object.entries(replacements).forEach(([from, to]) => {
-      q = q.replace(from.toLowerCase(), to.toLowerCase());
+      if (baseQuery.includes(from.toLowerCase())) {
+        searchTerms.add(to.toLowerCase());
+      }
     });
 
     const found: SearchResult[] = [];
@@ -83,8 +128,14 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         const { y, m, d } = note;
         const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
+        // 확장된 검색어 중 하나라도 매칭되는지 확인
+        const matchesAnyTerm = (text: string): boolean => {
+          const lowerText = text.toLowerCase();
+          return Array.from(searchTerms).some(term => lowerText.includes(term));
+        };
+
         // 날짜 검색
-        if (dateStr.includes(q) || `${m + 1}월 ${d}일`.includes(q)) {
+        if (matchesAnyTerm(dateStr) || matchesAnyTerm(`${m + 1}월 ${d}일`)) {
           found.push({
             date: { y, m, d },
             note,
@@ -95,7 +146,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         }
 
         // 제목 검색
-        if (note.title && note.title.toLowerCase().includes(q)) {
+        if (note.title && matchesAnyTerm(note.title)) {
           found.push({
             date: { y, m, d },
             note,
@@ -106,7 +157,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         }
 
         // 내용 검색
-        if (note.content && note.content.toLowerCase().includes(q)) {
+        if (note.content && matchesAnyTerm(note.content)) {
           found.push({
             date: { y, m, d },
             note,
@@ -121,8 +172,8 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
           for (const item of note.items) {
             const chipText = item.text || item.label;
             const chipEmoji = item.emoji || '';
-            // 텍스트 또는 이모지로 검색
-            if (chipText.toLowerCase().includes(q) || chipEmoji.includes(q)) {
+            // 텍스트 또는 이모지로 검색 (확장 검색어 적용)
+            if (matchesAnyTerm(chipText) || Array.from(searchTerms).some(term => chipEmoji.includes(term))) {
               found.push({
                 date: { y, m, d },
                 note,
@@ -142,7 +193,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, replacements]);
 
   useEffect(() => {
     if (open) {

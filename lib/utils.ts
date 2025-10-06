@@ -97,3 +97,13 @@ export const storage = {
     }
   },
 };
+
+// 모바일/터치 디바이스 감지
+export function isMobileDevice(): boolean {
+  if (typeof window === 'undefined') return false;
+
+  const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  return isCoarse || isTouchDevice;
+}

@@ -7,6 +7,7 @@ import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
+import { isMobileDevice } from '@/lib/utils';
 
 type Preset = { emoji: string | null; label: string };
 
@@ -165,10 +166,7 @@ export default function DateInfoModal({
 
     const hasImg = !!base.image_url;
     const itemsCount = Array.isArray(base.items) ? base.items.length : 0;
-    // 모바일 감지
-    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isMobile = isCoarse || isTouchDevice;
+    const isMobile = isMobileDevice();
 
     // 뷰포트에 따라 min/max 한계 재계산
     const L = computeLimits(hasImg);

@@ -11,6 +11,7 @@ import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
 import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
+import { isMobileDevice } from '@/lib/utils';
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -313,10 +314,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onPressStartCell(k: string) {
     clearPressTimer();
     pressKeyRef.current = k;
-    // 터치스크린 감지: 여러 방법 시도
-    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isMobile = isCoarse || isTouchDevice;
+    const isMobile = isMobileDevice();
     const LONGPRESS_MS = isMobile ? 200 : 350;
 
     pressTimerRef.current = window.setTimeout(() => {
@@ -334,9 +332,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // 드래그 시작 시 데이터 적재
   function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
     // 모바일: longReadyKey 체크 우회 (항상 허용)
-    const isCoarse = window.matchMedia?.('(pointer: coarse)')?.matches;
-    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-    const isMobile = isCoarse || isTouchDevice;
+    const isMobile = isMobileDevice();
 
     if (!isMobile && longReadyKey !== k) { e.preventDefault(); return; }
     if (!note || !hasAnyContent(note)) { e.preventDefault(); return; }

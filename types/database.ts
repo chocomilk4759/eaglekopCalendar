@@ -13,6 +13,18 @@ export interface Preset {
   updated_by?: string | null;
 }
 
+// SearchMapping 테이블
+export interface SearchMapping {
+  id: number;
+  keyword: string;
+  target: string;
+  mapping_type: 'text' | 'emoji';
+  enabled: boolean;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Note 색상 플래그
 export type NoteColor = 'red' | 'blue' | null;
 
