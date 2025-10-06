@@ -462,8 +462,19 @@ export default function DateInfoModal({
     const [moved] = items.splice(from, 1);
     items.splice(targetIdx, 0, moved);
 
-    try{ await persist({ items }); setDragIndex(null); }
-    catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
+    // ✅ 낙관적 업데이트: 즉시 UI 반영
+    setNote(prev => ({ ...prev, items }));
+    setDragIndex(null);
+
+    // 백그라운드에서 DB 저장
+    try{
+      await persist({ items });
+    }
+    catch(e:any){
+      // 저장 실패 시 원래 상태로 롤백
+      setNote(prev => ({ ...prev, items: note.items }));
+      alert(e?.message ?? '순서 변경 중 오류');
+    }
   }
   async function onDropContainer(e:React.DragEvent<HTMLDivElement>){
     if(!canEdit) return;
@@ -477,8 +488,19 @@ export default function DateInfoModal({
     const [moved] = items.splice(from, 1);
     items.push(moved);
 
-    try{ await persist({ items }); setDragIndex(null); }
-    catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
+    // ✅ 낙관적 업데이트: 즉시 UI 반영
+    setNote(prev => ({ ...prev, items }));
+    setDragIndex(null);
+
+    // 백그라운드에서 DB 저장
+    try{
+      await persist({ items });
+    }
+    catch(e:any){
+      // 저장 실패 시 원래 상태로 롤백
+      setNote(prev => ({ ...prev, items: note.items }));
+      alert(e?.message ?? '순서 변경 중 오류');
+    }
   }
 
   const normUrl = (u: string) => {
