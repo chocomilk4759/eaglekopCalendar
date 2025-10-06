@@ -86,6 +86,7 @@ export default function DateInfoModal({
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<{ idx: number; side: 'left' | 'right' } | null>(null);
+  const dragOverThrottleRef = useRef<number | null>(null);
 
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
   const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false);
@@ -451,6 +452,12 @@ export default function DateInfoModal({
     setDragIndex(null);
     setDragOverIndex(null);
     (window as any).__draggedModalChip = null;
+
+    // Throttle 타이머 정리
+    if (dragOverThrottleRef.current) {
+      clearTimeout(dragOverThrottleRef.current);
+      dragOverThrottleRef.current = null;
+    }
   }
 
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
@@ -458,13 +465,24 @@ export default function DateInfoModal({
     e.preventDefault();
     e.dataTransfer.dropEffect='move';
 
+    // ⚡ Throttle: 16ms (60fps)마다 한 번만 업데이트
+    if (dragOverThrottleRef.current) return;
+
+    dragOverThrottleRef.current = window.setTimeout(() => {
+      dragOverThrottleRef.current = null;
+    }, 16);
+
     // ✅ 마우스 위치로 왼쪽/오른쪽 구분하여 시각적 피드백
     const rect = e.currentTarget.getBoundingClientRect();
     const mouseX = e.clientX;
     const chipCenterX = rect.left + rect.width / 2;
     const side = mouseX < chipCenterX ? 'left' : 'right';
 
-    setDragOverIndex({ idx, side });
+    // ⚡ 성능 최적화: 상태가 실제로 변경될 때만 업데이트
+    setDragOverIndex(prev => {
+      if (prev?.idx === idx && prev?.side === side) return prev;
+      return { idx, side };
+    });
   }
 
   function onDragLeaveChip(){
