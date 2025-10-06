@@ -1068,7 +1068,7 @@ export default function DateInfoModal({
             if (confirmAction) confirmAction();
           }}
           title="초기화 확인"
-          message="해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?"
+          message="해당 날짜의 메모/일정/색상/링크/이미지를 모두 삭제할까요?"
           confirmText="삭제"
           cancelText="취소"
         />
@@ -1080,8 +1080,8 @@ export default function DateInfoModal({
           onConfirm={() => {
             if (confirmChipDeleteAction) confirmChipDeleteAction();
           }}
-          title="칩 삭제"
-          message="해당 칩을 삭제할까요?"
+          title="일정 삭제"
+          message="해당 일정을 삭제할까요?"
           confirmText="삭제"
           cancelText="취소"
         />
