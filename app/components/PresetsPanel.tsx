@@ -100,6 +100,7 @@ export default function PresetsPanel({
         onConfirm={() => {
           if (confirmAction) confirmAction();
         }}
+        title="프리셋 삭제"
         message="해당 프리셋을 삭제할까요?"
       />
     </div>
