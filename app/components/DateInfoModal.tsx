@@ -84,10 +84,6 @@ export default function DateInfoModal({
     [note]
   );
 
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<{ idx: number; side: 'left' | 'right' } | null>(null);
-  const dragOverThrottleRef = useRef<number | null>(null);
-  const [isDirty, setIsDirty] = useState(false);  // 변경 사항 추적
 
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
   const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false);
@@ -159,7 +155,6 @@ export default function DateInfoModal({
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
     setTitleInput(((base as any)?.title ?? '') as string);
-    setDragIndex(null);
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
     setDisplayImageUrl(null);
@@ -428,8 +423,7 @@ export default function DateInfoModal({
       const items = [...(note.items || [])];
       items.splice(chipEditIndex, 1);
       try {
-        setNote(prev => ({ ...prev, items }));
-        setIsDirty(true);  // 모달 닫을 때 저장
+        await persist({ items });
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
       } catch(e: any) {
@@ -441,7 +435,6 @@ export default function DateInfoModal({
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
-    setDragIndex(idx);
     const item = note.items?.[idx];
     if (item) {
       // 칩을 Calendar 셀로 드래그할 수 있도록 payload 추가
@@ -462,120 +455,8 @@ export default function DateInfoModal({
   }
 
   function onDragEndChip(){
-    // 드래그 종료 시 항상 dragIndex 초기화
-    setDragIndex(null);
-    setDragOverIndex(null);
+    // 드래그 종료 시 window 객체 정리
     (window as any).__draggedModalChip = null;
-
-    // Throttle 타이머 정리
-    if (dragOverThrottleRef.current) {
-      clearTimeout(dragOverThrottleRef.current);
-      dragOverThrottleRef.current = null;
-    }
-  }
-
-  function onDragOverChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
-    if(!canEdit) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect='move';
-
-    // ⚡ Throttle: 16ms (60fps)마다 한 번만 업데이트
-    if (dragOverThrottleRef.current) return;
-
-    dragOverThrottleRef.current = window.setTimeout(() => {
-      dragOverThrottleRef.current = null;
-    }, 16);
-
-    // ✅ 마우스 위치로 왼쪽/오른쪽 구분하여 시각적 피드백
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX;
-    const chipCenterX = rect.left + rect.width / 2;
-    const side = mouseX < chipCenterX ? 'left' : 'right';
-
-    // ⚡ 성능 최적화: 상태가 실제로 변경될 때만 업데이트
-    setDragOverIndex(prev => {
-      if (prev?.idx === idx && prev?.side === side) return prev;
-      return { idx, side };
-    });
-  }
-
-  function onDragLeaveChip(){
-    if(!canEdit) return;
-    setDragOverIndex(null);
-  }
-  async function onDropChip(e:React.DragEvent<HTMLSpanElement>, targetIdx:number){
-    if(!canEdit) return;
-    e.preventDefault();
-
-    // dragIndex 우선 사용 (모달 내부 드래그)
-    const from = dragIndex;
-    if(from === null || from === targetIdx) return;
-
-    // ✅ 마우스 위치로 정밀 삽입: 칩의 왼쪽/오른쪽 구분
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX;
-    const chipCenterX = rect.left + rect.width / 2;
-    const isLeftHalf = mouseX < chipCenterX;
-
-    // ⚡ 즉시 드래그 상태 초기화
-    setDragIndex(null);
-    setDragOverIndex(null);
-
-    // ✅ 함수형 setState로 최신 상태 사용 (DB 저장은 나중에)
-    setNote(prev => {
-      const items = [...(prev.items || [])];
-
-      // 유효성 검증
-      if (from >= items.length || targetIdx >= items.length) return prev;
-
-      const [moved] = items.splice(from, 1);
-
-      // 삽입 위치 계산 (제거 후 배열 기준)
-      let insertIdx;
-
-      if (from < targetIdx) {
-        // 앞에서 뒤로: targetIdx가 1 줄어듦
-        insertIdx = isLeftHalf ? targetIdx - 1 : targetIdx;
-      } else {
-        // 뒤에서 앞으로: targetIdx 그대로
-        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1;
-      }
-
-      items.splice(insertIdx, 0, moved);
-
-      return { ...prev, items };
-    });
-
-    // ✅ 변경 플래그 설정 (모달 닫을 때 저장)
-    setIsDirty(true);
-  }
-  async function onDropContainer(e:React.DragEvent<HTMLDivElement>){
-    if(!canEdit) return;
-    e.preventDefault();
-
-    // dragIndex 우선 사용 (모달 내부 드래그)
-    const from = dragIndex;
-    if(from === null) return;
-
-    // ⚡ 즉시 드래그 상태 초기화
-    setDragIndex(null);
-    setDragOverIndex(null);
-
-    // ✅ 함수형 setState로 최신 상태 사용 (DB 저장은 나중에)
-    setNote(prev => {
-      const items = [...(prev.items || [])];
-
-      // 유효성 검증
-      if (from >= items.length) return prev;
-
-      const [moved] = items.splice(from, 1);
-      items.push(moved);
-
-      return { ...prev, items };
-    });
-
-    // ✅ 변경 플래그 설정 (모달 닫을 때 저장)
-    setIsDirty(true);
   }
 
   const normUrl = (u: string) => {
@@ -583,20 +464,6 @@ export default function DateInfoModal({
     return s ? (/^https?:\/\//i.test(s) ? s : `https://${s}`) : '';
   };
 
-  // ✅ 모달 닫기 시 변경사항 저장
-  async function handleClose() {
-    if (isDirty && canEdit) {
-      try {
-        await persist({});  // 현재 note 상태 그대로 저장
-        setIsDirty(false);
-      } catch (e: any) {
-        console.error('저장 실패:', e);
-        alert(e?.message ?? '저장 중 오류가 발생했습니다');
-        return;  // 저장 실패 시 모달 닫지 않음
-      }
-    }
-    onClose();
-  }
   async function saveLink() {
     if (!canEdit) return;
     try {
@@ -809,7 +676,7 @@ export default function DateInfoModal({
   return (
     <div
       className="modal"
-      onClick={handleClose}
+      onClick={onClose}
       style={{
         pointerEvents: 'none', // 모달 배경은 이벤트 통과
       }}
@@ -884,26 +751,14 @@ export default function DateInfoModal({
             >＋</button>
           </div>
         ) : (
-          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}
-               onDragOver={(e)=>{ if(!disabled) e.preventDefault(); }}
-               onDrop={(e)=>{ if(!disabled) onDropContainer(e); }}>
-            {note.items.map((it:Item, idx:number)=>{
-              const isDragging = dragIndex === idx;
-              const isDragOver = dragOverIndex?.idx === idx;
-              const dragOverSide = isDragOver ? dragOverIndex?.side : null;
-
-              return (
+          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}>
+            {note.items.map((it:Item, idx:number)=>(
               <span key={idx} className="chip"
-                    data-dragging={isDragging ? "true" : undefined}
-                    data-drag-over={dragOverSide || undefined}
                     title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동/복사 가능' : '보기 전용'}
                     onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
                     draggable={!disabled}
                     onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
                     onDragEnd={onDragEndChip}
-                    onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, idx); }}
-                    onDragLeave={onDragLeaveChip}
-                    onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
@@ -915,8 +770,7 @@ export default function DateInfoModal({
                 </span>
                 <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
-            );
-            })}
+            ))}
             <button
               onClick={async ()=>{ if(disabled) return; await ensurePresets(); setComboOpen(v=>!v); }}
               disabled={disabled}
@@ -1013,7 +867,7 @@ export default function DateInfoModal({
 
                 <span className="actions-sep" aria-hidden style={{ width:16, display:'inline-block' }} />
 
-                <button onClick={handleClose}>닫기</button>
+                <button onClick={onClose}>닫기</button>
               </div>
             </div>
           </div>
