@@ -369,6 +369,9 @@ export default function DateInfoModal({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
 
+  const [confirmChipDeleteOpen, setConfirmChipDeleteOpen] = useState(false);
+  const [confirmChipDeleteAction, setConfirmChipDeleteAction] = useState<(() => void) | null>(null);
+
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
 
@@ -421,19 +424,19 @@ export default function DateInfoModal({
     if(!canEdit || chipEditIndex==null) return;
 
     // ConfirmModal 사용
-    setConfirmAction(() => async () => {
+    setConfirmChipDeleteAction(() => async () => {
       const items = [...(note.items || [])];
       items.splice(chipEditIndex, 1);
       try {
         setNote(prev => ({ ...prev, items }));
         setIsDirty(true);  // 모달 닫을 때 저장
         setChipModalOpen(false);
-        setConfirmOpen(false);
+        setConfirmChipDeleteOpen(false);
       } catch(e: any) {
         alert(e?.message ?? '아이템 삭제 중 오류');
       }
     });
-    setConfirmOpen(true);
+    setConfirmChipDeleteOpen(true);
   }
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
@@ -1066,6 +1069,19 @@ export default function DateInfoModal({
           }}
           title="초기화 확인"
           message="해당 날짜의 메모/아이템/색상/링크/이미지를 모두 삭제할까요?"
+          confirmText="삭제"
+          cancelText="취소"
+        />
+
+        {/* 칩 삭제 확인 모달 */}
+        <ConfirmModal
+          open={confirmChipDeleteOpen}
+          onClose={() => setConfirmChipDeleteOpen(false)}
+          onConfirm={() => {
+            if (confirmChipDeleteAction) confirmChipDeleteAction();
+          }}
+          title="칩 삭제"
+          message="해당 칩을 삭제할까요?"
           confirmText="삭제"
           cancelText="취소"
         />
