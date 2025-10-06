@@ -435,6 +435,7 @@ export default function DateInfoModal({
 
   const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
+  const [dropPosition, setDropPosition] = useState<'before' | 'after'>('before');
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
@@ -463,40 +464,71 @@ export default function DateInfoModal({
     (window as any).__draggedModalChip = null;
     setDraggedChipIndex(null);
     setDropTargetIndex(null);
+    setDropPosition('before');
   }
 
   function onDragOverChip(e: React.DragEvent<HTMLSpanElement>, idx: number) {
     if (!canEdit || draggedChipIndex === null) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+
+    // 마우스 위치로 왼쪽/오른쪽 판단
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const position = mouseX < chipCenterX ? 'before' : 'after';
+
     setDropTargetIndex(idx);
+    setDropPosition(position);
   }
 
   function onDragLeaveChip() {
     if (!canEdit || draggedChipIndex === null) return;
     setDropTargetIndex(null);
+    setDropPosition('before');
   }
 
   async function onDropChip(e: React.DragEvent<HTMLSpanElement>, targetIdx: number) {
     e.preventDefault();
-    if (!canEdit || draggedChipIndex === null || draggedChipIndex === targetIdx) {
+    if (!canEdit || draggedChipIndex === null) {
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
+      setDropPosition('before');
       return;
     }
 
+    // 마우스 위치로 최종 삽입 위치 결정
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const position = mouseX < chipCenterX ? 'before' : 'after';
+
     const items = [...(note.items || [])];
     const [draggedItem] = items.splice(draggedChipIndex, 1);
-    items.splice(targetIdx, 0, draggedItem);
+
+    // 드래그한 칩을 제거한 후의 인덱스 조정
+    let insertIdx = targetIdx;
+    if (draggedChipIndex < targetIdx) {
+      insertIdx = targetIdx - 1;
+    }
+
+    // position에 따라 최종 위치 결정
+    if (position === 'after') {
+      insertIdx = insertIdx + 1;
+    }
+
+    items.splice(insertIdx, 0, draggedItem);
 
     try {
       await persist({ items });
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
+      setDropPosition('before');
     } catch (e: any) {
       alert(e?.message ?? '칩 순서 변경 중 오류');
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
+      setDropPosition('before');
     }
   }
 
@@ -796,13 +828,29 @@ export default function DateInfoModal({
             {note.items.map((it:Item, idx:number)=>{
               const isDragging = draggedChipIndex === idx;
               const isDropTarget = dropTargetIndex === idx && draggedChipIndex !== null && draggedChipIndex !== idx;
+              const showBeforeIndicator = isDropTarget && dropPosition === 'before';
+              const showAfterIndicator = isDropTarget && dropPosition === 'after';
 
               return (
                 <span key={idx} style={{position:'relative', display:'inline-flex'}}>
-                  {isDropTarget && (
+                  {showBeforeIndicator && (
                     <span style={{
                       position:'absolute',
                       left: -4,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 2,
+                      height: '80%',
+                      background: 'var(--primary, #007bff)',
+                      borderRadius: 1,
+                      zIndex: 10,
+                      boxShadow: '0 0 4px rgba(0, 123, 255, 0.5)'
+                    }} />
+                  )}
+                  {showAfterIndicator && (
+                    <span style={{
+                      position:'absolute',
+                      right: -4,
                       top: '50%',
                       transform: 'translateY(-50%)',
                       width: 2,
