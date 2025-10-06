@@ -517,17 +517,15 @@ export default function DateInfoModal({
 
       const [moved] = items.splice(from, 1);
 
-      // 삽입 위치 계산
-      let insertIdx = targetIdx;
+      // 삽입 위치 계산 (제거 후 배열 기준)
+      let insertIdx;
 
-      // from을 제거했으므로 targetIdx 보정
       if (from < targetIdx) {
-        insertIdx = targetIdx - 1;
-      }
-
-      // 오른쪽 절반이면 다음 위치에 삽입
-      if (!isLeftHalf) {
-        insertIdx = insertIdx + 1;
+        // 앞에서 뒤로: targetIdx가 1 줄어듦
+        insertIdx = isLeftHalf ? targetIdx - 1 : targetIdx;
+      } else {
+        // 뒤에서 앞으로: targetIdx 그대로
+        insertIdx = isLeftHalf ? targetIdx : targetIdx + 1;
       }
 
       items.splice(insertIdx, 0, moved);
