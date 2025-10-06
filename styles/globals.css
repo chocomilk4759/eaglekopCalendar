@@ -463,11 +463,50 @@ a:focus-visible {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 1px 2px rgba(0, 0, 0, .06);
   touch-action: none;
   -webkit-user-drag: element;
+  position: relative;
+  transition: transform 0.15s ease;
 }
 
 [data-theme="dark"] .chip {
   background: linear-gradient(180deg, #1b1d23, #14161b);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .4);
+}
+
+/* ✅ 드래그 중 칩 반투명 */
+.chip[data-dragging="true"] {
+  opacity: 0.6;
+}
+
+/* ✅ 드래그 오버: 왼쪽 삽입 인디케이터 */
+.chip[data-drag-over="left"]::before {
+  content: '';
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: pulse-indicator 0.8s ease-in-out infinite;
+}
+
+/* ✅ 드래그 오버: 오른쪽 삽입 인디케이터 */
+.chip[data-drag-over="right"]::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  border-radius: 3px;
+  animation: pulse-indicator 0.8s ease-in-out infinite;
+}
+
+/* ✅ 펄스 애니메이션 */
+@keyframes pulse-indicator {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .chip-text {

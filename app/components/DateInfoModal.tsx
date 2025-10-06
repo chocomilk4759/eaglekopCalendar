@@ -85,6 +85,7 @@ export default function DateInfoModal({
   );
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<{ idx: number; side: 'left' | 'right' } | null>(null);
 
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
   const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false);
@@ -448,13 +449,27 @@ export default function DateInfoModal({
   function onDragEndChip(){
     // 드래그 종료 시 항상 dragIndex 초기화
     setDragIndex(null);
+    setDragOverIndex(null);
     (window as any).__draggedModalChip = null;
   }
 
-  function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){
+  function onDragOverChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
     e.preventDefault();
     e.dataTransfer.dropEffect='move';
+
+    // ✅ 마우스 위치로 왼쪽/오른쪽 구분하여 시각적 피드백
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const side = mouseX < chipCenterX ? 'left' : 'right';
+
+    setDragOverIndex({ idx, side });
+  }
+
+  function onDragLeaveChip(){
+    if(!canEdit) return;
+    setDragOverIndex(null);
   }
   async function onDropChip(e:React.DragEvent<HTMLSpanElement>, targetIdx:number){
     if(!canEdit) return;
@@ -464,17 +479,31 @@ export default function DateInfoModal({
     const from = dragIndex;
     if(from === null || from === targetIdx) return;
 
+    // ✅ 마우스 위치로 정밀 삽입: 칩의 왼쪽/오른쪽 구분
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const isLeftHalf = mouseX < chipCenterX;
+
     const items = [...(note.items || [])];
     const [moved] = items.splice(from, 1);
 
-    // ✅ from이 target보다 앞에 있으면 targetIdx를 1 감소
-    // (앞 요소를 제거했으므로 인덱스가 당겨짐)
-    const adjustedTarget = from < targetIdx ? targetIdx - 1 : targetIdx;
+    // 삽입 위치 결정
+    let insertIdx = targetIdx;
+
+    // 오른쪽 절반이면 다음 위치에 삽입
+    if (!isLeftHalf) {
+      insertIdx = targetIdx + 1;
+    }
+
+    // from이 target보다 앞에 있으면 인덱스 보정
+    const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
     items.splice(adjustedTarget, 0, moved);
 
     // ✅ 낙관적 업데이트: 즉시 UI 반영
     setNote(prev => ({ ...prev, items }));
     setDragIndex(null);
+    setDragOverIndex(null);
 
     // 백그라운드에서 DB 저장
     try{
@@ -501,6 +530,7 @@ export default function DateInfoModal({
     // ✅ 낙관적 업데이트: 즉시 UI 반영
     setNote(prev => ({ ...prev, items }));
     setDragIndex(null);
+    setDragOverIndex(null);
 
     // 백그라운드에서 DB 저장
     try{
@@ -807,20 +837,27 @@ export default function DateInfoModal({
           <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}
                onDragOver={(e)=>{ if(!disabled) e.preventDefault(); }}
                onDrop={(e)=>{ if(!disabled) onDropContainer(e); }}>
-            {note.items.map((it:Item, idx:number)=>(
+            {note.items.map((it:Item, idx:number)=>{
+              const isDragging = dragIndex === idx;
+              const isDragOver = dragOverIndex?.idx === idx;
+              const dragOverSide = isDragOver ? dragOverIndex?.side : null;
+
+              return (
               <span key={idx} className="chip"
+                    data-dragging={isDragging ? "true" : undefined}
+                    data-drag-over={dragOverSide || undefined}
                     title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동/복사 가능' : '보기 전용'}
                     onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
                     draggable={!disabled}
                     onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
                     onDragEnd={onDragEndChip}
-                    onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
+                    onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, idx); }}
+                    onDragLeave={onDragLeaveChip}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
                       display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
                       border:'1px solid var(--border)', borderRadius:999, padding:'4px 10px',
-                      fontSize:12, background:'var(--card)', color:'inherit',
-                      ...(dragIndex===idx ? { opacity:.6 } : null)
+                      fontSize:12, background:'var(--card)', color:'inherit'
                     }}>
                 <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                   <span className="chip-emoji">{it.emoji ?? ''}</span>
@@ -828,7 +865,8 @@ export default function DateInfoModal({
                 </span>
                 <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
               </span>
-            ))}
+            );
+            })}
             <button
               onClick={async ()=>{ if(disabled) return; await ensurePresets(); setComboOpen(v=>!v); }}
               disabled={disabled}
