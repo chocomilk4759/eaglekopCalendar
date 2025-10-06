@@ -449,44 +449,36 @@ export default function DateInfoModal({
 
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){
     if(!canEdit) return;
-    // 모달 내부 칩 재정렬만 허용 (JSON 페이로드가 없는 경우)
-    try {
-      const raw = e.dataTransfer.types.includes('application/json');
-      if (!raw) {
-        e.preventDefault();
-        e.dataTransfer.dropEffect='move';
-      }
-    } catch {
-      e.preventDefault();
-      e.dataTransfer.dropEffect='move';
-    }
+    e.preventDefault();
+    e.dataTransfer.dropEffect='move';
   }
   async function onDropChip(e:React.DragEvent<HTMLSpanElement>, targetIdx:number){
     if(!canEdit) return;
-    // JSON 페이로드가 있으면 무시 (Calendar로 드래그한 경우)
-    try {
-      const raw = e.dataTransfer.getData('application/json');
-      if (raw) return;
-    } catch {}
-
     e.preventDefault();
-    const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain'));
-    if(isNaN(from) || from===targetIdx) return;
-    const items = [...(note.items || [])]; const [moved] = items.splice(from, 1); items.splice(targetIdx, 0, moved);
+
+    // dragIndex 우선 사용 (모달 내부 드래그)
+    const from = dragIndex;
+    if(from === null || from === targetIdx) return;
+
+    const items = [...(note.items || [])];
+    const [moved] = items.splice(from, 1);
+    items.splice(targetIdx, 0, moved);
+
     try{ await persist({ items }); setDragIndex(null); }
     catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
   }
   async function onDropContainer(e:React.DragEvent<HTMLDivElement>){
     if(!canEdit) return;
-    // JSON 페이로드가 있으면 무시 (Calendar로 드래그한 경우)
-    try {
-      const raw = e.dataTransfer.getData('application/json');
-      if (raw) return;
-    } catch {}
-
     e.preventDefault();
-    const from = dragIndex ?? Number(e.dataTransfer.getData('text/plain')); if(isNaN(from)) return;
-    const items = [...(note.items || [])]; const [moved] = items.splice(from, 1); items.push(moved);
+
+    // dragIndex 우선 사용 (모달 내부 드래그)
+    const from = dragIndex;
+    if(from === null) return;
+
+    const items = [...(note.items || [])];
+    const [moved] = items.splice(from, 1);
+    items.push(moved);
+
     try{ await persist({ items }); setDragIndex(null); }
     catch(e:any){ alert(e?.message ?? '순서 변경 중 오류'); }
   }
@@ -783,14 +775,7 @@ export default function DateInfoModal({
           </div>
         ) : (
           <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}
-               onDragOver={(e)=>{
-                 if(!disabled){
-                   // JSON 페이로드 없는 경우만 preventDefault (모달 내부 재정렬)
-                   if (!e.dataTransfer.types.includes('application/json')) {
-                     e.preventDefault();
-                   }
-                 }
-               }}
+               onDragOver={(e)=>{ if(!disabled) e.preventDefault(); }}
                onDrop={(e)=>{ if(!disabled) onDropContainer(e); }}>
             {note.items.map((it:Item, idx:number)=>(
               <span key={idx} className="chip"
