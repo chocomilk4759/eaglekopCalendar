@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import ConfirmModal from './ConfirmModal';
 
 type Preset = { id:number; emoji:string|null; label:string; sort_order:number };
 
@@ -20,6 +21,10 @@ export default function PresetsPanel({
   const [emoji,setEmoji]=useState('');
   const [label,setLabel]=useState('');
 
+  // Confirm Modal
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+
   useEffect(()=>{
     supabase.from('presets').select('*').order('sort_order',{ascending:true})
       .then(({data,error})=>{
@@ -37,12 +42,15 @@ export default function PresetsPanel({
     setEmoji(''); setLabel(''); setShowAdd(false);
   }
   async function deletePreset(id:number){
-    const ok = window.confirm('해당 프리셋을 삭제할까요?');
-    if(!ok) return;
-    const { error } = await supabase.from('presets').delete().eq('id', id);
-    if(error){ alert(error.message); return; }
-    setPresets(p => p.filter(x => x.id !== id));
-    setActiveId(null);
+    // ConfirmModal 사용
+    setConfirmAction(() => async () => {
+      const { error } = await supabase.from('presets').delete().eq('id', id);
+      if(error){ alert(error.message); return; }
+      setPresets(p => p.filter(x => x.id !== id));
+      setActiveId(null);
+      setConfirmOpen(false);
+    });
+    setConfirmOpen(true);
   }
 
   if (mode !== 'vertical') {
@@ -84,6 +92,16 @@ export default function PresetsPanel({
           )}
         </div>
       ))}
+
+      {/* Confirm Modal */}
+      <ConfirmModal
+        open={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          if (confirmAction) confirmAction();
+        }}
+        message="해당 프리셋을 삭제할까요?"
+      />
     </div>
   );
 }

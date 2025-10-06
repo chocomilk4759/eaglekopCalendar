@@ -419,11 +419,21 @@ export default function DateInfoModal({
 
   async function deleteChip(){
     if(!canEdit || chipEditIndex==null) return;
-    const ok = window.confirm('해당 아이템을 삭제할까요?'); if(!ok) return;
-    const items = [...(note.items || [])]; items.splice(chipEditIndex, 1);
-    try{ await persist({ items }); }
-    catch(e:any){ alert(e?.message ?? '아이템 삭제 중 오류'); }
-    setChipModalOpen(false);
+
+    // ConfirmModal 사용
+    setConfirmAction(() => async () => {
+      const items = [...(note.items || [])];
+      items.splice(chipEditIndex, 1);
+      try {
+        setNote(prev => ({ ...prev, items }));
+        setIsDirty(true);  // 모달 닫을 때 저장
+        setChipModalOpen(false);
+        setConfirmOpen(false);
+      } catch(e: any) {
+        alert(e?.message ?? '아이템 삭제 중 오류');
+      }
+    });
+    setConfirmOpen(true);
   }
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
