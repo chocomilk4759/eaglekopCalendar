@@ -445,6 +445,12 @@ export default function DateInfoModal({
     e.dataTransfer.effectAllowed='move';
   }
 
+  function onDragEndChip(){
+    // 드래그 종료 시 항상 dragIndex 초기화
+    setDragIndex(null);
+    (window as any).__draggedModalChip = null;
+  }
+
   function onDragOverChip(e:React.DragEvent<HTMLSpanElement>){
     if(!canEdit) return;
     e.preventDefault();
@@ -807,6 +813,7 @@ export default function DateInfoModal({
                     onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
                     draggable={!disabled}
                     onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
+                    onDragEnd={onDragEndChip}
                     onDragOver={(e)=>{ if(!disabled) onDragOverChip(e); }}
                     onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
                     style={{
