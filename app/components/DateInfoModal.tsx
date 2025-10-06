@@ -792,39 +792,52 @@ export default function DateInfoModal({
             >＋</button>
           </div>
         ) : (
-          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4}}>
+          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4, position:'relative'}}>
             {note.items.map((it:Item, idx:number)=>{
               const isDragging = draggedChipIndex === idx;
               const isDropTarget = dropTargetIndex === idx && draggedChipIndex !== null && draggedChipIndex !== idx;
 
               return (
-                <span key={idx} className="chip"
-                      title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
-                      onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
-                      draggable={!disabled}
-                      onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
-                      onDragEnd={onDragEndChip}
-                      onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, idx); }}
-                      onDragLeave={onDragLeaveChip}
-                      onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
-                      style={{
-                        display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
-                        border: isDropTarget ? '2px dashed var(--primary, #007bff)' : '1px solid var(--border)',
-                        borderRadius:999, padding:'4px 10px',
-                        fontSize:12,
-                        background: isDropTarget ? 'var(--primary-bg, rgba(0, 123, 255, 0.1))' : 'var(--card)',
-                        color:'inherit',
-                        opacity: isDragging ? 0.4 : 1,
-                        cursor: disabled ? 'default' : 'grab',
-                        transform: isDropTarget ? 'scale(1.05)' : 'scale(1)',
-                        transition: 'all 0.15s ease',
-                        boxShadow: isDropTarget ? '0 0 8px rgba(0, 123, 255, 0.3)' : 'none'
-                      }}>
-                  <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
-                    <span className="chip-emoji">{it.emoji ?? ''}</span>
-                    {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                <span key={idx} style={{position:'relative', display:'inline-flex'}}>
+                  {isDropTarget && (
+                    <span style={{
+                      position:'absolute',
+                      left: -4,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 2,
+                      height: '80%',
+                      background: 'var(--primary, #007bff)',
+                      borderRadius: 1,
+                      zIndex: 10,
+                      boxShadow: '0 0 4px rgba(0, 123, 255, 0.5)'
+                    }} />
+                  )}
+                  <span className="chip"
+                        title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
+                        onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
+                        draggable={!disabled}
+                        onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
+                        onDragEnd={onDragEndChip}
+                        onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, idx); }}
+                        onDragLeave={onDragLeaveChip}
+                        onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
+                        style={{
+                          display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
+                          border: '1px solid var(--border)',
+                          borderRadius:999, padding:'4px 10px',
+                          fontSize:12,
+                          background: 'var(--card)',
+                          color:'inherit',
+                          opacity: isDragging ? 0.4 : 1,
+                          cursor: disabled ? 'default' : 'grab'
+                        }}>
+                    <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                      <span className="chip-emoji">{it.emoji ?? ''}</span>
+                      {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                    </span>
+                    <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                   </span>
-                  <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                 </span>
               );
             })}
