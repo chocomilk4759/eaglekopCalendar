@@ -460,7 +460,11 @@ export default function DateInfoModal({
 
     const items = [...(note.items || [])];
     const [moved] = items.splice(from, 1);
-    items.splice(targetIdx, 0, moved);
+
+    // ✅ from이 target보다 앞에 있으면 targetIdx를 1 감소
+    // (앞 요소를 제거했으므로 인덱스가 당겨짐)
+    const adjustedTarget = from < targetIdx ? targetIdx - 1 : targetIdx;
+    items.splice(adjustedTarget, 0, moved);
 
     // ✅ 낙관적 업데이트: 즉시 UI 반영
     setNote(prev => ({ ...prev, items }));
