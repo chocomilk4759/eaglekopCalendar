@@ -87,6 +87,7 @@ export default function DateInfoModal({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<{ idx: number; side: 'left' | 'right' } | null>(null);
   const dragOverThrottleRef = useRef<number | null>(null);
+  const [isDirty, setIsDirty] = useState(false);  // 변경 사항 추적
 
   const [linkInput, setLinkInput] = useState<string>(note.link ?? '');
   const [linkPanelOpen, setLinkPanelOpen] = useState<boolean>(false);
@@ -503,35 +504,36 @@ export default function DateInfoModal({
     const chipCenterX = rect.left + rect.width / 2;
     const isLeftHalf = mouseX < chipCenterX;
 
-    // ✅ 먼저 새 배열 계산
-    const items = [...(note.items || [])];
-    const [moved] = items.splice(from, 1);
-
-    // 삽입 위치 결정
-    let insertIdx = targetIdx;
-
-    // 오른쪽 절반이면 다음 위치에 삽입
-    if (!isLeftHalf) {
-      insertIdx = targetIdx + 1;
-    }
-
-    // from이 target보다 앞에 있으면 인덱스 보정
-    const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
-    items.splice(adjustedTarget, 0, moved);
-
-    // ⚡ 즉시 상태 업데이트
-    setNote(prev => ({ ...prev, items }));
+    // ⚡ 즉시 드래그 상태 초기화
     setDragIndex(null);
     setDragOverIndex(null);
 
-    // 백그라운드에서 DB 저장
-    try{
-      await persist({ items });
-    }
-    catch(e:any){
-      console.error('순서 변경 저장 실패:', e);
-      alert(e?.message ?? '순서 변경 중 오류');
-    }
+    // ✅ 함수형 setState로 최신 상태 사용 (DB 저장은 나중에)
+    setNote(prev => {
+      const items = [...(prev.items || [])];
+
+      // 유효성 검증
+      if (from >= items.length) return prev;
+
+      const [moved] = items.splice(from, 1);
+
+      // 삽입 위치 결정
+      let insertIdx = targetIdx;
+
+      // 오른쪽 절반이면 다음 위치에 삽입
+      if (!isLeftHalf) {
+        insertIdx = targetIdx + 1;
+      }
+
+      // from이 target보다 앞에 있으면 인덱스 보정
+      const adjustedTarget = from < insertIdx ? insertIdx - 1 : insertIdx;
+      items.splice(adjustedTarget, 0, moved);
+
+      return { ...prev, items };
+    });
+
+    // ✅ 변경 플래그 설정 (모달 닫을 때 저장)
+    setIsDirty(true);
   }
   async function onDropContainer(e:React.DragEvent<HTMLDivElement>){
     if(!canEdit) return;
@@ -541,30 +543,46 @@ export default function DateInfoModal({
     const from = dragIndex;
     if(from === null) return;
 
-    // ✅ 먼저 새 배열 계산
-    const items = [...(note.items || [])];
-    const [moved] = items.splice(from, 1);
-    items.push(moved);
-
-    // ⚡ 즉시 상태 업데이트
-    setNote(prev => ({ ...prev, items }));
+    // ⚡ 즉시 드래그 상태 초기화
     setDragIndex(null);
     setDragOverIndex(null);
 
-    // 백그라운드에서 DB 저장
-    try{
-      await persist({ items });
-    }
-    catch(e:any){
-      console.error('순서 변경 저장 실패:', e);
-      alert(e?.message ?? '순서 변경 중 오류');
-    }
+    // ✅ 함수형 setState로 최신 상태 사용 (DB 저장은 나중에)
+    setNote(prev => {
+      const items = [...(prev.items || [])];
+
+      // 유효성 검증
+      if (from >= items.length) return prev;
+
+      const [moved] = items.splice(from, 1);
+      items.push(moved);
+
+      return { ...prev, items };
+    });
+
+    // ✅ 변경 플래그 설정 (모달 닫을 때 저장)
+    setIsDirty(true);
   }
 
   const normUrl = (u: string) => {
     const s = (u || '').trim();
     return s ? (/^https?:\/\//i.test(s) ? s : `https://${s}`) : '';
   };
+
+  // ✅ 모달 닫기 시 변경사항 저장
+  async function handleClose() {
+    if (isDirty && canEdit) {
+      try {
+        await persist({});  // 현재 note 상태 그대로 저장
+        setIsDirty(false);
+      } catch (e: any) {
+        console.error('저장 실패:', e);
+        alert(e?.message ?? '저장 중 오류가 발생했습니다');
+        return;  // 저장 실패 시 모달 닫지 않음
+      }
+    }
+    onClose();
+  }
   async function saveLink() {
     if (!canEdit) return;
     try {
@@ -777,7 +795,7 @@ export default function DateInfoModal({
   return (
     <div
       className="modal"
-      onClick={onClose}
+      onClick={handleClose}
       style={{
         pointerEvents: 'none', // 모달 배경은 이벤트 통과
       }}
@@ -981,7 +999,7 @@ export default function DateInfoModal({
 
                 <span className="actions-sep" aria-hidden style={{ width:16, display:'inline-block' }} />
 
-                <button onClick={onClose}>닫기</button>
+                <button onClick={handleClose}>닫기</button>
               </div>
             </div>
           </div>
