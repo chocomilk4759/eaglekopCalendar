@@ -23,7 +23,7 @@ export default function PresetsPanel({
 
   // Confirm Modal
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  const [confirmAction, setConfirmAction] = useState<(() => void | Promise<void>) | null>(null);
 
   useEffect(()=>{
     supabase.from('presets').select('*').order('sort_order',{ascending:true})
@@ -44,11 +44,17 @@ export default function PresetsPanel({
   async function deletePreset(id:number){
     // ConfirmModal 사용
     setConfirmAction(() => async () => {
-      const { error } = await supabase.from('presets').delete().eq('id', id);
-      if(error){ alert(error.message); return; }
-      setPresets(p => p.filter(x => x.id !== id));
-      setActiveId(null);
-      setConfirmOpen(false);
+      try {
+        const { error } = await supabase.from('presets').delete().eq('id', id);
+        if(error){
+          alert(error.message);
+          return;
+        }
+        setPresets(p => p.filter(x => x.id !== id));
+        setActiveId(null);
+      } finally {
+        setConfirmOpen(false);
+      }
     });
     setConfirmOpen(true);
   }
@@ -98,7 +104,7 @@ export default function PresetsPanel({
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         onConfirm={() => {
-          if (confirmAction) confirmAction();
+          if (confirmAction) void confirmAction();
         }}
         title="프리셋 삭제"
         message="해당 프리셋을 삭제할까요?"

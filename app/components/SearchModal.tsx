@@ -27,6 +27,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
   const [replacements, setReplacements] = useState<Record<string, string>>({});
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // search_mappings 테이블에서 검색 키워드 맵 로드
   useEffect(() => {
@@ -94,6 +95,15 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       return;
     }
 
+    // 이전 요청 취소
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 새 AbortController 생성
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
     setLoading(true);
 
     // 검색어 확장: 원본 + 매핑된 키워드들
@@ -116,7 +126,8 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         .select('*')
         .order('y', { ascending: false })
         .order('m', { ascending: false })
-        .order('d', { ascending: false });
+        .order('d', { ascending: false })
+        .abortSignal(abortController.signal);
 
       if (error) throw error;
       if (!allNotes) {
@@ -190,6 +201,10 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
       setResults(found);
     } catch (error) {
+      // AbortError는 정상적인 취소이므로 무시
+      if (error instanceof Error && error.name === 'AbortError') {
+        return;
+      }
       console.error('Search error:', error);
       setResults([]);
     } finally {
@@ -203,7 +218,11 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       setQuery('');
       setResults([]);
     } else {
-      // 모달 닫힐 때: 이전 포커스 복원
+      // 모달 닫힐 때: 진행 중인 검색 취소 및 이전 포커스 복원
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
       if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
         previousFocusRef.current.focus();
       }
