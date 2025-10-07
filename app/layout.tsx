@@ -1,5 +1,5 @@
 import '../styles/globals.css';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import AuthButton from './components/AuthButton';
 import ThemeToggle from './components/ThemeToggle';
 import PresetsDockMount from './components/PresetsDockMount';
@@ -27,6 +27,9 @@ export const metadata: Metadata = {
     other: [{ rel: 'mask-icon', url: '/safari-pinned-tab.svg', color: '#0ea5e9' }],
   },
   manifest: '/manifest.webmanifest',
+};
+
+export const viewport: Viewport = {
   themeColor: '#ffffff',
 };
 
