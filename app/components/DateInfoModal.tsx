@@ -362,10 +362,10 @@ export default function DateInfoModal({
   const [chipModalNextDay, setChipModalNextDay] = useState<boolean>(false);
 
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<(() => void) | null>(null);
+  const [confirmAction, setConfirmAction] = useState<(() => Promise<void>) | null>(null);
 
   const [confirmChipDeleteOpen, setConfirmChipDeleteOpen] = useState(false);
-  const [confirmChipDeleteAction, setConfirmChipDeleteAction] = useState<(() => void) | null>(null);
+  const [confirmChipDeleteAction, setConfirmChipDeleteAction] = useState<(() => Promise<void>) | null>(null);
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
@@ -722,6 +722,7 @@ export default function DateInfoModal({
       // 3) DB 저장 + 프리뷰부터 표시 후 원본으로 교체
       await persist({ image_url: path, use_image_as_bg: true });
       setImageUrl(path);
+      setUseImageAsBg(true);
       await loadPreviewThenFull(supabase, path, (u) => setDisplayImageUrl(u));
 
     } catch (err:any) {
