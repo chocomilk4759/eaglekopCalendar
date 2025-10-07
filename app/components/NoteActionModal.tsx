@@ -1,4 +1,5 @@
 'use client';
+import { useEffect, useRef } from 'react';
 
 export default function NoteActionModal({
   open,
@@ -17,12 +18,57 @@ export default function NoteActionModal({
   sourceDate: string;
   targetDate: string;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const firstButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Esc 키 처리
+  useEffect(() => {
+    if (!open) return;
+    const handleEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEsc);
+    return () => window.removeEventListener('keydown', handleEsc);
+  }, [open, onClose]);
+
+  // 포커스 트랩 및 초기 포커스
+  useEffect(() => {
+    if (!open || !dialogRef.current) return;
+
+    firstButtonRef.current?.focus();
+
+    const dialog = dialogRef.current;
+    const focusableEls = dialog.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstEl = focusableEls[0];
+    const lastEl = focusableEls[focusableEls.length - 1];
+
+    const handleTab = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey && document.activeElement === firstEl) {
+        e.preventDefault();
+        lastEl?.focus();
+      } else if (!e.shiftKey && document.activeElement === lastEl) {
+        e.preventDefault();
+        firstEl?.focus();
+      }
+    };
+
+    dialog.addEventListener('keydown', handleTab);
+    return () => dialog.removeEventListener('keydown', handleTab);
+  }, [open]);
+
   if (!open) return null;
 
   return (
     <div className="modal" onClick={onClose}>
       <div
+        ref={dialogRef}
         className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="note-action-title"
         style={{
           position: 'fixed',
           top: '50%',
@@ -37,13 +83,14 @@ export default function NoteActionModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>날짜 동작 선택</h3>
+        <h3 id="note-action-title" style={{ margin: '0 0 16px', fontSize: 18 }}>날짜 동작 선택</h3>
         <p style={{ margin: '0 0 20px', fontSize: 14, opacity: 0.8 }}>
           <strong>{sourceDate}</strong>의 내용을 <strong>{targetDate}</strong>에 어떻게 처리할까요?
         </p>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button
+            ref={firstButtonRef}
             onClick={onMove}
             style={{
               padding: '12px 16px',

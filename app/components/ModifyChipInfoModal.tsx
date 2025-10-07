@@ -115,7 +115,7 @@ export default function ModifyChipInfoModal({
   async function ensureOptions(){
     if (options.length) return;
     const { data, error } = await supabase.from('presets').select('emoji,label');
-    if (!error && data) {
+    if (!error && data && data.length > 0) {
       const seen = new Set<string>();
       const list: ChipPreset[] = [];
       for (const r of data) {
@@ -127,6 +127,7 @@ export default function ModifyChipInfoModal({
       }
       setOptions(list);
     } else {
+      // 에러, 빈 결과, 또는 네트워크 문제 시 기본 프리셋 사용
       setOptions([
         { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
         { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },

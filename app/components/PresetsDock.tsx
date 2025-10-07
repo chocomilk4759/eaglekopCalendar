@@ -13,7 +13,7 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
     const mq = window.matchMedia('(max-width: 1199.98px)');
 
     const apply = () => {
-      if (mq.matches) setCollapsed(true);
+      setCollapsed(mq.matches);
     };
 
     apply();
