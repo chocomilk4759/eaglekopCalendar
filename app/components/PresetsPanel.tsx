@@ -2,8 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ConfirmModal from './ConfirmModal';
-
-type Preset = { id:number; emoji:string; label:string; sort_order:number };
+import type { Preset } from '@/types/database';
 
 export default function PresetsPanel({
   canEdit,

@@ -45,9 +45,12 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   }, [open, initialTime, initialNextDay]);
 
   const handleSave = () => {
-    // 빈 값 보정: 빈 문자열이면 '00'으로 설정
-    const validHour = hour.trim() === '' ? '00' : String(parseInt(hour) || 0).padStart(2, '0');
-    const validMinute = minute.trim() === '' ? '00' : String(parseInt(minute) || 0).padStart(2, '0');
+    // 빈 값 보정 및 범위 검증 (0-23시, 0-59분)
+    const hourNum = Math.max(0, Math.min(23, parseInt(hour) || 0));
+    const minuteNum = Math.max(0, Math.min(59, parseInt(minute) || 0));
+
+    const validHour = String(hourNum).padStart(2, '0');
+    const validMinute = String(minuteNum).padStart(2, '0');
 
     onSave(`${validHour}:${validMinute}`, nextDay);
     onClose();

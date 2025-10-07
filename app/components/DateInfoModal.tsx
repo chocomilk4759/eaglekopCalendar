@@ -8,8 +8,9 @@ import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInf
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
 import { isMobileDevice } from '@/lib/utils';
+import type { Preset as DbPreset } from '@/types/database';
 
-type Preset = { emoji: string; label: string };
+type Preset = Pick<DbPreset, 'emoji' | 'label'>;
 
 const BUCKET = 'note-images';
 const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif','image/apng','image/avif'] as const;
@@ -752,7 +753,7 @@ export default function DateInfoModal({
     try {
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
-        setPresets(data.map((r:any)=>({ emoji: r.emoji ?? null, label: String(r.label ?? '') })));
+        setPresets(data.map((r:any)=>({ emoji: r.emoji, label: String(r.label ?? '') })));
       } else {
         setPresets([
           { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },

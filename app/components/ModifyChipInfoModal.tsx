@@ -6,7 +6,7 @@ import TimePickerModal from './TimePickerModal';
 import { isValidStartTime, normalizeStartTime } from '@/types/note';
 
 export type ModifyChipMode = 'add' | 'edit';
-export type ChipPreset = { emoji: string; label: string };
+export type ChipPreset = { emoji: string | null; label: string };
 
 export default function ModifyChipInfoModal({
   open,

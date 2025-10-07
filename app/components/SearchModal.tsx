@@ -28,6 +28,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const requestIdRef = useRef(0);
 
   // search_mappings 테이블에서 검색 키워드 맵 로드
   useEffect(() => {
@@ -100,9 +101,10 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       abortControllerRef.current.abort();
     }
 
-    // 새 AbortController 생성
+    // 새 AbortController 생성 및 요청 ID 증가
     const abortController = new AbortController();
     abortControllerRef.current = abortController;
+    const currentRequestId = ++requestIdRef.current;
 
     setLoading(true);
 
@@ -131,8 +133,10 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
       if (error) throw error;
       if (!allNotes) {
-        setResults([]);
-        setLoading(false);
+        if (currentRequestId === requestIdRef.current) {
+          setResults([]);
+          setLoading(false);
+        }
         return;
       }
 
@@ -199,16 +203,25 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         }
       });
 
-      setResults(found);
+      // 최신 요청인 경우에만 결과 업데이트
+      if (currentRequestId === requestIdRef.current) {
+        setResults(found);
+      }
     } catch (error) {
       // AbortError는 정상적인 취소이므로 무시
       if (error instanceof Error && error.name === 'AbortError') {
         return;
       }
       console.error('Search error:', error);
-      setResults([]);
+      // 최신 요청인 경우에만 상태 업데이트
+      if (currentRequestId === requestIdRef.current) {
+        setResults([]);
+      }
     } finally {
-      setLoading(false);
+      // 최신 요청인 경우에만 로딩 상태 해제
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [supabase, replacements]);
 
