@@ -210,10 +210,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     let cancelled = false;
     setLoadingHolidays(true);
     (async () => {
-      const holidayMap = await getHolidays(ym.y, ym.m + 1);
-      if (!cancelled) {
-        setHolidays(holidayMap);
-        setLoadingHolidays(false);
+      try {
+        const holidayMap = await getHolidays(ym.y, ym.m + 1);
+        if (!cancelled) {
+          setHolidays(holidayMap);
+        }
+      } catch (error) {
+        console.error('Failed to load holidays:', error);
+      } finally {
+        if (!cancelled) {
+          setLoadingHolidays(false);
+        }
       }
     })();
     return () => { cancelled = true; };
