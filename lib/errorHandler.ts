@@ -43,8 +43,10 @@ export function handleError(context: ErrorContext): void {
     message += `\n${detail}`;
   }
 
-  // 사용자에게 표시
-  alert(message);
+  // 사용자에게 표시 (브라우저 환경에서만)
+  if (typeof window !== 'undefined') {
+    alert(message);
+  }
 }
 
 /**

@@ -22,8 +22,8 @@ const memoryCache = new Map<string, CachedUrl>();
 /**
  * localStorage에서 캐시 로드
  */
-function loadFromStorage(path: string): CachedUrl | null {
-  const key = `${CACHE_KEY_PREFIX}${CACHE_VERSION}:${path}`;
+function loadFromStorage(bucket: string, path: string): CachedUrl | null {
+  const key = `${CACHE_KEY_PREFIX}${CACHE_VERSION}:${bucket}:${path}`;
   const cached = storage.get<CachedUrl | null>(key, null);
 
   if (cached && cached.exp > Date.now()) {
@@ -41,8 +41,8 @@ function loadFromStorage(path: string): CachedUrl | null {
 /**
  * localStorage에 캐시 저장
  */
-function saveToStorage(path: string, cached: CachedUrl): void {
-  const key = `${CACHE_KEY_PREFIX}${CACHE_VERSION}:${path}`;
+function saveToStorage(bucket: string, path: string, cached: CachedUrl): void {
+  const key = `${CACHE_KEY_PREFIX}${CACHE_VERSION}:${bucket}:${path}`;
   storage.set(key, cached);
 }
 
@@ -55,18 +55,19 @@ export async function getSignedUrl(
   ttlSec = 3600
 ): Promise<string | null> {
   const now = Date.now();
+  const cacheKey = `${bucket}:${path}`;
 
   // 1) 메모리 캐시 확인
-  const memCached = memoryCache.get(path);
+  const memCached = memoryCache.get(cacheKey);
   if (memCached && memCached.exp > now) {
     return memCached.url;
   }
 
   // 2) localStorage 캐시 확인
-  const storageCached = loadFromStorage(path);
+  const storageCached = loadFromStorage(bucket, path);
   if (storageCached) {
     // 메모리 캐시에도 저장
-    memoryCache.set(path, storageCached);
+    memoryCache.set(cacheKey, storageCached);
     return storageCached.url;
   }
 
@@ -89,8 +90,8 @@ export async function getSignedUrl(
       exp: now + safeMs,
     };
 
-    memoryCache.set(path, cached);
-    saveToStorage(path, cached);
+    memoryCache.set(cacheKey, cached);
+    saveToStorage(bucket, path, cached);
 
     return data.signedUrl;
   } catch (error) {
