@@ -16,7 +16,7 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
       setCollapsed(mq.matches);
     };
 
-    apply();
+    // 초기 실행 제거 - 항상 접힌 상태로 시작
 
     // 최신 브라우저
     if (mq.addEventListener) {
