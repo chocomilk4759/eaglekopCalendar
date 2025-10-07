@@ -516,18 +516,11 @@ export default function DateInfoModal({
 
   const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [visualOrderIndices, setVisualOrderIndices] = useState<number[]>([]);
-
-  // note.items가 변경되면 visualOrderIndices 초기화
-  useEffect(() => {
-    setVisualOrderIndices((note.items || []).map((_, i) => i));
-  }, [note.items]);
+  const [dropPosition, setDropPosition] = useState<'before' | 'after'>('before');
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
     if(!canEdit) return;
     setDraggedChipIndex(idx);
-    setDragPosition({ x: e.clientX, y: e.clientY });
     const item = note.items?.[idx];
     if (item) {
       // 칩을 Calendar 셀로 드래그할 수 있도록 payload 추가
@@ -545,18 +538,6 @@ export default function DateInfoModal({
       (window as any).__draggedModalChip = payload;
     }
     e.dataTransfer.effectAllowed='move';
-
-    // 드래그 이미지를 투명하게 설정 (우리가 직접 렌더링할 것이므로)
-    const dragImage = document.createElement('div');
-    dragImage.style.opacity = '0';
-    document.body.appendChild(dragImage);
-    e.dataTransfer.setDragImage(dragImage, 0, 0);
-    setTimeout(() => document.body.removeChild(dragImage), 0);
-  }
-
-  function onDragChip(e: React.DragEvent<HTMLSpanElement>) {
-    if (!canEdit || draggedChipIndex === null) return;
-    setDragPosition({ x: e.clientX, y: e.clientY });
   }
 
   function onDragEndChip(){
@@ -564,34 +545,28 @@ export default function DateInfoModal({
     (window as any).__draggedModalChip = null;
     setDraggedChipIndex(null);
     setDropTargetIndex(null);
-    setDragPosition(null);
-    // visualOrderIndices를 원본 순서로 복원
-    setVisualOrderIndices((note.items || []).map((_, i) => i));
+    setDropPosition('before');
   }
 
   function onDragOverChip(e: React.DragEvent<HTMLSpanElement>, idx: number) {
-    if (!canEdit || draggedChipIndex === null || draggedChipIndex === idx) return;
+    if (!canEdit || draggedChipIndex === null) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    // 시각적 순서 실시간 변경 (Chrome 탭 스타일)
-    const currentOrder = [...visualOrderIndices];
-    const draggedPos = currentOrder.indexOf(draggedChipIndex);
-    const targetPos = currentOrder.indexOf(idx);
+    // 마우스 위치로 왼쪽/오른쪽 판단
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const position = mouseX < chipCenterX ? 'before' : 'after';
 
-    if (draggedPos === -1 || targetPos === -1) return;
-
-    // draggedIndex를 제거하고 targetIndex 위치에 삽입
-    currentOrder.splice(draggedPos, 1);
-    currentOrder.splice(targetPos, 0, draggedChipIndex);
-
-    setVisualOrderIndices(currentOrder);
     setDropTargetIndex(idx);
+    setDropPosition(position);
   }
 
   function onDragLeaveChip() {
-    // 드래그가 칩 영역을 벗어나도 시각적 순서는 유지
-    // (더 부드러운 Chrome 탭 경험)
+    if (!canEdit || draggedChipIndex === null) return;
+    setDropTargetIndex(null);
+    setDropPosition('before');
   }
 
   async function onDropChip(e: React.DragEvent<HTMLSpanElement>, targetIdx: number) {
@@ -599,26 +574,43 @@ export default function DateInfoModal({
     if (!canEdit || draggedChipIndex === null) {
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDragPosition(null);
-      setVisualOrderIndices((note.items || []).map((_, i) => i));
+      setDropPosition('before');
       return;
     }
 
-    // visualOrderIndices를 사용하여 새로운 items 배열 생성
-    const reorderedItems = visualOrderIndices.map(idx => (note.items || [])[idx]).filter(Boolean);
+    // 마우스 위치로 최종 삽입 위치 결정
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const chipCenterX = rect.left + rect.width / 2;
+    const position = mouseX < chipCenterX ? 'before' : 'after';
+
+    const items = [...(note.items || [])];
+    const [draggedItem] = items.splice(draggedChipIndex, 1);
+
+    // 드래그한 칩을 제거한 후의 인덱스 조정
+    let insertIdx = targetIdx;
+    if (draggedChipIndex < targetIdx) {
+      insertIdx = targetIdx - 1;
+    }
+
+    // position에 따라 최종 위치 결정
+    if (position === 'after') {
+      insertIdx = insertIdx + 1;
+    }
+
+    items.splice(insertIdx, 0, draggedItem);
 
     try {
-      await persist({ items: reorderedItems });
+      await persist({ items });
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDragPosition(null);
+      setDropPosition('before');
     } catch (e: any) {
       setAlertMessage({ title: '칩 순서 변경 실패', message: e?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
       setAlertOpen(true);
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDragPosition(null);
-      setVisualOrderIndices((note.items || []).map((_, i) => i));
+      setDropPosition('before');
     }
   }
 
@@ -947,67 +939,68 @@ export default function DateInfoModal({
             >＋</button>
           </div>
         ) : (
-          <div className="chips"
-               onDragOver={(e) => {
-                 if (draggedChipIndex !== null) {
-                   e.preventDefault();
-                   e.dataTransfer.dropEffect = 'move';
-                 }
-               }}
-               onDrop={(e) => {
-                 if (draggedChipIndex !== null && canEdit) {
-                   e.preventDefault();
-                   // 컨테이너에 드롭하면 현재 visualOrder 그대로 저장
-                   const reorderedItems = visualOrderIndices.map(idx => (note.items || [])[idx]).filter(Boolean);
-                   persist({ items: reorderedItems }).then(() => {
-                     setDraggedChipIndex(null);
-                     setDropTargetIndex(null);
-                     setDragPosition(null);
-                   }).catch((err: any) => {
-                     setAlertMessage({ title: '칩 순서 변경 실패', message: err?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
-                     setAlertOpen(true);
-                     setDraggedChipIndex(null);
-                     setDropTargetIndex(null);
-                     setDragPosition(null);
-                     setVisualOrderIndices((note.items || []).map((_, i) => i));
-                   });
-                 }
-               }}
-               style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4, position:'relative'}}>
-            {visualOrderIndices.map((originalIdx:number, visualIdx:number)=>{
-              const it = note.items?.[originalIdx];
-              if (!it) return null;
-
-              const isDragging = draggedChipIndex === originalIdx;
+          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4, position:'relative'}}>
+            {note.items.map((it:Item, idx:number)=>{
+              const isDragging = draggedChipIndex === idx;
+              const isDropTarget = dropTargetIndex === idx && draggedChipIndex !== null && draggedChipIndex !== idx;
+              const showBeforeIndicator = isDropTarget && dropPosition === 'before';
+              const showAfterIndicator = isDropTarget && dropPosition === 'after';
 
               return (
-                <span key={originalIdx}
-                      className="chip"
-                      title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
-                      onDoubleClick={()=> { if(!disabled) onDoubleClickChip(originalIdx); }}
-                      draggable={!disabled}
-                      onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, originalIdx); }}
-                      onDrag={(e)=>{ if(!disabled) onDragChip(e); }}
-                      onDragEnd={onDragEndChip}
-                      onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, originalIdx); }}
-                      onDragLeave={onDragLeaveChip}
-                      onDrop={(e)=>{ if(!disabled) onDropChip(e, originalIdx); }}
-                      style={{
-                        display: isDragging ? 'none' : 'inline-flex',
-                        alignItems:'center', justifyContent:'center', gap: 6,
-                        border: '1px solid var(--border)',
-                        borderRadius:999, padding:'4px 10px',
-                        fontSize:12,
-                        background: 'var(--card)',
-                        color:'inherit',
-                        cursor: disabled ? 'default' : 'grab',
-                        transition: 'all 0.2s ease',
-                      }}>
-                  <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
-                    <span className="chip-emoji">{it.emoji ?? ''}</span>
-                    {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                <span key={idx} style={{position:'relative', display:'inline-flex'}}>
+                  {showBeforeIndicator && (
+                    <span style={{
+                      position:'absolute',
+                      left: -4,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 2,
+                      height: '80%',
+                      background: 'var(--primary, #007bff)',
+                      borderRadius: 1,
+                      zIndex: 10,
+                      boxShadow: '0 0 4px rgba(0, 123, 255, 0.5)'
+                    }} />
+                  )}
+                  {showAfterIndicator && (
+                    <span style={{
+                      position:'absolute',
+                      right: -4,
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      width: 2,
+                      height: '80%',
+                      background: 'var(--primary, #007bff)',
+                      borderRadius: 1,
+                      zIndex: 10,
+                      boxShadow: '0 0 4px rgba(0, 123, 255, 0.5)'
+                    }} />
+                  )}
+                  <span className="chip"
+                        title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
+                        onDoubleClick={()=> { if(!disabled) onDoubleClickChip(idx); }}
+                        draggable={!disabled}
+                        onDragStart={(e)=>{ if(!disabled) onDragStartChip(e, idx); }}
+                        onDragEnd={onDragEndChip}
+                        onDragOver={(e)=>{ if(!disabled) onDragOverChip(e, idx); }}
+                        onDragLeave={onDragLeaveChip}
+                        onDrop={(e)=>{ if(!disabled) onDropChip(e, idx); }}
+                        style={{
+                          display:'inline-flex', alignItems:'center', justifyContent:'center', gap: 6,
+                          border: '1px solid var(--border)',
+                          borderRadius:999, padding:'4px 10px',
+                          fontSize:12,
+                          background: 'var(--card)',
+                          color:'inherit',
+                          opacity: isDragging ? 0.4 : 1,
+                          cursor: disabled ? 'default' : 'grab'
+                        }}>
+                    <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                      <span className="chip-emoji">{it.emoji ?? ''}</span>
+                      {it.startTime && <span className="chip-time" style={{fontSize:11, opacity:0.7}}>{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                    </span>
+                    <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                   </span>
-                  <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                 </span>
               );
             })}
@@ -1188,49 +1181,6 @@ export default function DateInfoModal({
           message={alertMessage.message}
         />
       </div>
-
-      {/* 드래그 중인 칩을 마우스 위치에 렌더링 (Chrome 탭 스타일) */}
-      {draggedChipIndex !== null && dragPosition && note.items?.[draggedChipIndex] && (
-        <div style={{
-          position: 'fixed',
-          left: dragPosition.x,
-          top: dragPosition.y,
-          transform: 'translate(-50%, -50%) scale(1.05)',
-          zIndex: 9999,
-          pointerEvents: 'none',
-          transition: 'transform 0.15s ease',
-        }}>
-          <span className="chip" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-            border: '1px solid var(--border)',
-            borderRadius: 999,
-            padding: '4px 10px',
-            fontSize: 12,
-            background: 'var(--card)',
-            color: 'inherit',
-            boxShadow: '0 8px 16px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.1)',
-            cursor: 'grabbing',
-          }}>
-            <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-              <span className="chip-emoji">{note.items[draggedChipIndex].emoji ?? ''}</span>
-              {note.items[draggedChipIndex].startTime && (
-                <span className="chip-time" style={{ fontSize: 11, opacity: 0.7 }}>
-                  {note.items[draggedChipIndex].startTime}
-                  {note.items[draggedChipIndex].nextDay ? '+1' : ''}
-                </span>
-              )}
-            </span>
-            <span className="chip-text">
-              {note.items[draggedChipIndex].text?.length
-                ? note.items[draggedChipIndex].text
-                : note.items[draggedChipIndex].label}
-            </span>
-          </span>
-        </div>
-      )}
     </div>
   );
 }
