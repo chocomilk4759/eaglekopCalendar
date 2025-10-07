@@ -6,7 +6,7 @@
 // Preset 테이블
 export interface Preset {
   id: number;
-  emoji: string | null;
+  emoji: string;
   label: string;
   sort_order: number;
   updated_at?: string;

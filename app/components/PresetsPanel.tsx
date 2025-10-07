@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ConfirmModal from './ConfirmModal';
 
-type Preset = { id:number; emoji:string|null; label:string; sort_order:number };
+type Preset = { id:number; emoji:string; label:string; sort_order:number };
 
 export default function PresetsPanel({
   canEdit,
@@ -34,8 +34,9 @@ export default function PresetsPanel({
   },[]);
 
   async function addPreset(){
+    if(!emoji.trim()){ alert('아이콘은 필수입니다.'); return; }
     if(!label.trim()){ alert('텍스트는 필수입니다.'); return; }
-    const payload = { emoji: (emoji.trim()||null), label: label.trim(), sort_order:(presets.at(-1)?.sort_order||0)+10 };
+    const payload = { emoji: emoji.trim(), label: label.trim(), sort_order:(presets.at(-1)?.sort_order||0)+10 };
     const { data, error } = await supabase.from('presets').insert(payload).select().single();
     if(error){ alert(error.message); return; }
     setPresets(p=>[...p, data as any]);

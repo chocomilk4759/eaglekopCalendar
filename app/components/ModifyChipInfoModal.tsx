@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import TimePickerModal from './TimePickerModal';
+import { isValidStartTime, normalizeStartTime } from '@/types/note';
 
 export type ModifyChipMode = 'add' | 'edit';
-export type ChipPreset = { emoji: string | null; label: string };
+export type ChipPreset = { emoji: string; label: string };
 
 export default function ModifyChipInfoModal({
   open,
@@ -64,6 +65,21 @@ export default function ModifyChipInfoModal({
       previousFocusRef.current = null;
     }
   }, [open, initialText, initialStartTime, initialNextDay, preset]);
+
+  // 저장 버튼 핸들러: startTime 검증
+  function handleSave() {
+    const trimmedTime = startTime.trim();
+
+    // startTime 형식 검증
+    if (!isValidStartTime(trimmedTime)) {
+      alert('시작 시간은 HH:mm 형식이어야 합니다 (예: 14:30)');
+      return;
+    }
+
+    // 정규화된 시간으로 저장
+    const normalized = normalizeStartTime(trimmedTime);
+    onSave(text.trim(), normalized ?? '', nextDay, localPreset);
+  }
 
   // 모달이 닫히면 콤보도 닫기
   useEffect(() => {
@@ -233,7 +249,7 @@ export default function ModifyChipInfoModal({
 
             {/* 액션 버튼들 */}
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, fontSize: 12 }}>
-              <button onClick={() => onSave(text.trim(), startTime.trim(), nextDay, localPreset)} aria-label="저장" style={{padding: '6px 12px'}}>저장</button>
+              <button onClick={handleSave} aria-label="저장" style={{padding: '6px 12px'}}>저장</button>
               {mode === 'add' ? (
                 <button onClick={onClose} aria-label="취소" style={{padding: '6px 12px'}}>취소</button>
               ) : (

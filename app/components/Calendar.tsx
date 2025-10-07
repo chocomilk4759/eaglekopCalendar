@@ -84,7 +84,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [notes, setNotes] = useState<Record<string, Note>>({});
   const [modalOpen, setModalOpen] = useState(false);
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
-  const [presetToAdd, setPresetToAdd] = useState<{ emoji: string | null; label: string } | null>(null);
+  const [presetToAdd, setPresetToAdd] = useState<{ emoji: string; label: string } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
@@ -719,7 +719,7 @@ useEffect(() => {
       return;
     }
     if (payload?.type !== 'preset') return;
-    const preset = payload.preset as { emoji: string | null; label: string };
+    const preset = payload.preset as { emoji: string; label: string };
     // 저장하지 않고, 해당 날짜 모달을 열고 프리셋을 전달한다.
     setPresetToAdd(preset);
     setModalDate({ y, m, d });
@@ -1344,7 +1344,7 @@ useEffect(() => {
       <ModifyChipInfoModal
         open={bulkOpen}
         mode="add"
-        preset={{ emoji: null, label: '' }}
+        preset={{ emoji: '', label: '' }}
         initialText=""
         onSave={(t,st,nd,p)=> applyBulkAddChip(t,st,nd,p)}
         onClose={()=> setBulkOpen(false)}

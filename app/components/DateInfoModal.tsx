@@ -9,7 +9,7 @@ import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
 import { isMobileDevice } from '@/lib/utils';
 
-type Preset = { emoji: string | null; label: string };
+type Preset = { emoji: string; label: string };
 
 const BUCKET = 'note-images';
 const ALLOWED = ['image/png','image/jpeg','image/webp','image/gif','image/apng','image/avif'] as const;
@@ -66,7 +66,7 @@ export default function DateInfoModal({
   note:Note|null;
   canEdit:boolean;
   onSaved:(n:Note)=>void;
-  addChipPreset?: { emoji: string | null; label: string } | null;
+  addChipPreset?: { emoji: string; label: string } | null;
   onConsumedAddPreset?: () => void;
 }){
   const supabase = createClient();
@@ -96,7 +96,7 @@ export default function DateInfoModal({
   const [comboOpen, setComboOpen] = useState(false);
   const [chipModalOpen, setChipModalOpen] = useState(false);
   const [chipModalMode, setChipModalMode] = useState<ModifyChipMode>('add');
-  const [chipModalPreset, setChipModalPreset] = useState<ChipPreset>({ emoji: null, label: '' });
+  const [chipModalPreset, setChipModalPreset] = useState<ChipPreset>({ emoji: '', label: '' });
   const [chipEditIndex, setChipEditIndex] = useState<number | null>(null);
 
   const [presets, setPresets] = useState<Preset[] | null>(null);
@@ -436,7 +436,7 @@ export default function DateInfoModal({
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
     const cur = note.items?.[idx]; if(!cur) return;
-    setChipModalPreset({ emoji: cur.emoji ?? null, label: cur.label });
+    setChipModalPreset({ emoji: cur.emoji ?? '', label: cur.label });
     setChipModalMode('edit');
     setChipEditIndex(idx);
     setChipModalStartTime(cur.startTime ?? '');
