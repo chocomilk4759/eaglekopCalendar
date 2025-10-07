@@ -14,10 +14,13 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
   const [hour, setHour] = useState('00');
   const [minute, setMinute] = useState('00');
   const [nextDay, setNextDay] = useState(initialNextDay);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
-  // 초기값 파싱
+  // 초기값 파싱 + 포커스 관리
   useEffect(() => {
     if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
       if (initialTime) {
         const [h, m] = initialTime.split(':');
         setHour(h?.padStart(2, '0') || '00');
@@ -27,6 +30,17 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
         setMinute('00');
       }
       setNextDay(initialNextDay);
+      // 첫 번째 input으로 포커스 이동
+      setTimeout(() => {
+        const firstInput = modalRef.current?.querySelector<HTMLInputElement>('input[type="text"]');
+        firstInput?.focus();
+      }, 0);
+    } else {
+      // 모달 닫힐 때: 이전 포커스 복원
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+      previousFocusRef.current = null;
     }
   }, [open, initialTime, initialNextDay]);
 
@@ -40,6 +54,43 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
     onClose();
   };
 
+  // Focus trap: Tab/Shift+Tab을 가로채서 모달 내부에서만 순환
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   const handleBackdropClick = (e: React.MouseEvent) => {
@@ -50,7 +101,7 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
 
   return (
     <div className="modal" onMouseDown={handleBackdropClick} style={{ zIndex: 1001 }}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '16px', minWidth: 240, maxWidth: 280 }}>
+      <div ref={modalRef} className="sheet" onClick={(e) => e.stopPropagation()} style={{ padding: '16px', minWidth: 240, maxWidth: 280 }}>
         <h3 style={{ margin: '0 0 16px 0', fontSize: 14, fontWeight: 600 }}>시작 시간</h3>
 
         {/* 시간 입력 */}

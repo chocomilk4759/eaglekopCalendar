@@ -370,6 +370,69 @@ export default function DateInfoModal({
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
 
+  // ── 포커스 관리 ──────────────────────────────────────────────────────────
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // 모달 열릴 때: 이전 포커스 저장 + 모달 내부로 포커스 이동
+  useEffect(() => {
+    if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      // 포커스 가능한 첫 번째 요소로 이동
+      setTimeout(() => {
+        const firstFocusable = modalRef.current?.querySelector<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        );
+        firstFocusable?.focus();
+      }, 0);
+    } else {
+      // 모달 닫힐 때: 이전 포커스 복원
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+      previousFocusRef.current = null;
+    }
+  }, [open]);
+
+  // Focus trap: Tab/Shift+Tab을 가로채서 모달 내부에서만 순환
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        // Shift+Tab: 첫 번째 요소에서 마지막 요소로
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        // Tab: 마지막 요소에서 첫 번째 요소로
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   function onDoubleClickChip(idx:number){
     if (!canEdit) return;
     const cur = note.items?.[idx]; if(!cur) return;
@@ -755,7 +818,12 @@ export default function DateInfoModal({
       }}
     >
       <div
-        ref={sheetRef}
+        ref={(el) => {
+          if (el) {
+            (sheetRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            (modalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          }
+        }}
         className="sheet modal-draggable"
         style={{
           position:'absolute',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Note } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import { createClient } from '@/lib/supabaseClient';
@@ -25,6 +25,8 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [replacements, setReplacements] = useState<Record<string, string>>({});
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // search_mappings 테이블에서 검색 키워드 맵 로드
   useEffect(() => {
@@ -197,8 +199,15 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
   useEffect(() => {
     if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
       setQuery('');
       setResults([]);
+    } else {
+      // 모달 닫힐 때: 이전 포커스 복원
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+      previousFocusRef.current = null;
     }
   }, [open]);
 
@@ -225,24 +234,48 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     }
   };
 
+  // Focus trap: Tab/Shift+Tab을 가로채서 모달 내부에서만 순환 + ESC 처리
   useEffect(() => {
     if (!open) return;
 
-    const handleEsc = (e: KeyboardEvent) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         onClose();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"]), .search-result-item'
+      );
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
       }
     };
 
-    window.addEventListener('keydown', handleEsc);
-    return () => window.removeEventListener('keydown', handleEsc);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
 
   if (!open) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="search-modal" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} className="search-modal" onClick={(e) => e.stopPropagation()}>
         <div className="search-header">
           <input
             type="text"
@@ -269,6 +302,13 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
               key={`${result.date.y}-${result.date.m}-${result.date.d}-${idx}`}
               className="search-result-item"
               onClick={() => handleSelect(result)}
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleSelect(result);
+                }
+              }}
             >
               <div className="search-result-header">
                 <span className="search-result-date">

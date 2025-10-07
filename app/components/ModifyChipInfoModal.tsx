@@ -45,14 +45,23 @@ export default function ModifyChipInfoModal({
   const [options, setOptions] = useState<ChipPreset[]>([]);
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (open) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
       setText(initialText);
       setStartTime(initialStartTime);
       setNextDay(initialNextDay);
       setLocalPreset(preset);
       setTimeout(() => inputRef.current?.focus(), 0);
+    } else {
+      // 모달 닫힐 때: 이전 포커스 복원
+      if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
+        previousFocusRef.current.focus();
+      }
+      previousFocusRef.current = null;
     }
   }, [open, initialText, initialStartTime, initialNextDay, preset]);
 
@@ -65,6 +74,43 @@ export default function ModifyChipInfoModal({
   useEffect(() => {
     if (open && canEdit) { void ensureOptions(); }
   }, [open, mode, canEdit]);
+
+  // Focus trap: Tab/Shift+Tab을 가로채서 모달 내부에서만 순환
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusableElements || focusableElements.length === 0) return;
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstElement) {
+          e.preventDefault();
+          lastElement.focus();
+        }
+      } else {
+        if (document.activeElement === lastElement) {
+          e.preventDefault();
+          firstElement.focus();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
 
   async function ensureOptions(){
     if (options.length) return;
@@ -103,7 +149,7 @@ export default function ModifyChipInfoModal({
 
   return (
     <div className="modal" onMouseDown={handleBackdropClick}>
-      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div ref={modalRef} className="sheet" onClick={(e) => e.stopPropagation()}>
         {title && (
           <div style={{marginBottom:8, fontSize:12, fontWeight:700, opacity:.85}}>
             {title}
