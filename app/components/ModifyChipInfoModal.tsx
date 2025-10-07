@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import TimePickerModal from './TimePickerModal';
+import AlertModal from './AlertModal';
 import { isValidStartTime, normalizeStartTime } from '@/types/note';
 
 export type ModifyChipMode = 'add' | 'edit';
@@ -44,6 +45,8 @@ export default function ModifyChipInfoModal({
   const [iconOpen, setIconOpen] = useState(false);
   const [timePickerOpen, setTimePickerOpen] = useState(false);
   const [options, setOptions] = useState<ChipPreset[]>([]);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
   const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -72,7 +75,8 @@ export default function ModifyChipInfoModal({
 
     // startTime 형식 검증
     if (!isValidStartTime(trimmedTime)) {
-      alert('시작 시간은 HH:mm 형식이어야 합니다 (예: 14:30)');
+      setAlertMessage({ title: '시간 형식 오류', message: '시작 시간은 HH:mm 형식이어야 합니다 (예: 14:30)' });
+      setAlertOpen(true);
       return;
     }
 
@@ -279,6 +283,14 @@ export default function ModifyChipInfoModal({
           setNextDay(nd);
         }}
         onClose={() => setTimePickerOpen(false)}
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
       />
     </div>
   );

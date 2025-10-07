@@ -7,6 +7,7 @@ import TopRibbon from './TopRibbon';
 import SearchModal from './SearchModal';
 import ChipActionModal from './ChipActionModal';
 import NoteActionModal from './NoteActionModal';
+import AlertModal from './AlertModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
@@ -86,6 +87,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
   const [presetToAdd, setPresetToAdd] = useState<{ emoji: string; label: string } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
   // ---- SWR 캐시 & 로딩 상태
   const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
   // ---- 공휴일 데이터
@@ -441,7 +444,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         const saved = await upsertNote(finalNote);
         setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
       } catch (e:any) {
-        alert(e?.message ?? '복제 저장 중 오류');
+        setAlertMessage({ title: '복제 저장 실패', message: e?.message ?? '복제 저장 중 오류가 발생했습니다.' });
+        setAlertOpen(true);
       }
     }
   }
@@ -456,7 +460,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const saved = await upsertNote(finalNote);
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e:any) {
-      alert(e?.message ?? '덮어쓰기 중 오류');
+      setAlertMessage({ title: '덮어쓰기 실패', message: e?.message ?? '덮어쓰기 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
 
     setNoteActionOpen(false);
@@ -473,7 +478,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const saved = await upsertNote(finalNote);
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e:any) {
-      alert(e?.message ?? '합치기 중 오류');
+      setAlertMessage({ title: '합치기 실패', message: e?.message ?? '합치기 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
 
     setNoteActionOpen(false);
@@ -506,7 +512,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         return next;
       });
     } catch (e:any) {
-      alert(e?.message ?? '이동 중 오류');
+      setAlertMessage({ title: '이동 실패', message: e?.message ?? '이동 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
 
     setNoteActionOpen(false);
@@ -793,7 +800,8 @@ useEffect(() => {
         [sourceKey]: { ...sourceNote, items: sourceItems },
       }));
     } catch (e: any) {
-      alert(e?.message ?? '칩 이동 중 오류');
+      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '칩 이동 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
 
     setChipActionOpen(false);
@@ -818,7 +826,8 @@ useEffect(() => {
         [targetKey]: { ...targetNote, items: targetItems },
       }));
     } catch (e: any) {
-      alert(e?.message ?? '칩 복사 중 오류');
+      setAlertMessage({ title: '칩 복사 실패', message: e?.message ?? '칩 복사 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
 
     setChipActionOpen(false);
@@ -862,7 +871,8 @@ useEffect(() => {
   async function jumpGo() {
     const d = new Date(jump);
     if (Number.isNaN(d.getTime())) {
-      alert('유효한 날짜를 선택하세요.');
+      setAlertMessage({ title: '날짜 오류', message: '유효한 날짜를 선택하세요.' });
+      setAlertOpen(true);
       return;
     }
 
@@ -1423,6 +1433,14 @@ useEffect(() => {
         onMerge={mergeNote}
         sourceDate={pendingNoteDrop ? `${pendingNoteDrop.src.y}-${String(pendingNoteDrop.src.m + 1).padStart(2, '0')}-${String(pendingNoteDrop.src.d).padStart(2, '0')}` : ''}
         targetDate={pendingNoteDrop ? `${pendingNoteDrop.targetY}-${String(pendingNoteDrop.targetM + 1).padStart(2, '0')}-${String(pendingNoteDrop.targetD).padStart(2, '0')}` : ''}
+      />
+
+      {/* ── Alert Modal ── */}
+      <AlertModal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
       />
     </>
   );

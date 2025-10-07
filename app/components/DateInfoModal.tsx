@@ -285,7 +285,10 @@ export default function DateInfoModal({
     if(!canEdit) return;
     const next: 'red'|'blue'|null = note.color===color ? null : color;
     try{ await persist({ color: next }); }
-    catch(e:any){ alert(e?.message ?? '플래그 저장 중 오류가 발생했습니다.'); }
+    catch(e:any){
+      setAlertMessage({ title: '플래그 저장 실패', message: e?.message ?? '플래그 저장 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
   }
 
   async function toggleRest(){
@@ -297,7 +300,8 @@ export default function DateInfoModal({
         await persist({ color: 'red', content: '휴방' });
       }
     }catch(e:any){
-      alert(e?.message ?? '휴 상태 변경 중 오류');
+      setAlertMessage({ title: '휴 상태 변경 실패', message: e?.message ?? '휴 상태 변경 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
   }
 
@@ -311,9 +315,11 @@ export default function DateInfoModal({
         image_url: imageUrl ?? null,
       });
       setInitialMemo(saved.content || '');
-      alert('저장되었습니다.');
+      setAlertMessage({ title: '저장 완료', message: '저장되었습니다.' });
+      setAlertOpen(true);
     }catch(e:any){
-      alert(e?.message ?? '저장 중 오류가 발생했습니다.');
+      setAlertMessage({ title: '저장 실패', message: e?.message ?? '저장 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
   }
 
@@ -321,7 +327,11 @@ export default function DateInfoModal({
     if (!canEdit) return;
     setUseImageAsBg(checked);
     try { await persist({ use_image_as_bg: checked }); }
-    catch (e:any) { alert(e?.message ?? '배경 사용 여부 저장 중 오류'); setUseImageAsBg(!checked); }
+    catch (e:any) {
+      setAlertMessage({ title: '배경 설정 실패', message: e?.message ?? '배경 사용 여부 저장 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+      setUseImageAsBg(!checked);
+    }
   }
 
   function openClearConfirm() {
@@ -458,7 +468,10 @@ export default function DateInfoModal({
     };
     const items = [...(note.items || []), newItem];
     try{ await persist({ items }); }
-    catch(e:any){ alert(e?.message ?? '아이템 추가 중 오류'); }
+    catch(e:any){
+      setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
     setChipModalOpen(false);
   }
 
@@ -475,7 +488,10 @@ export default function DateInfoModal({
       nextDay: nextDay || undefined
     };
     try{ await persist({ items }); }
-    catch(e:any){ alert(e?.message ?? '아이템 수정 중 오류'); }
+    catch(e:any){
+      setAlertMessage({ title: '아이템 수정 실패', message: e?.message ?? '아이템 수정 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
     setChipModalOpen(false);
   }
 
@@ -491,7 +507,8 @@ export default function DateInfoModal({
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
       } catch(e: any) {
-        alert(e?.message ?? '아이템 삭제 중 오류');
+        setAlertMessage({ title: '아이템 삭제 실패', message: e?.message ?? '아이템 삭제 중 오류가 발생했습니다.' });
+        setAlertOpen(true);
       }
     });
     setConfirmChipDeleteOpen(true);
@@ -589,7 +606,8 @@ export default function DateInfoModal({
       setDropTargetIndex(null);
       setDropPosition('before');
     } catch (e: any) {
-      alert(e?.message ?? '칩 순서 변경 중 오류');
+      setAlertMessage({ title: '칩 순서 변경 실패', message: e?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
       setDropPosition('before');
@@ -607,13 +625,20 @@ export default function DateInfoModal({
       const normalized = linkInput ? normUrl(linkInput) : '';
       const saved = await persist({ link: normalized || null });
       setLinkInput(saved.link ?? '');
-      alert('링크가 저장되었습니다.');
-    } catch (e:any) { alert(e?.message ?? '링크 저장 중 오류'); }
+      setAlertMessage({ title: '링크 저장 완료', message: '링크가 저장되었습니다.' });
+      setAlertOpen(true);
+    } catch (e:any) {
+      setAlertMessage({ title: '링크 저장 실패', message: e?.message ?? '링크 저장 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
   }
   async function deleteLink() {
     if (!canEdit) return;
     try { await persist({ link: null }); setLinkInput(''); }
-    catch (e:any) { alert(e?.message ?? '링크 삭제 중 오류'); }
+    catch (e:any) {
+      setAlertMessage({ title: '링크 삭제 실패', message: e?.message ?? '링크 삭제 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
   }
 
   // 애니메이션 판별
@@ -656,15 +681,29 @@ export default function DateInfoModal({
 
   async function pickImage(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; if (!f) return;
-    if (!canEdit) { alert('권한이 없습니다.'); e.currentTarget.value=''; return; }
+    if (!canEdit) {
+      setAlertMessage({ title: '권한 없음', message: '권한이 없습니다.' });
+      setAlertOpen(true);
+      e.currentTarget.value='';
+      return;
+    }
     setUploading(true);
     try {
       const { data: sess } = await supabase.auth.getSession();
-      if (!sess.session) { alert('로그인 필요'); setUploading(false); e.currentTarget.value=''; return; }
+      if (!sess.session) {
+        setAlertMessage({ title: '로그인 필요', message: '이미지 업로드를 위해 로그인이 필요합니다.' });
+        setAlertOpen(true);
+        setUploading(false);
+        e.currentTarget.value='';
+        return;
+      }
 
       if (!ALLOWED.includes(f.type as any)) {
-        alert('이미지 형식은 PNG/JPEG/WebP/GIF/APNG/AVIF만 허용합니다.');
-        setUploading(false); e.currentTarget.value=''; return;
+        setAlertMessage({ title: '형식 오류', message: '이미지 형식은 PNG/JPEG/WebP/GIF/APNG/AVIF만 허용합니다.' });
+        setAlertOpen(true);
+        setUploading(false);
+        e.currentTarget.value='';
+        return;
       }
 
       const isGif = f.type === 'image/gif' || /\.gif$/i.test(f.name);
@@ -675,7 +714,8 @@ export default function DateInfoModal({
       // 파일 크기 검증: GIF는 별도 제한, 나머지는 일반 제한
       const maxSize = isGif ? MAX_GIF_MB : MAX_IMAGE_MB;
       if (f.size > maxSize * 1024 * 1024) {
-        alert(`이미지 용량이 큽니다(>${maxSize}MB). 크기를 줄여 다시 시도하세요.`);
+        setAlertMessage({ title: '용량 초과', message: `이미지 용량이 큽니다(>${maxSize}MB). 크기를 줄여 다시 시도하세요.` });
+        setAlertOpen(true);
         setUploading(false);
         e.currentTarget.value = '';
         return;
@@ -727,7 +767,8 @@ export default function DateInfoModal({
       await loadPreviewThenFull(supabase, path, (u) => setDisplayImageUrl(u));
 
     } catch (err:any) {
-      alert(err?.message ?? '이미지 업로드 실패');
+      setAlertMessage({ title: '이미지 업로드 실패', message: err?.message ?? '이미지 업로드 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     } finally {
       setUploading(false);
       e.currentTarget.value = '';
@@ -743,7 +784,8 @@ export default function DateInfoModal({
       setImageUrl(saved.image_url);
       setDisplayImageUrl(null);
     } catch (e:any) {
-      alert(e?.message ?? '이미지 제거 중 오류');
+      setAlertMessage({ title: '이미지 제거 실패', message: e?.message ?? '이미지 제거 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
     }
   }
 
@@ -784,7 +826,10 @@ export default function DateInfoModal({
     const newItem: Item = { emoji: p.emoji ?? null, label: p.label, emojiOnly: true };
     items.push(newItem);
     try { await persist({ items }); setComboOpen(false); }
-    catch (e:any) { alert(e?.message ?? '아이템 추가 중 오류'); }
+    catch (e:any) {
+      setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
   }
 
   // ── 드래그 이동 핸들러 ───────────────────────────────────────────────────

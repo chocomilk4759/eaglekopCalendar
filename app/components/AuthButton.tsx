@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
+import AlertModal from './AlertModal';
 
 export default function AuthButton() {
   const supabase = useMemo(() => createClient(), []);
@@ -25,6 +26,10 @@ export default function AuthButton() {
   const [currPw, setCurrPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [newPw2, setNewPw2] = useState('');
+
+  // Alert Modal
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
 
   // ─────────────────────────────────────────────────────────────
   // 1) Supabase 인증 상태 구독
@@ -56,7 +61,8 @@ export default function AuthButton() {
     const id = (idInput || '').trim();
     const pw = pwInput;
     if (!id || !pw) {
-      alert('아이디와 비밀번호를 모두 입력하세요.');
+      setAlertMessage({ title: '입력 오류', message: '아이디와 비밀번호를 모두 입력하세요.' });
+      setAlertOpen(true);
       return;
     }
     const emailLike = id.includes('@') ? id : `${id}@${loginDomain}`;
@@ -67,7 +73,8 @@ export default function AuthButton() {
     });
 
     if (error) {
-      alert(`로그인 실패: ${error.message}`);
+      setAlertMessage({ title: '로그인 실패', message: error.message });
+      setAlertOpen(true);
       return;
     }
     // 성공
@@ -80,7 +87,8 @@ export default function AuthButton() {
   const handleLogout = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
-      alert(`로그아웃 실패: ${error.message}`);
+      setAlertMessage({ title: '로그아웃 실패', message: error.message });
+      setAlertOpen(true);
       return;
     }
     setOpen(false);
@@ -92,15 +100,18 @@ export default function AuthButton() {
 
   const handleChangePassword = useCallback(async () => {
     if (!email) {
-      alert('로그인된 사용자만 비밀번호를 변경할 수 있습니다.');
+      setAlertMessage({ title: '권한 없음', message: '로그인된 사용자만 비밀번호를 변경할 수 있습니다.' });
+      setAlertOpen(true);
       return;
     }
     if (!currPw || !newPw || !newPw2) {
-      alert('모든 입력란을 채워주세요.');
+      setAlertMessage({ title: '입력 오류', message: '모든 입력란을 채워주세요.' });
+      setAlertOpen(true);
       return;
     }
     if (newPw !== newPw2) {
-      alert('새 비밀번호가 서로 일치하지 않습니다.');
+      setAlertMessage({ title: '입력 오류', message: '새 비밀번호가 서로 일치하지 않습니다.' });
+      setAlertOpen(true);
       return;
     }
 
@@ -110,7 +121,8 @@ export default function AuthButton() {
       password: currPw,
     });
     if (reauthError) {
-      alert('현재 비밀번호가 일치하지 않습니다.');
+      setAlertMessage({ title: '인증 실패', message: '현재 비밀번호가 일치하지 않습니다.' });
+      setAlertOpen(true);
       return;
     }
 
@@ -118,11 +130,13 @@ export default function AuthButton() {
       password: newPw,
     });
     if (updateError) {
-      alert(`비밀번호 변경 실패: ${updateError.message}`);
+      setAlertMessage({ title: '비밀번호 변경 실패', message: updateError.message });
+      setAlertOpen(true);
       return;
     }
 
-    alert('비밀번호가 변경되었습니다.');
+    setAlertMessage({ title: '비밀번호 변경 완료', message: '비밀번호가 변경되었습니다.' });
+    setAlertOpen(true);
     setEditMode(false);
     setCurrPw('');
     setNewPw('');
@@ -246,6 +260,14 @@ export default function AuthButton() {
           </div>
         )}
       </div>
+
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
+      />
     </div>
   );
 }

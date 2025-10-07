@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import ConfirmModal from './ConfirmModal';
+import AlertModal from './AlertModal';
 import type { Preset } from '@/types/database';
 
 export default function PresetsPanel({
@@ -24,6 +25,10 @@ export default function PresetsPanel({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<(() => void | Promise<void>) | null>(null);
 
+  // Alert Modal
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
+
   useEffect(()=>{
     supabase.from('presets').select('*').order('sort_order',{ascending:true})
       .then(({data,error})=>{
@@ -33,11 +38,23 @@ export default function PresetsPanel({
   },[]);
 
   async function addPreset(){
-    if(!emoji.trim()){ alert('아이콘은 필수입니다.'); return; }
-    if(!label.trim()){ alert('텍스트는 필수입니다.'); return; }
+    if(!emoji.trim()){
+      setAlertMessage({ title: '입력 오류', message: '아이콘은 필수입니다.' });
+      setAlertOpen(true);
+      return;
+    }
+    if(!label.trim()){
+      setAlertMessage({ title: '입력 오류', message: '텍스트는 필수입니다.' });
+      setAlertOpen(true);
+      return;
+    }
     const payload = { emoji: emoji.trim(), label: label.trim(), sort_order:(presets.at(-1)?.sort_order||0)+10 };
     const { data, error } = await supabase.from('presets').insert(payload).select().single();
-    if(error){ alert(error.message); return; }
+    if(error){
+      setAlertMessage({ title: '프리셋 추가 실패', message: error.message });
+      setAlertOpen(true);
+      return;
+    }
     setPresets(p=>[...p, data as any]);
     setEmoji(''); setLabel(''); setShowAdd(false);
   }
@@ -47,7 +64,8 @@ export default function PresetsPanel({
       try {
         const { error } = await supabase.from('presets').delete().eq('id', id);
         if(error){
-          alert(error.message);
+          setAlertMessage({ title: '프리셋 삭제 실패', message: error.message });
+          setAlertOpen(true);
           return;
         }
         setPresets(p => p.filter(x => x.id !== id));
@@ -108,6 +126,14 @@ export default function PresetsPanel({
         }}
         title="프리셋 삭제"
         message="해당 프리셋을 삭제할까요?"
+      />
+
+      {/* Alert Modal */}
+      <AlertModal
+        open={alertOpen}
+        onClose={() => setAlertOpen(false)}
+        title={alertMessage.title}
+        message={alertMessage.message}
       />
     </div>
   );
