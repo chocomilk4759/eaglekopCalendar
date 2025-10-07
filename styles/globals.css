@@ -375,6 +375,7 @@ a:focus-visible {
   overflow-wrap: anywhere;
   flex: 1;
   width: 100%;
+  color: var(--fg);
 }
 
 /* --- Blue Cell Bundle (칩 + 텍스트) --- */
