@@ -516,13 +516,12 @@ export default function DateInfoModal({
 
   const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
   const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null);
-  const [dropPosition, setDropPosition] = useState<'before' | 'after'>('before');
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [visualOrder, setVisualOrder] = useState<Item[]>([]);
+  const [visualOrderIndices, setVisualOrderIndices] = useState<number[]>([]);
 
-  // note.items가 변경되면 visualOrder 동기화
+  // note.items가 변경되면 visualOrderIndices 초기화
   useEffect(() => {
-    setVisualOrder([...(note.items || [])]);
+    setVisualOrderIndices((note.items || []).map((_, i) => i));
   }, [note.items]);
 
   function onDragStartChip(e:React.DragEvent<HTMLSpanElement>, idx:number){
@@ -565,41 +564,29 @@ export default function DateInfoModal({
     (window as any).__draggedModalChip = null;
     setDraggedChipIndex(null);
     setDropTargetIndex(null);
-    setDropPosition('before');
     setDragPosition(null);
-    // visualOrder를 원본 note.items로 복원
-    setVisualOrder([...(note.items || [])]);
+    // visualOrderIndices를 원본 순서로 복원
+    setVisualOrderIndices((note.items || []).map((_, i) => i));
   }
 
   function onDragOverChip(e: React.DragEvent<HTMLSpanElement>, idx: number) {
-    if (!canEdit || draggedChipIndex === null) return;
+    if (!canEdit || draggedChipIndex === null || draggedChipIndex === idx) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
 
-    // 마우스 위치로 왼쪽/오른쪽 판단
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX;
-    const chipCenterX = rect.left + rect.width / 2;
-    const position = mouseX < chipCenterX ? 'before' : 'after';
-
-    setDropTargetIndex(idx);
-    setDropPosition(position);
-
     // 시각적 순서 실시간 변경 (Chrome 탭 스타일)
-    const newOrder = [...(note.items || [])];
-    const [draggedItem] = newOrder.splice(draggedChipIndex, 1);
+    const currentOrder = [...visualOrderIndices];
+    const draggedPos = currentOrder.indexOf(draggedChipIndex);
+    const targetPos = currentOrder.indexOf(idx);
 
-    let insertIdx = idx;
-    if (draggedChipIndex < idx) {
-      insertIdx = idx - 1;
-    }
+    if (draggedPos === -1 || targetPos === -1) return;
 
-    if (position === 'after') {
-      insertIdx = insertIdx + 1;
-    }
+    // draggedIndex를 제거하고 targetIndex 위치에 삽입
+    currentOrder.splice(draggedPos, 1);
+    currentOrder.splice(targetPos, 0, draggedChipIndex);
 
-    newOrder.splice(insertIdx, 0, draggedItem);
-    setVisualOrder(newOrder);
+    setVisualOrderIndices(currentOrder);
+    setDropTargetIndex(idx);
   }
 
   function onDragLeaveChip() {
@@ -612,27 +599,26 @@ export default function DateInfoModal({
     if (!canEdit || draggedChipIndex === null) {
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDropPosition('before');
       setDragPosition(null);
-      setVisualOrder([...(note.items || [])]);
+      setVisualOrderIndices((note.items || []).map((_, i) => i));
       return;
     }
 
-    // visualOrder의 현재 상태를 DB에 저장
+    // visualOrderIndices를 사용하여 새로운 items 배열 생성
+    const reorderedItems = visualOrderIndices.map(idx => (note.items || [])[idx]).filter(Boolean);
+
     try {
-      await persist({ items: visualOrder });
+      await persist({ items: reorderedItems });
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDropPosition('before');
       setDragPosition(null);
     } catch (e: any) {
       setAlertMessage({ title: '칩 순서 변경 실패', message: e?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
       setAlertOpen(true);
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
-      setDropPosition('before');
       setDragPosition(null);
-      setVisualOrder([...(note.items || [])]);
+      setVisualOrderIndices((note.items || []).map((_, i) => i));
     }
   }
 
@@ -961,19 +947,41 @@ export default function DateInfoModal({
             >＋</button>
           </div>
         ) : (
-          <div className="chips" style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4, position:'relative'}}>
-            {visualOrder.map((it:Item, idx:number)=>{
-              // note.items에서의 원래 인덱스 찾기
-              const originalIdx = note.items?.findIndex(item =>
-                item.emoji === it.emoji &&
-                item.label === it.label &&
-                item.text === it.text &&
-                item.startTime === it.startTime
-              ) ?? idx;
+          <div className="chips"
+               onDragOver={(e) => {
+                 if (draggedChipIndex !== null) {
+                   e.preventDefault();
+                   e.dataTransfer.dropEffect = 'move';
+                 }
+               }}
+               onDrop={(e) => {
+                 if (draggedChipIndex !== null && canEdit) {
+                   e.preventDefault();
+                   // 컨테이너에 드롭하면 현재 visualOrder 그대로 저장
+                   const reorderedItems = visualOrderIndices.map(idx => (note.items || [])[idx]).filter(Boolean);
+                   persist({ items: reorderedItems }).then(() => {
+                     setDraggedChipIndex(null);
+                     setDropTargetIndex(null);
+                     setDragPosition(null);
+                   }).catch((err: any) => {
+                     setAlertMessage({ title: '칩 순서 변경 실패', message: err?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
+                     setAlertOpen(true);
+                     setDraggedChipIndex(null);
+                     setDropTargetIndex(null);
+                     setDragPosition(null);
+                     setVisualOrderIndices((note.items || []).map((_, i) => i));
+                   });
+                 }
+               }}
+               style={{marginBottom:6, display:'flex', flexWrap:'wrap', gap:4, position:'relative'}}>
+            {visualOrderIndices.map((originalIdx:number, visualIdx:number)=>{
+              const it = note.items?.[originalIdx];
+              if (!it) return null;
+
               const isDragging = draggedChipIndex === originalIdx;
 
               return (
-                <span key={`${originalIdx}-${idx}`}
+                <span key={originalIdx}
                       className="chip"
                       title={canEdit ? '더블클릭: 편집, 드래그: 순서 변경 또는 Calendar로 이동/복사' : '보기 전용'}
                       onDoubleClick={()=> { if(!disabled) onDoubleClickChip(originalIdx); }}
@@ -993,7 +1001,7 @@ export default function DateInfoModal({
                         background: 'var(--card)',
                         color:'inherit',
                         cursor: disabled ? 'default' : 'grab',
-                        transition: 'transform 0.2s ease, opacity 0.2s ease',
+                        transition: 'all 0.2s ease',
                       }}>
                   <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                     <span className="chip-emoji">{it.emoji ?? ''}</span>
