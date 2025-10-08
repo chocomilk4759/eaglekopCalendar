@@ -548,11 +548,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     };
   }, [canShowSeven]);
 
-  // 해당 월의 노트 불러오기 (공휴일 데이터 로드 후 실행)
+  // 해당 월의 노트 불러오기 (공휴일 데이터와 병렬 실행)
   useEffect(() => {
-    // 공휴일 데이터 로딩 중이면 대기
-    if (loadingHolidays) return;
-
     let alive = true;
 
     const run = async () => {
@@ -606,7 +603,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       alive = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ymKey, loadingHolidays]);
+  }, [ymKey]);
 
   function shallowEqualObj(a: Record<string,string>, b: Record<string,string>) {
     const ak = Object.keys(a), bk = Object.keys(b);
