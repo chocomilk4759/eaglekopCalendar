@@ -13,6 +13,7 @@ import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
 import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
 import { isMobileDevice } from '@/lib/utils';
+import { getSignedUrl } from '@/lib/imageCache';
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -619,18 +620,35 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
   const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
-// 배경 URL effect 의존성 축소 + setState 최적화 + 캐싱 강화
+// 배경 이미지가 필요한 노트의 키만 추출 (의존성 최적화)
+const bgImageKeys = useMemo(() => {
+  const keys: string[] = [];
+  for (const n of Object.values(notes)) {
+    if (n?.image_url && (n as any)?.use_image_as_bg) {
+      keys.push(`${n.y}-${n.m}-${n.d}`);
+    }
+  }
+  return keys.sort().join(','); // 정렬된 문자열로 변환하여 비교 최적화
+}, [notes]);
+
+// 배경 URL 생성 (의존성 세밀화 + 동적 import 제거)
 useEffect(() => {
+  if (!bgImageKeys) {
+    setBgUrls({});
+    return;
+  }
+
   let cancelled = false;
   (async () => {
-    // 동적 import로 imageCache 로드
-    const { getSignedUrl } = await import('@/lib/imageCache');
-
     const tasks: Array<Promise<[string, string]>> = [];
-    for (const n of Object.values(notes)) {
-      if (!n?.image_url || !(n as any)?.use_image_as_bg) continue;
-      const k = `${n.y}-${n.m}-${n.d}`;
-      const raw = n.image_url!;
+    const keys = bgImageKeys.split(',');
+
+    for (const k of keys) {
+      if (!k) continue;
+      const n = notes[k];
+      if (!n?.image_url) continue;
+
+      const raw = n.image_url;
 
       tasks.push((async () => {
         // HTTP URL이면 그대로 사용 (외부 이미지)
@@ -638,7 +656,6 @@ useEffect(() => {
           const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
           if (m) {
             const bucket = m[1], key = decodeURIComponent(m[2]);
-            // 캐싱된 getSignedUrl 사용
             const url = await getSignedUrl(key, bucket);
             return [k, url || raw] as [string, string];
           }
@@ -665,7 +682,7 @@ useEffect(() => {
     setBgUrls(prev => shallowEqualObj(prev, map) ? prev : map);
   })();
   return () => { cancelled = true; };
-}, [notes, ymKey]);
+}, [bgImageKeys, notes]);
 
   async function prefetchMonth(y: number, m: number) {
     const k = `${y}-${m}`;
