@@ -20,11 +20,18 @@ interface GoogleCalendarResponse {
   items: GoogleCalendarEvent[];
 }
 
+interface CachedHolidays {
+  data: Array<[string, HolidayInfo]>; // Map을 배열로 변환하여 저장
+  exp: number; // 만료 시간 (timestamp)
+}
+
 const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
 const CALENDAR_ID = 'ko.south_korea%23holiday%40group.v.calendar.google.com'; // 한국 공휴일 캘린더
+const CACHE_KEY_PREFIX = 'holiday-cache:';
+const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
 
 /**
- * Google Calendar API를 사용해 한국 공휴일 정보 조회
+ * Google Calendar API를 사용해 한국 공휴일 정보 조회 (localStorage 캐싱 포함)
  * @param year 연도 (4자리)
  * @param month 월 (1-12)
  */
@@ -34,7 +41,27 @@ export async function getHolidays(year: number, month: number): Promise<Map<stri
     return new Map();
   }
 
-  // 해당 월의 시작일과 종료일 계산
+  const cacheKey = `${CACHE_KEY_PREFIX}${year}-${String(month).padStart(2, '0')}`;
+  const now = Date.now();
+
+  // 1) localStorage 캐시 확인
+  try {
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      const parsed: CachedHolidays = JSON.parse(cached);
+      if (parsed.exp > now) {
+        // 캐시 유효 → Map으로 복원하여 반환
+        return new Map(parsed.data);
+      } else {
+        // 만료된 캐시 삭제
+        localStorage.removeItem(cacheKey);
+      }
+    }
+  } catch (error) {
+    console.warn('공휴일 캐시 로드 실패:', error);
+  }
+
+  // 2) API 호출
   const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
   const lastDay = new Date(year, month, 0).getDate();
   const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
@@ -72,6 +99,17 @@ export async function getHolidays(year: number, month: number): Promise<Map<stri
           });
         }
       });
+    }
+
+    // 3) localStorage에 캐시 저장
+    try {
+      const cacheData: CachedHolidays = {
+        data: Array.from(holidayMap.entries()),
+        exp: now + CACHE_TTL_MS
+      };
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('공휴일 캐시 저장 실패:', error);
     }
 
     return holidayMap;
