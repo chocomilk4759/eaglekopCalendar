@@ -1080,18 +1080,7 @@ useEffect(() => {
 
         {/* -------- 우측 컨테이너 (vertical) -------- */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 40%' }}>
-          {/* 우측 상단: 오늘 날짜 크게 */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div
-              style={{
-                fontWeight: 800,
-                fontSize: 'clamp(20px, 4vw, 28px)',
-                color: 'var(--accent)',
-              }}
-            >
-              <span style={{visibility:'hidden'}}>{todayLabel}</span>
-            </div>
-          </div>
+
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
