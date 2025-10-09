@@ -302,6 +302,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const pressKeyRef = useRef<string|null>(null);
   const pulseTimerRef = useRef<number|undefined>(undefined);
 
+  // ----- 칩 롱프레스 드래그 상태 -----
+  const [longReadyChip, setLongReadyChip] = useState<string|null>(null);
+  const chipPressTimerRef = useRef<number|undefined>(undefined);
+  const chipPressKeyRef = useRef<string|null>(null);
+
   // ----- 드래그 중인 데이터 (모바일용 fallback) -----
   const draggedChipDataRef = useRef<any>(null);
   const draggedNoteDataRef = useRef<any>(null);
@@ -341,6 +346,32 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   function onPressEndCell() {
     clearPressTimer();
     setLongReadyKey(null);
+  }
+
+  // ----- 칩 롱프레스 핸들러 -----
+  function clearChipPressTimer() {
+    if (chipPressTimerRef.current) {
+      window.clearTimeout(chipPressTimerRef.current);
+      chipPressTimerRef.current = undefined;
+    }
+    chipPressKeyRef.current = null;
+  }
+
+  function onPressStartChip(chipKey: string) {
+    clearChipPressTimer();
+    chipPressKeyRef.current = chipKey;
+    const isMobile = isMobileDevice();
+    const LONGPRESS_MS = isMobile ? 200 : 350;
+
+    chipPressTimerRef.current = window.setTimeout(() => {
+      setLongReadyChip(chipKey);
+      if (navigator.vibrate) navigator.vibrate(50);
+    }, LONGPRESS_MS);
+  }
+
+  function onPressEndChip() {
+    clearChipPressTimer();
+    setLongReadyChip(null);
   }
 
 
@@ -1277,13 +1308,41 @@ useEffect(() => {
                     // 파란 셀에서 칩을 먼저, 텍스트를 아래에
                     <div className="cell-bundle">
                       <div className="chips">
-                        {note.items.map((it: Item, i: number) => (
+                        {note.items.map((it: Item, i: number) => {
+                          const chipKey = `${k}-${i}`;
+                          return (
                           <span
                             key={i}
                             className="chip"
                             draggable={canEdit}
+                            onMouseDown={(e) => {
+                              if (!canEdit || !c.d) return;
+                              e.stopPropagation();
+                              onPressStartChip(chipKey);
+                            }}
+                            onMouseUp={(e) => {
+                              e.stopPropagation();
+                              onPressEndChip();
+                            }}
+                            onMouseLeave={() => {
+                              onPressEndChip();
+                            }}
+                            onTouchStart={(e) => {
+                              if (!canEdit || !c.d) return;
+                              e.stopPropagation();
+                              onPressStartChip(chipKey);
+                            }}
+                            onTouchEnd={(e) => {
+                              e.stopPropagation();
+                              onPressEndChip();
+                            }}
                             onDragStart={(e) => {
                               if (!canEdit || !c.d) return;
+                              const isMobile = isMobileDevice();
+                              if (!isMobile && longReadyChip !== chipKey) {
+                                e.preventDefault();
+                                return;
+                              }
                               e.stopPropagation();
                               const payload = {
                                 type: 'chip',
@@ -1298,6 +1357,10 @@ useEffect(() => {
                               e.dataTransfer.effectAllowed = 'move';
                               draggedChipDataRef.current = payload;
                             }}
+                            onDragEnd={() => {
+                              onPressEndChip();
+                              draggedChipDataRef.current = null;
+                            }}
                           >
                             <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                               <span className="chip-emoji">{it.emoji ?? ''}</span>
@@ -1305,7 +1368,8 @@ useEffect(() => {
                             </span>
                             <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                           </span>
-                        ))}
+                          );
+                        })}
                       </div>
                       <div className="cell-content-text">{note.content}</div>
                     </div>
@@ -1313,13 +1377,41 @@ useEffect(() => {
                     <div className="cell-content-text">{note!.content}</div>
                   ) : (showChips && note) ? (
                     <div className="chips">
-                      {note!.items.map((it: Item, i: number) => (
+                      {note!.items.map((it: Item, i: number) => {
+                        const chipKey = `${k}-${i}`;
+                        return (
                         <span
                           key={i}
                           className="chip"
                           draggable={canEdit}
+                          onMouseDown={(e) => {
+                            if (!canEdit || !c.d) return;
+                            e.stopPropagation();
+                            onPressStartChip(chipKey);
+                          }}
+                          onMouseUp={(e) => {
+                            e.stopPropagation();
+                            onPressEndChip();
+                          }}
+                          onMouseLeave={() => {
+                            onPressEndChip();
+                          }}
+                          onTouchStart={(e) => {
+                            if (!canEdit || !c.d) return;
+                            e.stopPropagation();
+                            onPressStartChip(chipKey);
+                          }}
+                          onTouchEnd={(e) => {
+                            e.stopPropagation();
+                            onPressEndChip();
+                          }}
                           onDragStart={(e) => {
                             if (!canEdit || !c.d) return;
+                            const isMobile = isMobileDevice();
+                            if (!isMobile && longReadyChip !== chipKey) {
+                              e.preventDefault();
+                              return;
+                            }
                             e.stopPropagation();
                             const payload = {
                               type: 'chip',
@@ -1334,6 +1426,10 @@ useEffect(() => {
                             e.dataTransfer.effectAllowed = 'move';
                             draggedChipDataRef.current = payload;
                           }}
+                          onDragEnd={() => {
+                            onPressEndChip();
+                            draggedChipDataRef.current = null;
+                          }}
                         >
                           <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
                             <span className="chip-emoji">{it.emoji ?? ''}</span>
@@ -1341,7 +1437,8 @@ useEffect(() => {
                           </span>
                           <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
                         </span>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : null}
                 </div>
