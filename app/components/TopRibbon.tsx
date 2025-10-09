@@ -22,97 +22,166 @@ export default function TopRibbon({
   gap?: number;
   minSize?: number;
 }) {
-  // 첫 번째 버튼의 ref로 부모 박스를 관찰(컨테이너 없이 크기 계산)
-  const firstBtnRef = useRef<HTMLButtonElement | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const [btnSize, setBtnSize] = useState<number>(containerHeight ?? 64);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
 
-  // 버튼 개수·간격 기반 가용폭 내 사이즈 계산
+  // 버튼 크기 계산
   const computeSize = () => {
-    const first = firstBtnRef.current;
-    if (!first) return;
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
-    const parent = first.parentElement; // TopRibbon 상위 컨테이너(예: flex 박스)
-    if (!parent) return;
+    const parentW = container.clientWidth;
+    const targetH = containerHeight ?? 64;
 
+    // 모바일(768px 이하)에서는 최소 48px 보장
+    const isMobile = window.innerWidth <= 768;
+    const effectiveMinSize = isMobile ? 48 : minSize;
+
+    // 모든 버튼이 한 줄에 들어갈 수 있는지 계산
     const n = Math.max(1, buttons.length);
-    const parentW = parent.clientWidth;   // 사용 가능한 가로폭
-    const parentH = parent.clientHeight;  // 사용 가능한 세로높이(없으면 0)
-
-    // 목표 높이: 우선 순위 (prop 지정 높이) > (부모 높이) > fallback 48
-    const targetH = Math.max(minSize, (containerHeight ?? (parentH || 64)));
-
-    // 폭 기준 한 버튼 최대 크기(정사각형 가정)
     const maxByWidth = Math.floor((parentW - gap * (n - 1)) / n);
 
-    // 최종 버튼 변 길이
-    const size = Math.max(minSize, Math.min(targetH, maxByWidth));
+    // 최종 크기: 높이와 폭 기준 중 작은 값, 단 최소 크기 이상
+    const size = Math.max(effectiveMinSize, Math.min(targetH, maxByWidth));
     setBtnSize(size);
+  };
+
+  // 스크롤 위치에 따라 좌우 페이드 표시 여부 결정
+  const updateScrollFade = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    setShowLeftFade(scrollLeft > 10);
+    setShowRightFade(scrollLeft < scrollWidth - clientWidth - 10);
   };
 
   useEffect(() => {
     computeSize();
+    updateScrollFade();
 
-    // 부모 크기 변화 관찰
-    const first = firstBtnRef.current;
-    const parent = first?.parentElement || null;
+    const container = scrollContainerRef.current;
+    if (!container) return;
 
+    // ResizeObserver로 컨테이너 크기 변화 감지
     let ro: ResizeObserver | null = null;
-    if (parent && typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(computeSize);
-      ro.observe(parent);
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => {
+        computeSize();
+        updateScrollFade();
+      });
+      ro.observe(container);
     } else {
-      const onResize = () => computeSize();
+      const onResize = () => {
+        computeSize();
+        updateScrollFade();
+      };
       window.addEventListener('resize', onResize);
       return () => window.removeEventListener('resize', onResize);
     }
+
     return () => ro?.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buttons.length, containerHeight, gap, minSize]);
 
   return (
-    <>
-      {/* 선택적 텍스트(별도 컨테이너 없이 바로 노출) */}
-      {extraText && (
-        <span style={{ whiteSpace: 'nowrap', marginRight: gap }}>{extraText}</span>
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: containerHeight ?? 64,
+      }}
+    >
+      {/* 좌측 페이드 그라데이션 */}
+      {showLeftFade && (
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 40,
+            background: 'linear-gradient(to right, var(--bg), transparent)',
+            pointerEvents: 'none',
+            zIndex: 1,
+          }}
+        />
       )}
 
-      {/* 버튼들만 직접 렌더 (컨테이너 없음) */}
-      {buttons.map((b, i) => (
-        <button
-          key={b.id}
-          ref={i === 0 ? firstBtnRef : undefined}
-          title={b.alt}
-          aria-label={b.alt}
-          onClick={() => {
-            if (b.onClick) b.onClick();
-            else if (b.href) window.open(b.href, '_blank', 'noopener,noreferrer');
-          }}
+      {/* 우측 페이드 그라데이션 */}
+      {showRightFade && (
+        <div
           style={{
-            // 정사각형 버튼
-            width: btnSize,
-            height: btnSize,
-            border: 'none',
-            background: 'transparent',
-            padding: 0,
-            borderRadius: 12,
-            // 행 내 간격 (부모가 flex든 inline 흐름이든 동작)
-            marginRight: i < buttons.length - 1 ? gap : 0,
+            position: 'absolute',
+            right: 0,
+            top: 0,
+            bottom: 0,
+            width: 40,
+            background: 'linear-gradient(to left, var(--bg), transparent)',
+            pointerEvents: 'none',
+            zIndex: 1,
           }}
-        >
-          <img
-            src={b.src}
-            alt={b.alt || ''}
-            style={{
-              display: 'block',
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              borderRadius: 12,
-              boxShadow: '0 2px 6px rgba(0,0,0,.08)',
+        />
+      )}
+
+      {/* 스크롤 컨테이너 */}
+      <div
+        ref={scrollContainerRef}
+        onScroll={updateScrollFade}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap,
+          overflowX: 'auto',
+          overflowY: 'hidden',
+          height: '100%',
+          scrollbarWidth: 'thin',
+          WebkitOverflowScrolling: 'touch',
+        }}
+        className="top-ribbon-scroll"
+      >
+        {/* 선택적 텍스트 */}
+        {extraText && (
+          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{extraText}</span>
+        )}
+
+        {/* 버튼들 */}
+        {buttons.map((b, i) => (
+          <button
+            key={b.id}
+            title={b.alt}
+            aria-label={b.alt}
+            onClick={() => {
+              if (b.onClick) b.onClick();
+              else if (b.href) window.open(b.href, '_blank', 'noopener,noreferrer');
             }}
-          />
-        </button>
-      ))}
-    </>
+            style={{
+              width: btnSize,
+              height: btnSize,
+              flexShrink: 0,
+              border: 'none',
+              background: 'transparent',
+              padding: 0,
+              borderRadius: 12,
+            }}
+          >
+            <img
+              src={b.src}
+              alt={b.alt || ''}
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                borderRadius: 12,
+                boxShadow: '0 2px 6px rgba(0,0,0,.08)',
+              }}
+            />
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }

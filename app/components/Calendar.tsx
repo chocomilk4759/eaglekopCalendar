@@ -1097,9 +1097,8 @@ useEffect(() => {
           <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
             <TopRibbon
               buttons={ribbonButtons}
-              containerHeight={64}          // ★ 고정 높이 전달(컴포넌트가 지원)
+              containerHeight={64}
               gap={10}
-              key={canShowSeven ? 'wide' : 'narrow'}  // ★ 상태가 바뀔 때 리마운트
             />
           </div>
         </div>
