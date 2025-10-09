@@ -1079,17 +1079,12 @@ useEffect(() => {
         </div>
 
         {/* -------- 우측 컨테이너 (vertical) -------- */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 40%' }}>
-
-
-          {/* 우측 하단: Ribbon Buttons (horizontal) */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
-            <TopRibbon
-              buttons={ribbonButtons}
-              containerHeight={64}
-              gap={10}
-            />
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
+          <TopRibbon
+            buttons={ribbonButtons}
+            containerHeight={64}
+            gap={10}
+          />
         </div>
       </div>
       {/* ==================== /상단 컨테이너 ==================== */}
