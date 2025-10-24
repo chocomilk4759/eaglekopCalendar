@@ -32,6 +32,7 @@ export default function UnscheduledModal({
   const [chipModalMode, setChipModalMode] = useState<ModifyChipMode>('add');
   const [chipModalPreset, setChipModalPreset] = useState<ChipPreset>({ emoji: '', label: '' });
   const [chipEditIndex, setChipEditIndex] = useState<number | null>(null);
+  const [chipModalText, setChipModalText] = useState<string>('');
   const [chipModalStartTime, setChipModalStartTime] = useState<string>('');
   const [chipModalNextDay, setChipModalNextDay] = useState<boolean>(false);
 
@@ -184,6 +185,7 @@ export default function UnscheduledModal({
     setChipModalPreset({ emoji: '', label: '' });
     setChipModalMode('add');
     setChipEditIndex(null);
+    setChipModalText('');
     setChipModalStartTime('');
     setChipModalNextDay(false);
     setChipModalOpen(true);
@@ -196,6 +198,7 @@ export default function UnscheduledModal({
     setChipModalPreset({ emoji: cur.emoji ?? '', label: cur.label });
     setChipModalMode('edit');
     setChipEditIndex(idx);
+    setChipModalText(cur.text ?? '');
     setChipModalStartTime(cur.startTime ?? '');
     setChipModalNextDay(cur.nextDay ?? false);
     setChipModalOpen(true);
@@ -502,19 +505,19 @@ export default function UnscheduledModal({
         onClose={() => setChipModalOpen(false)}
         mode={chipModalMode}
         preset={chipModalPreset}
-        onApply={chipModalMode === 'add' ? applyAddChip : applyEditChip}
+        initialText={chipModalText}
+        initialStartTime={chipModalStartTime}
+        initialNextDay={chipModalNextDay}
+        onSave={chipModalMode === 'add' ? applyAddChip : applyEditChip}
         onDelete={deleteChip}
-        startTime={chipModalStartTime}
-        nextDay={chipModalNextDay}
-        onStartTimeChange={setChipModalStartTime}
-        onNextDayChange={setChipModalNextDay}
+        canEdit={canEdit}
       />
 
       {/* ConfirmModal (Chip 삭제) */}
       <ConfirmModal
         open={confirmChipDeleteOpen}
         onClose={() => setConfirmChipDeleteOpen(false)}
-        onConfirm={confirmChipDeleteAction}
+        onConfirm={confirmChipDeleteAction ?? (() => {})}
         title="칩 삭제"
         message="이 칩을 삭제하시겠습니까?"
       />
