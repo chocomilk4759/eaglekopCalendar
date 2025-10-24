@@ -1,7 +1,7 @@
 'use client';
 
 import { createClient } from '@/lib/supabaseClient';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Item } from '@/types/note';
 import type { Preset as DbPreset } from '@/types/database';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
@@ -28,7 +28,7 @@ export default function UnscheduledModal({
   canEdit: boolean;
   onChipMovedFromCalendar?: (sourceY: number, sourceM: number, sourceD: number, chipIndex: number) => Promise<void>;
 }) {
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   const [items, setItems] = useState<Item[]>([]);
   const [recordId, setRecordId] = useState<number | null>(null);
@@ -71,6 +71,8 @@ export default function UnscheduledModal({
   useEffect(() => {
     if (!open) return;
 
+    let cancelled = false;
+
     async function loadData() {
       try {
         const { data, error } = await supabase
@@ -79,29 +81,19 @@ export default function UnscheduledModal({
           .limit(1)
           .maybeSingle();
 
+        if (cancelled) return;
         if (error) throw error;
 
         if (data) {
           setRecordId(data.id);
           setItems(Array.isArray(data.items) ? data.items : []);
         } else {
-          // 레코드가 없으면 생성
-          if (canEdit) {
-            const { data: newData, error: insertError } = await supabase
-              .from('undated_items')
-              .insert({ items: [] })
-              .select()
-              .single();
-
-            if (insertError) throw insertError;
-            setRecordId(newData.id);
-            setItems([]);
-          } else {
-            setRecordId(null);
-            setItems([]);
-          }
+          // 레코드가 없으면 초기화만 (실제 저장은 하지 않음)
+          setRecordId(null);
+          setItems([]);
         }
       } catch (e: any) {
+        if (cancelled) return;
         setAlertMessage({ title: '데이터 로드 실패', message: e?.message ?? '데이터 로드 중 오류가 발생했습니다.' });
         setAlertOpen(true);
       }
@@ -119,7 +111,11 @@ export default function UnscheduledModal({
     const y = Math.max(12, Math.floor((vh - modalHeight) / 2));
     setPos({ x, y });
     setSize({ w: modalWidth, h: modalHeight });
-  }, [open, canEdit, supabase]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, canEdit]);
 
   // ── 포커스 관리 ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -194,14 +190,16 @@ export default function UnscheduledModal({
 
   // ── DB 저장 ──────────────────────────────────────────────────────────
   async function persist(newItems: Item[]): Promise<void> {
-    if (!recordId) throw new Error('레코드 ID가 없습니다.');
-
-    const { error } = await supabase
+    // upsert를 사용하여 레코드가 없으면 생성, 있으면 업데이트
+    const payload = { id: recordId || 1, items: newItems };
+    const { data, error } = await supabase
       .from('undated_items')
-      .update({ items: newItems })
-      .eq('id', recordId);
+      .upsert(payload, { onConflict: 'id' })
+      .select()
+      .single();
 
     if (error) throw new Error(error.message);
+    setRecordId(data.id);
     setItems(newItems);
   }
 
@@ -270,8 +268,8 @@ export default function UnscheduledModal({
     setChipModalOpen(true);
   }
 
-  async function applyAddChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset) {
-    if (!canEdit) return;
+  async function applyAddChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
+    if(!canEdit) return;
     const base = overridePreset ?? chipModalPreset;
     const newItem: Item = {
       emoji: base.emoji ?? null,
@@ -279,43 +277,41 @@ export default function UnscheduledModal({
       text: text || undefined,
       emojiOnly: !text,
       startTime: startTime || undefined,
-      nextDay: nextDay || undefined,
+      nextDay: nextDay || undefined
     };
     const newItems = [...items, newItem];
-    try {
-      await persist(newItems);
-    } catch (e: any) {
+    try{ await persist(newItems); }
+    catch(e:any){
       setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
   }
 
-  async function applyEditChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset) {
-    if (!canEdit || chipEditIndex == null) return;
+  async function applyEditChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
+    if(!canEdit || chipEditIndex==null) return;
     const newItems = [...items];
-    const cur = newItems[chipEditIndex];
-    if (!cur) return;
+    const cur = newItems[chipEditIndex]; if(!cur) return;
     newItems[chipEditIndex] = {
       ...cur,
       text: text || undefined,
       emojiOnly: !text,
-      emoji: overridePreset?.emoji !== undefined ? (overridePreset?.emoji ?? null) : cur.emoji,
+      emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji,
       startTime: startTime || undefined,
-      nextDay: nextDay || undefined,
+      nextDay: nextDay || undefined
     };
-    try {
-      await persist(newItems);
-    } catch (e: any) {
+    try{ await persist(newItems); }
+    catch(e:any){
       setAlertMessage({ title: '아이템 수정 실패', message: e?.message ?? '아이템 수정 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
   }
 
-  async function deleteChip() {
-    if (!canEdit || chipEditIndex == null) return;
+  async function deleteChip(){
+    if(!canEdit || chipEditIndex==null) return;
 
+    // ConfirmModal 사용
     setConfirmChipDeleteAction(() => async () => {
       const newItems = [...items];
       newItems.splice(chipEditIndex, 1);
@@ -323,7 +319,7 @@ export default function UnscheduledModal({
         await persist(newItems);
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
-      } catch (e: any) {
+      } catch(e: any) {
         setAlertMessage({ title: '아이템 삭제 실패', message: e?.message ?? '아이템 삭제 중 오류가 발생했습니다.' });
         setAlertOpen(true);
       }
