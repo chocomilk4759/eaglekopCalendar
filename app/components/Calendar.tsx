@@ -1105,7 +1105,7 @@ useEffect(() => {
               ◀
             </button>
 
-            <strong style={{ fontSize: canShowSeven ? 18 : 16, flex: 1, textAlign: 'center' }}>{monthLabel}</strong>
+            <strong style={{ fontSize: canShowSeven ? 18 : 16, minWidth: 120, maxWidth: 200, textAlign: 'center' }}>{monthLabel}</strong>
 
             <button
               onMouseEnter={() => {
@@ -1126,7 +1126,7 @@ useEffect(() => {
               value={jump}
               onChange={(e) => setJump(e.target.value)}
               aria-label="날짜 선택"
-              style={{ flex: canShowSeven ? '0 0 auto' : '1 1 120px', minWidth: 120 }}
+              style={{ flex: canShowSeven ? '0 0 auto' : '1 1 120px', minWidth: 120, maxWidth: 180 }}
             />
             <button
               onMouseEnter={() => {
