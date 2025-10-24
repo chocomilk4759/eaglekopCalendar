@@ -21,10 +21,12 @@ export default function UnscheduledModal({
   open,
   onClose,
   canEdit,
+  onChipMovedFromCalendar,
 }: {
   open: boolean;
   onClose: () => void;
   canEdit: boolean;
+  onChipMovedFromCalendar?: (sourceY: number, sourceM: number, sourceD: number, chipIndex: number) => Promise<void>;
 }) {
   const supabase = createClient();
 
@@ -388,10 +390,16 @@ export default function UnscheduledModal({
 
     try {
       await persist(newItems);
-      setAlertMessage({ title: '칩 추가 완료', message: '미정 일정에 추가되었습니다.' });
+
+      // Calendar 셀에서 온 경우 원본 삭제
+      if ((payload.sourceType === 'cell' || payload.sourceType === 'modal') && payload.sourceDate && onChipMovedFromCalendar) {
+        await onChipMovedFromCalendar(payload.sourceDate.y, payload.sourceDate.m, payload.sourceDate.d, payload.chipIndex);
+      }
+
+      setAlertMessage({ title: '칩 이동 완료', message: '미정 일정으로 이동되었습니다.' });
       setAlertOpen(true);
     } catch (e: any) {
-      setAlertMessage({ title: '칩 추가 실패', message: e?.message ?? '칩 추가 중 오류가 발생했습니다.' });
+      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '칩 이동 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
 
@@ -468,78 +476,79 @@ export default function UnscheduledModal({
           <h3 style={{ margin: 0 }}>미정 일정</h3>
         </div>
 
-        {/* + 버튼 영역 */}
-        <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)' }}>
-          <button
-            onClick={onClickAddChip}
-            disabled={disabled}
-            style={{
-              fontSize: '24px',
-              width: '48px',
-              height: '48px',
-              borderRadius: '50%',
-              border: '2px solid var(--border)',
-              background: 'var(--bg)',
-              cursor: disabled ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-            }}
-            aria-label="칩 추가"
-          >
-            +
-          </button>
-
-          {/* 프리셋 콤보박스 */}
-          {comboOpen && presets && (
-            <div
-              className="combo-panel"
+        {/* + 버튼 영역 (편집 가능할 때만 표시) */}
+        {canEdit && (
+          <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)' }}>
+            <button
+              onClick={onClickAddChip}
               style={{
-                position: 'absolute',
-                top: '100%',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                marginTop: '4px',
+                fontSize: '24px',
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
+                border: '2px solid var(--border)',
                 background: 'var(--bg)',
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                zIndex: 100,
-                maxHeight: '300px',
-                overflowY: 'auto',
-                minWidth: '200px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
               }}
+              aria-label="칩 추가"
             >
-              {presets.map((p, i) => (
-                <button
-                  key={i}
-                  onClick={() => selectPresetAndOpenModal(p)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    padding: '8px 12px',
-                    width: '100%',
-                    border: 'none',
-                    background: 'transparent',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    fontSize: '14px',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <span style={{ fontSize: '18px' }}>{p.emoji}</span>
-                  <span>{p.label}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+              +
+            </button>
+
+            {/* 프리셋 콤보박스 */}
+            {comboOpen && presets && (
+              <div
+                className="combo-panel"
+                style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  marginTop: '4px',
+                  background: 'var(--bg)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  zIndex: 100,
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  minWidth: '200px',
+                }}
+              >
+                {presets.map((p, i) => (
+                  <button
+                    key={i}
+                    onClick={() => selectPresetAndOpenModal(p)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '8px 12px',
+                      width: '100%',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      fontSize: '14px',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
+                    <span style={{ fontSize: '18px' }}>{p.emoji}</span>
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Chip 목록 영역 */}
         <div

@@ -916,6 +916,27 @@ useEffect(() => {
     setPendingChipDrop(null);
   }
 
+  // UnscheduledModal로 칩 이동 시 원본 삭제
+  async function handleChipMovedToUnscheduled(sourceY: number, sourceM: number, sourceD: number, chipIndex: number) {
+    const sourceKey = cellKey(sourceY, sourceM, sourceD);
+    const sourceNote = notes[sourceKey];
+    if (!sourceNote) return;
+
+    const sourceItems = [...(sourceNote.items || [])];
+    sourceItems.splice(chipIndex, 1);
+
+    try {
+      await upsertNote({ ...sourceNote, items: sourceItems });
+      setNotes(prev => ({
+        ...prev,
+        [sourceKey]: { ...sourceNote, items: sourceItems },
+      }));
+    } catch (e: any) {
+      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '원본 칩 삭제 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
+  }
+
   // 월 그리드 생성 (최적화: 의존성 최소화)
   const dim = useMemo(() => daysInMonth(ym.y, ym.m), [ym.y, ym.m]);
   const start = useMemo(() => startWeekday(ym.y, ym.m), [ym.y, ym.m]);
@@ -1578,6 +1599,7 @@ useEffect(() => {
         open={unscheduledModalOpen}
         onClose={() => setUnscheduledModalOpen(false)}
         canEdit={canEdit}
+        onChipMovedFromCalendar={handleChipMovedToUnscheduled}
       />
 
       {/* ── 칩 이동/복사 선택 모달 ── */}
