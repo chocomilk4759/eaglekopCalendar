@@ -1141,7 +1141,7 @@ useEffect(() => {
                 title="미정 일정"
                 aria-label="미정 일정"
               >
-                미정
+                ?
               </button>
             </div>
           </div>
