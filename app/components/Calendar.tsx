@@ -90,6 +90,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [presetToAdd, setPresetToAdd] = useState<{ emoji: string; label: string } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [unscheduledModalOpen, setUnscheduledModalOpen] = useState(false);
+  const [refreshUnscheduledTrigger, setRefreshUnscheduledTrigger] = useState(0);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
   // ---- SWR 캐시 & 로딩 상태
@@ -853,6 +854,9 @@ useEffect(() => {
             .eq('id', data.id);
 
           if (updateError) throw updateError;
+
+          // UnscheduledModal 갱신 트리거
+          setRefreshUnscheduledTrigger(prev => prev + 1);
         }
       } else {
         // Calendar 셀 또는 DateInfoModal에서 온 경우: notes 테이블에서 삭제
@@ -1600,6 +1604,7 @@ useEffect(() => {
         onClose={() => setUnscheduledModalOpen(false)}
         canEdit={canEdit}
         onChipMovedFromCalendar={handleChipMovedToUnscheduled}
+        refreshTrigger={refreshUnscheduledTrigger}
       />
 
       {/* ── 칩 이동/복사 선택 모달 ── */}

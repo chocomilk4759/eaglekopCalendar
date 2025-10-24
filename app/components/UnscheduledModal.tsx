@@ -22,11 +22,13 @@ export default function UnscheduledModal({
   onClose,
   canEdit,
   onChipMovedFromCalendar,
+  refreshTrigger,
 }: {
   open: boolean;
   onClose: () => void;
   canEdit: boolean;
   onChipMovedFromCalendar?: (sourceY: number, sourceM: number, sourceD: number, chipIndex: number) => Promise<void>;
+  refreshTrigger?: number;
 }) {
   const supabase = useMemo(() => createClient(), []);
 
@@ -68,6 +70,8 @@ export default function UnscheduledModal({
   const modalRef = useRef<HTMLDivElement>(null);
 
   // ── 데이터 로드 ──────────────────────────────────────────────────────────
+  const loadDataRef = useRef<() => Promise<void>>();
+
   useEffect(() => {
     if (!open) return;
 
@@ -99,6 +103,7 @@ export default function UnscheduledModal({
       }
     }
 
+    loadDataRef.current = loadData;
     loadData();
 
     // 중앙 배치 (모바일 대응)
@@ -116,6 +121,13 @@ export default function UnscheduledModal({
       cancelled = true;
     };
   }, [open, canEdit]);
+
+  // ── 외부에서 갱신 요청이 왔을 때 데이터 다시 로드 ──────────────────────
+  useEffect(() => {
+    if (open && refreshTrigger !== undefined && refreshTrigger > 0 && loadDataRef.current) {
+      loadDataRef.current();
+    }
+  }, [refreshTrigger, open]);
 
   // ── 포커스 관리 ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -560,14 +572,6 @@ export default function UnscheduledModal({
             </div>
           ) : (
             items.map((item, idx) => {
-              const displayText = item.emojiOnly
-                ? item.emoji || item.label
-                : `${item.emoji ?? ''} ${item.text ?? item.label}`.trim();
-              const hasTime = item.startTime;
-              const finalDisplay = hasTime
-                ? `${displayText} ${item.startTime}${item.nextDay ? '+1' : ''}`
-                : displayText;
-
               return (
                 <span
                   key={idx}
@@ -576,18 +580,31 @@ export default function UnscheduledModal({
                   onDragStart={(e) => onDragStartChip(e, idx)}
                   onDragEnd={onDragEndChip}
                   onDoubleClick={() => onDoubleClickChip(idx)}
+                  title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동' : '보기 전용'}
                   style={{
-                    padding: '6px 12px',
-                    borderRadius: '16px',
-                    background: 'var(--chip-bg)',
-                    color: 'var(--chip-text)',
-                    fontSize: '14px',
-                    cursor: canEdit ? 'pointer' : 'default',
-                    whiteSpace: 'nowrap',
-                    opacity: draggedChipIndex === idx ? 0.5 : 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    border: '1px solid var(--border)',
+                    borderRadius: 999,
+                    padding: '4px 10px',
+                    fontSize: 12,
+                    background: 'var(--card)',
+                    color: 'inherit',
+                    cursor: canEdit ? 'grab' : 'default',
+                    opacity: draggedChipIndex === idx ? 0.4 : 1,
                   }}
                 >
-                  {finalDisplay}
+                  <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                    <span className="chip-emoji">{item.emoji ?? ''}</span>
+                    {item.startTime && (
+                      <span className="chip-time" style={{ fontSize: 11, opacity: 0.7 }}>
+                        {item.startTime}{item.nextDay ? '+1' : ''}
+                      </span>
+                    )}
+                  </span>
+                  <span className="chip-text">{item.text?.length ? item.text : item.label}</span>
                 </span>
               );
             })
