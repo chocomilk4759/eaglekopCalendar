@@ -1075,8 +1075,8 @@ useEffect(() => {
         <div
           style={{
             display: 'flex',
-            flexDirection: canShowSeven ? 'column' : 'row',
-            gap: 10,
+            flexDirection: 'column',
+            gap: 8,
             minWidth: 360,
             flex: '1 1 60%'
           }}>
@@ -1089,22 +1089,23 @@ useEffect(() => {
               height={40}
               style={{ borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
             />
-            <h2 style={{ margin: 0 }}>이글콥의 스케쥴표</h2>
+            <h2 style={{ margin: 0, fontSize: canShowSeven ? '1.5rem' : '1.2rem' }}>이글콥의 스케쥴표</h2>
           </div>
 
-          {/* 좌측 하단: ◀ 월 텍스트 ▶ | 날짜 선택 + 이동 (horizontal) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          {/* 좌측 중단: ◀ 월 텍스트 ▶ (horizontal) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onMouseEnter={() => {
                 const p = prevOf(ym);
                 prefetchMonth(p.y, p.m);
               }}
               onClick={() => setYM(prevOf(ym))}
+              style={{ minWidth: 32 }}
             >
               ◀
             </button>
 
-            <strong style={{ fontSize: 18 }}>{monthLabel}</strong>
+            <strong style={{ fontSize: canShowSeven ? 18 : 16, flex: 1, textAlign: 'center' }}>{monthLabel}</strong>
 
             <button
               onMouseEnter={() => {
@@ -1112,38 +1113,49 @@ useEffect(() => {
                 prefetchMonth(n.y, n.m);
               }}
               onClick={() => setYM(nextOf(ym))}
+              style={{ minWidth: 32 }}
             >
               ▶
             </button>
+          </div>
 
-            <div className="jump" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap' }}>
-              <input type="date" value={jump} onChange={(e) => setJump(e.target.value)} aria-label="날짜 선택" />
-              <button
-                onMouseEnter={() => {
-                  const d = new Date(jump);
-                  if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
-                }}
-                onClick={jumpGo}
-                title="이동"
-                aria-label="이동"
-              >
-                ➜
-              </button>
-              <button
-                onClick={() => setSearchOpen(true)}
-                title="검색 (Ctrl+F)"
-                aria-label="검색"
-              >
-                🔍
-              </button>
-              <button
-                onClick={() => setUnscheduledModalOpen(true)}
-                title="미정 일정"
-                aria-label="미정 일정"
-              >
-                ?
-              </button>
-            </div>
+          {/* 좌측 하단: 날짜 선택 + 이동 + 검색 + 미정 일정 (horizontal) */}
+          <div className="jump" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+            <input
+              type="date"
+              value={jump}
+              onChange={(e) => setJump(e.target.value)}
+              aria-label="날짜 선택"
+              style={{ flex: canShowSeven ? '0 0 auto' : '1 1 120px', minWidth: 120 }}
+            />
+            <button
+              onMouseEnter={() => {
+                const d = new Date(jump);
+                if (!Number.isNaN(d.getTime())) prefetchMonth(d.getFullYear(), d.getMonth());
+              }}
+              onClick={jumpGo}
+              title="이동"
+              aria-label="이동"
+              style={{ minWidth: 32 }}
+            >
+              ➜
+            </button>
+            <button
+              onClick={() => setSearchOpen(true)}
+              title="검색 (Ctrl+F)"
+              aria-label="검색"
+              style={{ minWidth: 32 }}
+            >
+              🔍
+            </button>
+            <button
+              onClick={() => setUnscheduledModalOpen(true)}
+              title="미정 일정"
+              aria-label="미정 일정"
+              style={{ minWidth: 32 }}
+            >
+              ?
+            </button>
           </div>
         </div>
 
