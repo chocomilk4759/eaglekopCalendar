@@ -432,37 +432,38 @@ export default function UnscheduledModal({
   if (!open) return null;
 
   return (
-    <div
-      className="modal"
-      onClick={onClose}
-      style={{
-        pointerEvents: 'none',
-      }}
-    >
+    <>
       <div
-        ref={(el) => {
-          if (el) {
-            (sheetRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-            (modalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-          }
-        }}
-        className="sheet modal-draggable"
+        className="modal"
+        onClick={onClose}
         style={{
-          position: 'absolute',
-          left: pos.x,
-          top: pos.y,
-          width: size.w,
-          height: size.h,
-          minWidth: 420,
-          minHeight: 320,
-          maxWidth: 800,
-          maxHeight: 800,
-          resize: 'both',
-          overflow: 'auto',
-          pointerEvents: 'auto',
+          pointerEvents: 'none',
         }}
-        onClick={(e) => e.stopPropagation()}
       >
+        <div
+          ref={(el) => {
+            if (el) {
+              (sheetRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+              (modalRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+            }
+          }}
+          className="sheet modal-draggable"
+          style={{
+            position: 'absolute',
+            left: pos.x,
+            top: pos.y,
+            width: size.w,
+            height: size.h,
+            minWidth: 420,
+            minHeight: 320,
+            maxWidth: 800,
+            maxHeight: 800,
+            resize: 'both',
+            overflow: 'auto',
+            pointerEvents: 'auto',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
         {/* 상단(드래그 핸들) */}
         <div
           className="date-head drag-handle"
@@ -609,6 +610,7 @@ export default function UnscheduledModal({
             닫기
           </button>
         </div>
+        </div>
       </div>
 
       {/* ModifyChipInfoModal */}
@@ -641,6 +643,6 @@ export default function UnscheduledModal({
         title={alertMessage.title}
         message={alertMessage.message}
       />
-    </div>
+    </>
   );
 }
