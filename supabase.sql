@@ -25,8 +25,18 @@ create table public.presets (
   updated_by uuid null,
   constraint presets_pkey primary key (id)
 ) TABLESPACE pg_default;
+
+create table public.undated_items (
+  id bigserial not null,
+  items jsonb not null default '[]'::jsonb,
+  updated_at timestamp with time zone not null default now(),
+  updated_by uuid null,
+  constraint undated_items_pkey primary key (id)
+) TABLESPACE pg_default;
+
 alter table public.notes enable row level security;
 alter table public.presets enable row level security;
+alter table public.undated_items enable row level security;
 
 -- ✅ 여기서부터 정책을 "드롭 후 생성" 방식으로 적용
 
@@ -64,6 +74,24 @@ create policy presets_update_auth on public.presets
 
 drop policy if exists presets_delete_auth on public.presets;
 create policy presets_delete_auth on public.presets
+  for delete using (auth.role() = 'authenticated');
+
+-- undated_items (read)
+drop policy if exists undated_items_read_all on public.undated_items;
+create policy undated_items_read_all on public.undated_items
+  for select using (true);
+
+-- undated_items (write/update/delete) - 로그인 사용자만 허용
+drop policy if exists undated_items_write_auth on public.undated_items;
+create policy undated_items_write_auth on public.undated_items
+  for insert with check (auth.role() = 'authenticated');
+
+drop policy if exists undated_items_update_auth on public.undated_items;
+create policy undated_items_update_auth on public.undated_items
+  for update using (auth.role() = 'authenticated');
+
+drop policy if exists undated_items_delete_auth on public.undated_items;
+create policy undated_items_delete_auth on public.undated_items
   for delete using (auth.role() = 'authenticated');
 
 INSERT INTO "public"."presets" ("id", "emoji", "label", "sort_order", "updated_at", "updated_by") VALUES ('1', '📢', '공지사항·중대발표', '10', '2025-08-26 09:31:25.72677+00', null), ('2', '🔔', '알림', '20', '2025-08-26 09:31:25.72677+00', null), ('3', '⚽', '축구 입중계 일정', '30', '2025-08-26 09:31:25.72677+00', null), ('4', '⚾', '야구 입중계 일정', '40', '2025-08-26 09:31:25.72677+00', null), ('5', '🏁', 'F1 입중계 일정', '50', '2025-08-26 09:31:25.72677+00', null), ('6', '🥎', '촌지', '60', '2025-08-26 09:31:25.72677+00', null), ('7', '🏆', '대회', '70', '2025-08-26 09:31:25.72677+00', null), ('8', '🎮', '게임', '80', '2025-08-26 09:31:25.72677+00', null), ('9', '📺', '같이보기', '90', '2025-08-26 09:31:25.72677+00', null), ('10', '🤼‍♂️', '합방', '100', '2025-08-26 09:31:25.72677+00', null), ('12', '👄', '저챗노가리', '110', '2025-08-26 12:31:43.70673+00', null), ('13', '🍚', '광고', '120', '2025-08-26 14:15:40.257751+00', null), ('14', '🎤', '노래방', '130', '2025-08-26 14:20:09.918876+00', null);

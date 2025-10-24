@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
 import SearchModal from './SearchModal';
+import UnscheduledModal from './UnscheduledModal';
 import ChipActionModal from './ChipActionModal';
 import NoteActionModal from './NoteActionModal';
 import AlertModal from './AlertModal';
@@ -88,6 +89,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [modalDate, setModalDate] = useState<{ y: number; m: number; d: number } | null>(null);
   const [presetToAdd, setPresetToAdd] = useState<{ emoji: string; label: string } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [unscheduledModalOpen, setUnscheduledModalOpen] = useState(false);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
   // ---- SWR 캐시 & 로딩 상태
@@ -142,12 +144,12 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     targetY: number;
     targetM: number;
     targetD: number;
-    sourceY: number;
-    sourceM: number;
-    sourceD: number;
+    sourceY?: number;
+    sourceM?: number;
+    sourceD?: number;
     chipIndex: number;
     item: Item;
-    sourceType: 'modal' | 'cell';
+    sourceType: 'modal' | 'cell' | 'unscheduled';
   } | null>(null);
 
   // 노트 복사 액션 모달 상태
@@ -793,8 +795,8 @@ useEffect(() => {
 
     const { sourceDate, chipIndex, item, sourceType } = payload;
 
-    // 동일 날짜로 드롭하면 무시
-    if (sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
+    // 동일 날짜로 드롭하면 무시 (unscheduled 제외)
+    if (sourceType !== 'unscheduled' && sourceDate && sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
       return;
     }
 
@@ -803,9 +805,9 @@ useEffect(() => {
       targetY,
       targetM,
       targetD,
-      sourceY: sourceDate.y,
-      sourceM: sourceDate.m,
-      sourceD: sourceDate.d,
+      sourceY: sourceDate?.y,
+      sourceM: sourceDate?.m,
+      sourceD: sourceDate?.d,
       chipIndex,
       item,
       sourceType,
@@ -816,7 +818,7 @@ useEffect(() => {
   // 칩 이동 (원본 삭제)
   async function moveChip() {
     if (!pendingChipDrop) return;
-    const { targetY, targetM, targetD, sourceY, sourceM, sourceD, chipIndex, item } = pendingChipDrop;
+    const { targetY, targetM, targetD, sourceY, sourceM, sourceD, chipIndex, item, sourceType } = pendingChipDrop;
 
     // 1) 대상 날짜에 칩 추가
     const targetKey = cellKey(targetY, targetM, targetD);
@@ -825,25 +827,60 @@ useEffect(() => {
     });
     const targetItems = [...(targetNote.items || []), item];
 
-    // 2) 원본 날짜에서 칩 제거
-    const sourceKey = cellKey(sourceY, sourceM, sourceD);
-    const sourceNote = notes[sourceKey];
-    if (!sourceNote) return;
-    const sourceItems = [...(sourceNote.items || [])];
-    sourceItems.splice(chipIndex, 1);
-
     try {
       // 대상 저장
       await upsertNote({ ...targetNote, items: targetItems });
-      // 원본 저장
-      await upsertNote({ ...sourceNote, items: sourceItems });
 
-      // 상태 업데이트
-      setNotes(prev => ({
-        ...prev,
-        [targetKey]: { ...targetNote, items: targetItems },
-        [sourceKey]: { ...sourceNote, items: sourceItems },
-      }));
+      // 2) 원본에서 칩 제거
+      if (sourceType === 'unscheduled') {
+        // UnscheduledModal에서 온 경우: undated_items 테이블에서 삭제
+        const { data, error } = await supabase
+          .from('undated_items')
+          .select('*')
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          const currentItems = Array.isArray(data.items) ? data.items : [];
+          const newItems = [...currentItems];
+          newItems.splice(chipIndex, 1);
+
+          const { error: updateError } = await supabase
+            .from('undated_items')
+            .update({ items: newItems })
+            .eq('id', data.id);
+
+          if (updateError) throw updateError;
+        }
+      } else {
+        // Calendar 셀 또는 DateInfoModal에서 온 경우: notes 테이블에서 삭제
+        if (sourceY === undefined || sourceM === undefined || sourceD === undefined) return;
+        const sourceKey = cellKey(sourceY, sourceM, sourceD);
+        const sourceNote = notes[sourceKey];
+        if (!sourceNote) return;
+        const sourceItems = [...(sourceNote.items || [])];
+        sourceItems.splice(chipIndex, 1);
+
+        // 원본 저장
+        await upsertNote({ ...sourceNote, items: sourceItems });
+
+        // 상태 업데이트
+        setNotes(prev => ({
+          ...prev,
+          [targetKey]: { ...targetNote, items: targetItems },
+          [sourceKey]: { ...sourceNote, items: sourceItems },
+        }));
+      }
+
+      // sourceType이 'unscheduled'인 경우에도 대상 상태는 업데이트
+      if (sourceType === 'unscheduled') {
+        setNotes(prev => ({
+          ...prev,
+          [targetKey]: { ...targetNote, items: targetItems },
+        }));
+      }
     } catch (e: any) {
       setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '칩 이동 중 오류가 발생했습니다.' });
       setAlertOpen(true);
@@ -1074,6 +1111,17 @@ useEffect(() => {
               >
                 🔍
               </button>
+              <button
+                onClick={() => setUnscheduledModalOpen(true)}
+                title="미정 일정"
+                aria-label="미정 일정"
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                }}
+              >
+                U
+              </button>
             </div>
           </div>
         </div>
@@ -1242,6 +1290,13 @@ useEffect(() => {
                       const payload = (window as any).__draggedModalChip;
                       dropChip(c.y, c.m, c.d, JSON.stringify(payload));
                       (window as any).__draggedModalChip = null;
+                      return;
+                    }
+                    // UnscheduledModal에서 chip 드래그
+                    else if ((window as any).__draggedUnscheduledChip) {
+                      const payload = (window as any).__draggedUnscheduledChip;
+                      dropChip(c.y, c.m, c.d, JSON.stringify(payload));
+                      (window as any).__draggedUnscheduledChip = null;
                       return;
                     }
                   }
@@ -1520,6 +1575,13 @@ useEffect(() => {
           }
           openInfo(y, m, d);
         }}
+      />
+
+      {/* ── 미정 일정 모달 ── */}
+      <UnscheduledModal
+        open={unscheduledModalOpen}
+        onClose={() => setUnscheduledModalOpen(false)}
+        canEdit={canEdit}
       />
 
       {/* ── 칩 이동/복사 선택 모달 ── */}
