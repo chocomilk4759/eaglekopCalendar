@@ -1115,10 +1115,6 @@ useEffect(() => {
                 onClick={() => setUnscheduledModalOpen(true)}
                 title="미정 일정"
                 aria-label="미정 일정"
-                style={{
-                  fontWeight: 'bold',
-                  fontSize: '14px',
-                }}
               >
                 U
               </button>

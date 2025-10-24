@@ -3,9 +3,12 @@
 import { createClient } from '@/lib/supabaseClient';
 import { useEffect, useRef, useState } from 'react';
 import type { Item } from '@/types/note';
+import type { Preset as DbPreset } from '@/types/database';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
+
+type Preset = Pick<DbPreset, 'emoji' | 'label'>;
 
 interface UndatedItems {
   id: number;
@@ -41,6 +44,11 @@ export default function UnscheduledModal({
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
+
+  // ── 프리셋 선택 상태 ──────────────────────────────────────────────────
+  const [comboOpen, setComboOpen] = useState(false);
+  const [presets, setPresets] = useState<Preset[] | null>(null);
+  const loadingPresetsRef = useRef(false);
 
   // ── Drag & Drop 상태 ──────────────────────────────────────────────────
   const [draggedChipIndex, setDraggedChipIndex] = useState<number | null>(null);
@@ -126,8 +134,24 @@ export default function UnscheduledModal({
         previousFocusRef.current.focus();
       }
       previousFocusRef.current = null;
+      setComboOpen(false);
     }
   }, [open]);
+
+  // ── 콤보박스 외부 클릭 시 닫기 ──────────────────────────────────────────
+  useEffect(() => {
+    if (!comboOpen) return;
+
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.combo-panel') && !target.closest('button[aria-label="칩 추가"]')) {
+        setComboOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [comboOpen]);
 
   // Focus trap: Escape 키로 닫기
   useEffect(() => {
@@ -179,15 +203,55 @@ export default function UnscheduledModal({
     setItems(newItems);
   }
 
+  // ── 프리셋 로드 ──────────────────────────────────────────────────────────
+  async function ensurePresets() {
+    if (presets || loadingPresetsRef.current) return;
+    loadingPresetsRef.current = true;
+    try {
+      const { data, error } = await supabase.from('presets').select('emoji,label');
+      if (!error && data && Array.isArray(data) && data.length) {
+        setPresets(data.map((r: any) => ({ emoji: r.emoji, label: String(r.label ?? '') })));
+      } else {
+        setPresets([
+          { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
+          { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
+          { emoji: '🏁', label: 'F1' }, { emoji: '🥎', label: '촌지' },
+          { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
+          { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
+          { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
+          { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
+        ]);
+      }
+    } catch {
+      setPresets([
+        { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
+        { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
+        { emoji: '🏁', label: 'F1' }, { emoji: '🥎', label: '촌지' },
+        { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
+        { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
+        { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
+        { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
+      ]);
+    } finally {
+      loadingPresetsRef.current = false;
+    }
+  }
+
   // ── Chip 추가/편집/삭제 ──────────────────────────────────────────────────
   function onClickAddChip() {
     if (!canEdit) return;
-    setChipModalPreset({ emoji: '', label: '' });
+    void ensurePresets();
+    setComboOpen(true);
+  }
+
+  function selectPresetAndOpenModal(p: Preset) {
+    setChipModalPreset({ emoji: p.emoji ?? '', label: p.label });
     setChipModalMode('add');
     setChipEditIndex(null);
     setChipModalText('');
     setChipModalStartTime('');
     setChipModalNextDay(false);
+    setComboOpen(false);
     setChipModalOpen(true);
   }
 
@@ -399,13 +463,13 @@ export default function UnscheduledModal({
         <div
           className="date-head drag-handle"
           onMouseDown={onDragDown}
-          style={{ cursor: 'move', userSelect: 'none', padding: '16px', borderBottom: '1px solid var(--border)' }}
+          style={{ cursor: 'move', userSelect: 'none', padding: '16px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}
         >
-          <h3 style={{ margin: 0, textAlign: 'center' }}>미정</h3>
+          <h3 style={{ margin: 0 }}>미정 일정</h3>
         </div>
 
         {/* + 버튼 영역 */}
-        <div style={{ padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
+        <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)' }}>
           <button
             onClick={onClickAddChip}
             disabled={disabled}
@@ -420,11 +484,61 @@ export default function UnscheduledModal({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              position: 'absolute',
+              left: '50%',
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
             }}
             aria-label="칩 추가"
           >
             +
           </button>
+
+          {/* 프리셋 콤보박스 */}
+          {comboOpen && presets && (
+            <div
+              className="combo-panel"
+              style={{
+                position: 'absolute',
+                top: '100%',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                marginTop: '4px',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                zIndex: 100,
+                maxHeight: '300px',
+                overflowY: 'auto',
+                minWidth: '200px',
+              }}
+            >
+              {presets.map((p, i) => (
+                <button
+                  key={i}
+                  onClick={() => selectPresetAndOpenModal(p)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 12px',
+                    width: '100%',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    fontSize: '14px',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                >
+                  <span style={{ fontSize: '18px' }}>{p.emoji}</span>
+                  <span>{p.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Chip 목록 영역 */}
