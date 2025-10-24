@@ -472,30 +472,23 @@ export default function UnscheduledModal({
           <h3 style={{ margin: 0 }}>미정 일정</h3>
         </div>
 
-        {/* + 버튼 영역 (편집 가능할 때만 표시) */}
+        {/* 미정 일정 추가 버튼 영역 (편집 가능할 때만 표시) */}
         {canEdit && (
-          <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
             <button
               onClick={onClickAddChip}
               style={{
-                fontSize: '24px',
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                border: '2px solid var(--border)',
-                background: 'var(--bg)',
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: '1px solid var(--border)',
+                background: 'var(--button-bg)',
+                color: 'var(--button-text)',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: 'translate(-50%, -50%)',
+                fontSize: '14px',
               }}
               aria-label="칩 추가"
             >
-              +
+              미정 일정 추가
             </button>
 
             {/* 프리셋 콤보박스 */}
