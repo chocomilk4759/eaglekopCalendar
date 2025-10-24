@@ -260,40 +260,77 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // 일괄 칩 추가
-  function applyBulkAddChip(text: string, startTime: string, nextDay: boolean, preset?: ChipPreset){
+  async function applyBulkAddChip(text: string, startTime: string, nextDay: boolean, preset?: ChipPreset){
     const targets = bulkTargets.slice();
     if (!targets.length){ setBulkOpen(false); return; }
-    setNotes(prev => {
-      const next = { ...prev };
-      for (const t of targets){
-        const k = `${t.y}-${t.m}-${t.d}`;
-        const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
-        const items = Array.isArray((n as any).items) ? [ ...(n as any).items ] : [];
-        items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined, nextDay: nextDay || undefined });
-        (n as any).items = items;
-        next[k] = n as any;
-      }
-      return next;
-    });
+
+    // 먼저 로컬 상태 업데이트
+    const updatedNotes: Note[] = [];
+    for (const t of targets){
+      const k = `${t.y}-${t.m}-${t.d}`;
+      const existing = notes[k];
+      const n = existing ? { ...existing } : normalizeNote({ y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null });
+      const items = Array.isArray(n.items) ? [ ...n.items ] : [];
+      items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined, nextDay: nextDay || undefined });
+      const updated = normalizeNote({ ...n, items });
+      updatedNotes.push(updated);
+    }
+
+    // DB에 저장 (병렬 처리)
+    try {
+      const savePromises = updatedNotes.map(note => upsertNote(note));
+      const savedNotes = await Promise.all(savePromises);
+
+      // 로컬 상태 업데이트
+      setNotes(prev => {
+        const next = { ...prev };
+        for (const saved of savedNotes) {
+          next[cellKey(saved.y, saved.m, saved.d)] = saved;
+        }
+        return next;
+      });
+    } catch (e: any) {
+      setAlertMessage({ title: '일괄 저장 실패', message: e?.message ?? '일괄 칩 추가 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
+
     setBulkOpen(false);
     setBulkTargets([]);
   }
   
   // ★ Ctrl 일괄: '휴방' 적용(기존 휴방 로직과 동일하게 content='휴방', color='red')
-  function applyBulkRest(){
+  async function applyBulkRest(){
     const targets = bulkTargets.slice();
     if (!targets.length){ setBulkOpen(false); return; }
-    setNotes(prev => {
-      const next = { ...prev };
-      for (const t of targets){
-        const k = `${t.y}-${t.m}-${t.d}`;
-        const n = next[k] ? { ...next[k] } : { y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null };
-        (n as any).content = '휴방';
-        (n as any).color = 'red';
-        next[k] = n as any;
-      }
-      return next;
-    });
+
+    // 로컬 상태로 업데이트할 노트 준비
+    const updatedNotes: Note[] = [];
+    for (const t of targets){
+      const k = `${t.y}-${t.m}-${t.d}`;
+      const existing = notes[k];
+      const n = existing ? { ...existing } : normalizeNote({ y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null });
+      const updated = normalizeNote({ ...n, content: '휴방', color: 'red' as const });
+      updatedNotes.push(updated);
+    }
+
+    // DB에 저장 (병렬 처리)
+    try {
+      const savePromises = updatedNotes.map(note => upsertNote(note));
+      const savedNotes = await Promise.all(savePromises);
+
+      // 로컬 상태 업데이트
+      setNotes(prev => {
+        const next = { ...prev };
+        for (const saved of savedNotes) {
+          next[cellKey(saved.y, saved.m, saved.d)] = saved;
+        }
+        return next;
+      });
+    } catch (e: any) {
+      setAlertMessage({ title: '휴방 설정 실패', message: e?.message ?? '일괄 휴방 설정 중 오류가 발생했습니다.' });
+      setAlertOpen(true);
+    }
+
     setBulkOpen(false);
     setBulkTargets([]);
   }
