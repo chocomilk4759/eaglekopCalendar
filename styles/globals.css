@@ -419,6 +419,7 @@ a:focus-visible {
   width: 100%;
   align-items: center;
   text-align: center;
+  transform: translateY(calc(-1 * var(--cell-top-h) / 2));
 }
 
 .cell.flag-blue .cell-bundle .chips {
