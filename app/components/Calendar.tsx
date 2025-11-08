@@ -1227,7 +1227,7 @@ useEffect(() => {
           )}
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }} className="top-ribbon-reset">
             <TopRibbon
               buttons={ribbonButtons}
               containerHeight={64}
