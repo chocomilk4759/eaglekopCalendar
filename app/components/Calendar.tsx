@@ -592,15 +592,28 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setPendingNoteDrop(null);
   }
 
-  // grid 너비와 gap로 7칸 가능 여부 계산 (셀 최소폭 160px 기준)
+  // grid 너비와 gap로 7칸 가능 여부 계산 (CSS 변수 --cell-min-w 기준)
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
     const ro = new ResizeObserver(() => {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
+
+      // CSS 변수에서 동적으로 최소 너비 읽기
+      const rootStyles = getComputedStyle(document.documentElement);
+      const cellMinWStr = rootStyles.getPropertyValue('--cell-min-w').trim();
+      // clamp()의 현재 계산된 값을 얻기 위해 임시 요소 사용
+      const tempDiv = document.createElement('div');
+      tempDiv.style.width = cellMinWStr;
+      tempDiv.style.position = 'absolute';
+      tempDiv.style.visibility = 'hidden';
+      document.body.appendChild(tempDiv);
+      const cellMinWidth = parseFloat(getComputedStyle(tempDiv).width) || 140;
+      document.body.removeChild(tempDiv);
+
       const width = el.clientWidth;
-      const cols = Math.floor((width + gap) / (140 + gap));
+      const cols = Math.floor((width + gap) / (cellMinWidth + gap));
       setCanShowSeven(cols >= 7);
     });
     ro.observe(el);
