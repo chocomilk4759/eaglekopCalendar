@@ -373,6 +373,11 @@ a:focus-visible {
 
 .cell.flag-red .cell-content-text,
 .cell.flag-blue .cell-content-text {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   color: #fff;
   font-weight: 800;
   font-size: clamp(18px, 2.6vw, 30px);
