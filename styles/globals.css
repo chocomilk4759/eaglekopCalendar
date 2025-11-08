@@ -37,6 +37,9 @@
   --font-chip: clamp(13px, 0.85vw, 15px);
   --font-title: clamp(13px, 0.9vw, 16px);
 
+  /* Cell-top 높이 (FHD 기준 24px) */
+  --cell-top-h: clamp(22px, 1.6vw, 28px);
+
   /* 프리셋 도크 */
   --dock-width-expanded: 240px;
   --dock-top: 104px;
@@ -256,7 +259,6 @@ a:focus-visible {
 }
 
 .calendar-grid .cell-top {
-  --cell-top-h: 22px;
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -1126,6 +1128,7 @@ a:focus-visible {
     --cell-min-w: clamp(120px, 28vw, 180px);
     --cell-h: clamp(144px, max(33.6vw, 20vh), 216px); /* 1:1.2 비율, vh/vw 중 큰 값 사용 */
     --grid-gap: clamp(8px, 2vw, 12px);
+    --cell-top-h: clamp(20px, 4vw, 24px);
   }
 
   /* 터치 타겟 크기 증가 */
