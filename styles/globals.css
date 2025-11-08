@@ -25,7 +25,7 @@
 
   /* 캘린더 셀 크기 (Viewport 기반 스케일링) */
   --cell-min-w: clamp(140px, 10vw, 220px);
-  --cell-h: clamp(154px, 11vw, 242px); /* 1:1.1 비율 (너비의 1.1배) */
+  --cell-h: clamp(154px, max(11vw, 13vh), 280px); /* 1:1.1 비율, vh/vw 중 큰 값 사용 */
   --cell-min-h: 160px;
   --cell-max-h: clamp(240px, 18vh, 360px);
 
@@ -1102,7 +1102,7 @@ a:focus-visible {
 @media (max-width: 768px) {
   :root {
     --cell-min-w: clamp(120px, 28vw, 180px);
-    --cell-h: clamp(132px, 30.8vw, 198px); /* 1:1.1 비율 (120px×1.1=132px, 180px×1.1=198px) */
+    --cell-h: clamp(132px, max(30.8vw, 18vh), 198px); /* 1:1.1 비율, vh/vw 중 큰 값 사용 */
     --grid-gap: clamp(8px, 2vw, 12px);
   }
 
@@ -1227,7 +1227,7 @@ a:focus-visible {
 /* --- 16:9 디스플레이 최적화 (세로 공간 활용) --- */
 @media (aspect-ratio: 16/9) {
   :root {
-    --cell-h: clamp(154px, 11vw, 242px); /* 1:1.1 비율 유지 */
+    --cell-h: clamp(154px, max(11vw, 14vh), 300px); /* 1:1.1 비율 유지 */
   }
 }
 
