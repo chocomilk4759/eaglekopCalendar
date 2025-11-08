@@ -399,6 +399,11 @@ a:focus-visible {
   justify-content: center;
 }
 
+/* Blue flag 텍스트 완전 중앙 정렬 */
+.cell.flag-blue .cell-content.has-text .cell-content-text {
+  transform: translateY(calc(-1 * var(--cell-top-h) / 2));
+}
+
 /* --- Blue Cell Bundle (칩 + 텍스트) --- */
 .cell.flag-blue .cell-bundle {
   display: flex;
