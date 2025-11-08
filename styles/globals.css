@@ -24,8 +24,8 @@
   --flagBlue: #4C88DB;
 
   /* 캘린더 셀 크기 (Viewport 기반 스케일링) */
-  --cell-min-w: clamp(220px, 10vw, 220px);
-  --cell-h: clamp(264px, max(12vw, 15vh), 308px); /* 1:1.2 비율, vh/vw 중 큰 값 사용 */
+  --cell-min-w: clamp(170px, 10vw, 220px);
+  --cell-h: clamp(204px, max(12vw, 15vh), 308px); /* 1:1.2 비율, vh/vw 중 큰 값 사용 */
   --cell-min-h: 160px;
   --cell-max-h: clamp(240px, 18vh, 360px);
 
