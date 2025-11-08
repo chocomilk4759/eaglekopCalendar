@@ -137,7 +137,6 @@ export default function TopRibbon({
           overflowX: 'auto',
           overflowY: 'hidden',
           height: '100%',
-          paddingBottom: 8,
         }}
         className="top-ribbon-scroll"
       >
