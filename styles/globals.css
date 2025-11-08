@@ -1085,37 +1085,47 @@ a:focus-visible {
 
 /* --- Top Ribbon Scroll --- */
 .top-ribbon-scroll {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, .2) transparent;
+  scrollbar-width: thin !important;
+  scrollbar-color: rgba(0, 0, 0, .6) transparent !important;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: scroll !important;
 }
 
 .top-ribbon-scroll::-webkit-scrollbar {
-  height: 6px;
+  height: 10px !important;
+  -webkit-appearance: none;
 }
 
 .top-ribbon-scroll::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(0, 0, 0, .05) !important;
+  border-radius: 5px;
 }
 
 .top-ribbon-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, .2);
-  border-radius: 3px;
+  background: rgba(0, 0, 0, .6) !important;
+  border-radius: 5px;
+  border: 1px solid rgba(0, 0, 0, .1);
 }
 
 .top-ribbon-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, .3);
+  background: rgba(0, 0, 0, .8) !important;
 }
 
 [data-theme="dark"] .top-ribbon-scroll {
-  scrollbar-color: rgba(255, 255, 255, .3) transparent;
+  scrollbar-color: rgba(255, 255, 255, .6) transparent !important;
+}
+
+[data-theme="dark"] .top-ribbon-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .05) !important;
 }
 
 [data-theme="dark"] .top-ribbon-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, .3);
+  background: rgba(255, 255, 255, .6) !important;
+  border: 1px solid rgba(255, 255, 255, .1);
 }
 
 [data-theme="dark"] .top-ribbon-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, .4);
+  background: rgba(255, 255, 255, .8) !important;
 }
 
 
