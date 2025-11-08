@@ -139,6 +139,7 @@ export default function TopRibbon({
           height: '100%',
           scrollbarWidth: 'thin',
           WebkitOverflowScrolling: 'touch',
+          paddingBottom: 8,
         }}
         className="top-ribbon-scroll"
       >
