@@ -1210,7 +1210,7 @@ useEffect(() => {
         </div>
 
         {/* -------- 우측 컨테이너 (vertical) -------- */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: '0 0 40%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, flex: '0 0 40%' }}>
           {/* 우측 상단: Spacer (wide 화면에서만 top ribbon 위치 조정용) */}
           {canShowSeven && (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
