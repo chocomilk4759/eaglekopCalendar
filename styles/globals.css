@@ -1137,6 +1137,11 @@ a:focus-visible {
     padding: 6px 10px;
     min-height: 36px;
   }
+
+  /* Top Ribbon 전체 너비 */
+  .top-ribbon-reset {
+    width: 100% !important;
+  }
 }
 
 /* --- Mobile Chips Scroll --- */
