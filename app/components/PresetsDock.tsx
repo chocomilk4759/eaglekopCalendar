@@ -57,13 +57,13 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
       data-collapsed={collapsed ? '1' : '0'}
       role="complementary"
       aria-label="프리셋 도크"
-      aria-expanded={!collapsed}
     >
       <div className="dock-toggle-wrap">
         <button
           type="button"
           className="dock-toggle"
           aria-label={collapsed ? '프리셋 펼치기' : '프리셋 접기'}
+          aria-expanded={!collapsed}
           title={collapsed ? '펼치기' : '접기'}
           onClick={() => setCollapsed(v => !v)}
         >

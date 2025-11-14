@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
@@ -1163,12 +1164,13 @@ useEffect(() => {
           }}>
           {/* 좌측 상단: 아이콘 + 텍스트 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img
+            <Image
               src="/images/channel-profile.png"
               alt="채널 프로필"
               width={40}
               height={40}
               style={{ borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
+              priority
             />
             <h2 style={{ margin: 0, fontSize: canShowSeven ? '1.5rem' : '1.2rem' }}>이글콥의 스케쥴표</h2>
           </div>

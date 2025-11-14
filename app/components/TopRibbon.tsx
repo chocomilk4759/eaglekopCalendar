@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 
 type RibbonButton = {
   id: string;
@@ -165,15 +166,16 @@ export default function TopRibbon({
               background: 'transparent',
               padding: 0,
               borderRadius: 12,
+              position: 'relative',
+              overflow: 'hidden',
             }}
           >
-            <img
+            <Image
               src={b.src}
               alt={b.alt || ''}
+              fill
+              sizes={`${btnSize}px`}
               style={{
-                display: 'block',
-                width: '100%',
-                height: '100%',
                 objectFit: 'cover',
                 borderRadius: 12,
                 boxShadow: '0 2px 6px rgba(0,0,0,.08)',
