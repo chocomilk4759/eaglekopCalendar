@@ -51,7 +51,7 @@ export default function AuthButton() {
       alive = false;
       sub.subscription?.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
   // ─────────────────────────────────────────────────────────────
   // 3) 핸들러들
@@ -81,7 +81,7 @@ export default function AuthButton() {
     setPwInput('');
     setOpen(false);
     setEditMode(false);
-  }, [idInput, pwInput, loginDomain, supabase]);
+  }, [idInput, pwInput, loginDomain]);
 
   const handleLogout = useCallback(async () => {
     const { error } = await supabase.auth.signOut();
@@ -95,7 +95,7 @@ export default function AuthButton() {
     setCurrPw('');
     setNewPw('');
     setNewPw2('');
-  }, [supabase]);
+  }, []);
 
   const handleChangePassword = useCallback(async () => {
     if (!email) {
@@ -140,7 +140,7 @@ export default function AuthButton() {
     setCurrPw('');
     setNewPw('');
     setNewPw2('');
-  }, [email, currPw, newPw, newPw2, supabase]);
+  }, [email, currPw, newPw, newPw2]);
 
   // ─────────────────────────────────────────────────────────────
   // 4) 렌더

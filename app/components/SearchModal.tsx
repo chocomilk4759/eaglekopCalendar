@@ -87,7 +87,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     })();
 
     return () => { cancelled = true; };
-  }, [supabase]);
+  }, []);
 
   const performSearch = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
@@ -222,7 +222,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
         setLoading(false);
       }
     }
-  }, [supabase, replacements]);
+  }, [replacements]);
 
   useEffect(() => {
     if (open) {

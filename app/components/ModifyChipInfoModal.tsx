@@ -111,7 +111,7 @@ export default function ModifyChipInfoModal({
         { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
       ]);
     }
-  }, [options.length, supabase]);
+  }, [options.length]);
 
   // 모달이 닫히면 콤보도 닫기
   useEffect(() => {

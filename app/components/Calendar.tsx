@@ -503,7 +503,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   async function upsertNote(note: Note) {
-    const payload = normalizeNote(note);
+    const payload = normalizeNote(note) as unknown as Record<string, unknown>;
     const { data, error } = await supabase
       .from('notes')
       .upsert(payload, { onConflict: 'y,m,d' })
@@ -929,7 +929,7 @@ useEffect(() => {
           const { error: updateError } = await supabase
             .from('undated_items')
             .update({ items: newItems })
-            .eq('id', data.id);
+            .eq('id', (data as any).id);
 
           if (updateError) throw updateError;
 

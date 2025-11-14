@@ -144,7 +144,7 @@ export default function DateInfoModal({
       });
     })();
     return () => { cancelled = true; };
-  }, [imageUrl, supabase]);
+  }, [imageUrl]);
 
   // ── 모달 열릴 때 초기화 + 중앙 배치 + 초기 크기 규칙(요구사항) ────────────
   useEffect(()=>{
@@ -266,7 +266,7 @@ export default function DateInfoModal({
   }
 
   async function persist(upd: Partial<Note> & Record<string, any>): Promise<Note> {
-    const payload = normalizeNote({ ...note, ...upd, y: date.y, m: date.m, d: date.d });
+    const payload = normalizeNote({ ...note, ...upd, y: date.y, m: date.m, d: date.d }) as unknown as Record<string, unknown>;
     const { data, error } = await supabase
       .from('notes')
       .upsert(payload, { onConflict: 'y,m,d' })
