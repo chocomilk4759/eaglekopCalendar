@@ -55,11 +55,26 @@ export interface NoteItem {
   nextDay?: boolean; // 다음날 새벽 시간인 경우 true
 }
 
+// Supabase 에러 타입
+export interface SupabaseError {
+  message: string;
+  code?: string;
+  details?: string;
+  hint?: string;
+}
+
 // Supabase 응답 타입
 export interface SupabaseResponse<T> {
   data: T | null;
-  error: {
-    message: string;
-    details?: string;
-  } | null;
+  error: SupabaseError | null;
+}
+
+// Cookie 옵션 타입 (Supabase SSR 용)
+export interface CookieOptions {
+  maxAge?: number;
+  path?: string;
+  domain?: string;
+  secure?: boolean;
+  httpOnly?: boolean;
+  sameSite?: 'lax' | 'strict' | 'none';
 }

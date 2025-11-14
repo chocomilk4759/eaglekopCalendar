@@ -72,7 +72,7 @@ export function setItemTime(
  * - undefined를 모두 제거 (null로 강제)
  * - color는 red/blue 외 값이면 null
  */
-export function normalizeNote(row: Partial<Note> & Record<string, any>): Note {
+export function normalizeNote(row: Partial<Note> | (Partial<Note> & Record<string, unknown>)): Note {
   return {
     id: row.id ?? undefined,
     y: row.y ?? 0,

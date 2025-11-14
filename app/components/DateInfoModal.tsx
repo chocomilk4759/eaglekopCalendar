@@ -79,7 +79,7 @@ export default function DateInfoModal({
   const [note, setNote] = useState<Note>(initial || emptyNote);
   const [memo, setMemo] = useState(note.content || '');
   const [initialMemo, setInitialMemo] = useState(note.content || '');
-  const [titleInput, setTitleInput] = useState<string>((note as any)?.title ?? '');
+  const [titleInput, setTitleInput] = useState<string>(note.title ?? '');
   const isRest = useMemo(
     () => note.color === 'red' && (note.content?.trim() === '휴방'),
     [note]
@@ -92,7 +92,7 @@ export default function DateInfoModal({
   const [displayImageUrl, setDisplayImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const [useImageAsBg, setUseImageAsBg] = useState<boolean>(!!(note as any)?.use_image_as_bg);
+  const [useImageAsBg, setUseImageAsBg] = useState<boolean>(!!note.use_image_as_bg);
 
   const [comboOpen, setComboOpen] = useState(false);
   const [chipModalOpen, setChipModalOpen] = useState(false);
@@ -155,11 +155,11 @@ export default function DateInfoModal({
     setNote(base);
     setMemo(base.content || '');
     setInitialMemo(base.content || '');
-    setTitleInput(((base as any)?.title ?? '') as string);
+    setTitleInput(base.title ?? '');
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
     setDisplayImageUrl(null);
-    setUseImageAsBg(!!(base as any)?.use_image_as_bg);
+    setUseImageAsBg(!!base.use_image_as_bg);
     setLinkPanelOpen(false);
     setComboOpen(false);
 

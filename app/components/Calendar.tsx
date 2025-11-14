@@ -57,7 +57,7 @@ function safeUrl(raw: string | null | undefined): string | null
 }
 
 function lsKey(y:number, m:number) { return `cal:${y}-${m}`; }
-function loadMonthLS(y:number, m:number): any[] | null
+function loadMonthLS(y:number, m:number): unknown[] | null
 {
   try {
     const raw = localStorage.getItem(lsKey(y,m));
@@ -65,7 +65,7 @@ function loadMonthLS(y:number, m:number): any[] | null
     return Array.isArray(arr) ? arr : null;
   } catch { return null; }
 }
-function saveMonthLS(y:number, m:number, rows:any[]){ 
+function saveMonthLS(y:number, m:number, rows:unknown[]){
   try { localStorage.setItem(lsKey(y,m), JSON.stringify(rows||[])); } catch {}
 }
 function normMonth(y:number, m:number){ 
@@ -289,8 +289,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
         return next;
       });
-    } catch (e: any) {
-      setAlertMessage({ title: '일괄 저장 실패', message: e?.message ?? '일괄 칩 추가 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '일괄 칩 추가 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '일괄 저장 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -326,8 +327,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
         return next;
       });
-    } catch (e: any) {
-      setAlertMessage({ title: '휴방 설정 실패', message: e?.message ?? '일괄 휴방 설정 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '일괄 휴방 설정 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '휴방 설정 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -515,8 +517,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       try {
         const saved = await upsertNote(finalNote);
         setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
-      } catch (e:any) {
-        setAlertMessage({ title: '복제 저장 실패', message: e?.message ?? '복제 저장 중 오류가 발생했습니다.' });
+      } catch (e) {
+        const errorMessage = e instanceof Error ? e.message : '복제 저장 중 오류가 발생했습니다.';
+        setAlertMessage({ title: '복제 저장 실패', message: errorMessage });
         setAlertOpen(true);
       }
     }
@@ -531,8 +534,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     try {
       const saved = await upsertNote(finalNote);
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
-    } catch (e:any) {
-      setAlertMessage({ title: '덮어쓰기 실패', message: e?.message ?? '덮어쓰기 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '덮어쓰기 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '덮어쓰기 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -549,8 +553,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     try {
       const saved = await upsertNote(finalNote);
       setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
-    } catch (e:any) {
-      setAlertMessage({ title: '합치기 실패', message: e?.message ?? '합치기 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '합치기 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '합치기 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -583,8 +588,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         next[targetKey] = saved; // 대상 설정
         return next;
       });
-    } catch (e:any) {
-      setAlertMessage({ title: '이동 실패', message: e?.message ?? '이동 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '이동 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '이동 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -935,8 +941,9 @@ useEffect(() => {
           [targetKey]: { ...targetNote, items: targetItems },
         }));
       }
-    } catch (e: any) {
-      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '칩 이동 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '칩 이동 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '칩 이동 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -961,8 +968,9 @@ useEffect(() => {
         ...prev,
         [targetKey]: { ...targetNote, items: targetItems },
       }));
-    } catch (e: any) {
-      setAlertMessage({ title: '칩 복사 실패', message: e?.message ?? '칩 복사 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '칩 복사 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '칩 복사 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
@@ -985,8 +993,9 @@ useEffect(() => {
         ...prev,
         [sourceKey]: { ...sourceNote, items: sourceItems },
       }));
-    } catch (e: any) {
-      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '원본 칩 삭제 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '원본 칩 삭제 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '칩 이동 실패', message: errorMessage });
       setAlertOpen(true);
     }
   }

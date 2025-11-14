@@ -96,9 +96,10 @@ export default function UnscheduledModal({
           setRecordId(null);
           setItems([]);
         }
-      } catch (e: any) {
+      } catch (e) {
         if (cancelled) return;
-        setAlertMessage({ title: '데이터 로드 실패', message: e?.message ?? '데이터 로드 중 오류가 발생했습니다.' });
+        const errorMessage = e instanceof Error ? e.message : '데이터 로드 중 오류가 발생했습니다.';
+        setAlertMessage({ title: '데이터 로드 실패', message: errorMessage });
         setAlertOpen(true);
       }
     }
@@ -222,7 +223,7 @@ export default function UnscheduledModal({
     try {
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
-        setPresets(data.map((r: any) => ({ emoji: r.emoji, label: String(r.label ?? '') })));
+        setPresets(data.map((r) => ({ emoji: r.emoji, label: String(r.label ?? '') })));
       } else {
         setPresets([
           { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
@@ -293,8 +294,9 @@ export default function UnscheduledModal({
     };
     const newItems = [...items, newItem];
     try{ await persist(newItems); }
-    catch(e:any){
-      setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
+    catch(e){
+      const errorMessage = e instanceof Error ? e.message : '아이템 추가 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '아이템 추가 실패', message: errorMessage });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
@@ -313,8 +315,9 @@ export default function UnscheduledModal({
       nextDay: nextDay || undefined
     };
     try{ await persist(newItems); }
-    catch(e:any){
-      setAlertMessage({ title: '아이템 수정 실패', message: e?.message ?? '아이템 수정 중 오류가 발생했습니다.' });
+    catch(e){
+      const errorMessage = e instanceof Error ? e.message : '아이템 수정 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '아이템 수정 실패', message: errorMessage });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
@@ -331,8 +334,9 @@ export default function UnscheduledModal({
         await persist(newItems);
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
-      } catch(e: any) {
-        setAlertMessage({ title: '아이템 삭제 실패', message: e?.message ?? '아이템 삭제 중 오류가 발생했습니다.' });
+      } catch(e) {
+        const errorMessage = e instanceof Error ? e.message : '아이템 삭제 중 오류가 발생했습니다.';
+        setAlertMessage({ title: '아이템 삭제 실패', message: errorMessage });
         setAlertOpen(true);
       }
     });
@@ -406,8 +410,9 @@ export default function UnscheduledModal({
 
       setAlertMessage({ title: '칩 이동 완료', message: '미정 일정으로 이동되었습니다.' });
       setAlertOpen(true);
-    } catch (e: any) {
-      setAlertMessage({ title: '칩 이동 실패', message: e?.message ?? '칩 이동 중 오류가 발생했습니다.' });
+    } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : '칩 이동 중 오류가 발생했습니다.';
+      setAlertMessage({ title: '칩 이동 실패', message: errorMessage });
       setAlertOpen(true);
     }
 
