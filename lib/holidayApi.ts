@@ -1,5 +1,7 @@
 // 한국 공휴일 API (서버 사이드 프록시 사용)
 
+import { safeSetItem } from './localStorageUtils';
+
 export interface HolidayInfo {
   dateName: string; // 공휴일명
   date: string; // YYYY-MM-DD 형식
@@ -71,7 +73,7 @@ export async function getHolidays(
         data: Array.from(holidayMap.entries()),
         exp: now + CACHE_TTL_MS,
       };
-      localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+      safeSetItem(cacheKey, JSON.stringify(cacheData));
     } catch (error) {
       console.warn('공휴일 캐시 저장 실패:', error);
     }

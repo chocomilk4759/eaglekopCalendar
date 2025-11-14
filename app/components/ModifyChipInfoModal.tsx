@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import TimePickerModal from './TimePickerModal';
 import AlertModal from './AlertModal';
@@ -85,6 +85,35 @@ export default function ModifyChipInfoModal({
     onSave(text.trim(), normalized ?? '', nextDay, localPreset);
   }
 
+  // 프리셋 옵션 로드 함수 (useCallback으로 메모이제이션)
+  const ensureOptions = useCallback(async () => {
+    if (options.length) return;
+    const { data, error } = await supabase.from('presets').select('emoji,label');
+    if (!error && data && data.length > 0) {
+      const seen = new Set<string>();
+      const list: ChipPreset[] = [];
+      for (const r of data) {
+        const e = r.emoji ?? null;
+        const key = e ?? 'null';
+        if (seen.has(key)) continue;
+        seen.add(key);
+        list.push({ emoji: e, label: String(r.label ?? '') });
+      }
+      setOptions(list);
+    } else {
+      // 에러, 빈 결과, 또는 네트워크 문제 시 기본 프리셋 사용
+      setOptions([
+        { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
+        { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
+        { emoji: '🏁', label: 'F1' },  { emoji: '🥎', label: '촌지' },
+        { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
+        { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
+        { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
+        { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
+      ]);
+    }
+  }, [options.length, supabase]);
+
   // 모달이 닫히면 콤보도 닫기
   useEffect(() => {
     if (!open) setIconOpen(false);
@@ -93,7 +122,7 @@ export default function ModifyChipInfoModal({
   // 열릴 때(ADD/EDIT 공통) + 권한 있으면 옵션 프리페치
   useEffect(() => {
     if (open && canEdit) { void ensureOptions(); }
-  }, [open, mode, canEdit]);
+  }, [open, mode, canEdit, ensureOptions]);
 
   // Focus trap: Tab/Shift+Tab을 가로채서 모달 내부에서만 순환
   useEffect(() => {
@@ -131,34 +160,6 @@ export default function ModifyChipInfoModal({
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, onClose]);
-
-  async function ensureOptions(){
-    if (options.length) return;
-    const { data, error } = await supabase.from('presets').select('emoji,label');
-    if (!error && data && data.length > 0) {
-      const seen = new Set<string>();
-      const list: ChipPreset[] = [];
-      for (const r of data) {
-        const e = r.emoji ?? null;
-        const key = e ?? 'null';
-        if (seen.has(key)) continue;
-        seen.add(key);
-        list.push({ emoji: e, label: String(r.label ?? '') });
-      }
-      setOptions(list);
-    } else {
-      // 에러, 빈 결과, 또는 네트워크 문제 시 기본 프리셋 사용
-      setOptions([
-        { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
-        { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
-        { emoji: '🏁', label: 'F1' },  { emoji: '🥎', label: '촌지' },
-        { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
-        { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
-        { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
-        { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
-      ]);
-    }
-  }
 
   if (!open) return null;
 

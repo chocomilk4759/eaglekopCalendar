@@ -35,7 +35,7 @@ export default function PresetsPanel({
         if(error){ console.error(error); return; }
         setPresets((data||[]) as Preset[]);
       });
-  },[]);
+  },[supabase]);
 
   async function addPreset(){
     if(!emoji.trim()){

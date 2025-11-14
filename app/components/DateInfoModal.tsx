@@ -131,7 +131,7 @@ export default function DateInfoModal({
     setChipModalNextDay(false);
     setChipModalOpen(true);
     onConsumedAddPreset?.();
-  }, [open, addChipPreset, canEdit]);
+  }, [open, addChipPreset, canEdit, onConsumedAddPreset]);
 
 
   // ── 이미지 URL 표시 (프리뷰 → 원본 교체) ───────────────────────────────────
@@ -227,7 +227,7 @@ export default function DateInfoModal({
     window.addEventListener('resize', onResize);
     onResize();
     return () => window.removeEventListener('resize', onResize);
-  }, [open, imageUrl, note.image_url]);
+  }, [open, imageUrl, note.image_url, size.w, size.h]);
 
   function computeLimits(hasImg:boolean){
     const margin = 12;

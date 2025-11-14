@@ -2,6 +2,8 @@
  * 공통 유틸리티 함수
  */
 
+import { safeSetItem } from './localStorageUtils';
+
 // 날짜 포맷팅: 숫자를 2자리 문자열로 (예: 1 -> "01")
 export const pad = (n: number): string => String(n).padStart(2, '0');
 
@@ -82,10 +84,9 @@ export const storage = {
   },
 
   set<T>(key: string, value: T): void {
-    try {
-      localStorage.setItem(key, JSON.stringify(value));
-    } catch (error) {
-      console.warn(`Failed to save to localStorage: ${key}`, error);
+    const success = safeSetItem(key, JSON.stringify(value));
+    if (!success) {
+      console.warn(`Failed to save to localStorage: ${key}`);
     }
   },
 

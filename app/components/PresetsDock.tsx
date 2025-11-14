@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import PresetsPanel from './PresetsPanel';
+import { safeSetItem } from '@/lib/localStorageUtils';
 
 const STORAGE_KEY = 'presets-dock-collapsed';
 
@@ -19,11 +20,7 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
   // collapsed 상태가 변경될 때마다 localStorage에 저장
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      localStorage.setItem(STORAGE_KEY, String(collapsed));
-    } catch {
-      // localStorage 접근 실패 시 무시
-    }
+    safeSetItem(STORAGE_KEY, String(collapsed));
   }, [collapsed]);
 
   // 폭이 좁아지는 순간(아이콘 숨김 구간) 자동 접힘

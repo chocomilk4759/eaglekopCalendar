@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { safeSetItem } from '@/lib/localStorageUtils';
 
 export default function ThemeToggle(){
   const [theme,setTheme]=useState<'light'|'dark'>(() => {
@@ -9,7 +10,7 @@ export default function ThemeToggle(){
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
+    safeSetItem('theme', theme);
   }, [theme]);
 
   const toggle = () => setTheme(t => (t === 'light' ? 'dark' : 'light'));

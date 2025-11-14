@@ -54,7 +54,9 @@ export async function GET(request: NextRequest) {
   }
 
   // 서버 전용 환경 변수 (NEXT_PUBLIC_ 접두사 없음)
-  const API_KEY = process.env.GOOGLE_API_KEY || '';
+  // Vercel: GOOGLE_API_KEY 사용 (보안)
+  // 로컬: NEXT_PUBLIC_GOOGLE_API_KEY fallback (개발용)
+  const API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
   const CALENDAR_ID = 'ko.south_korea%23holiday%40group.v.calendar.google.com';
 
   if (!API_KEY || API_KEY === 'your_google_api_key_here') {

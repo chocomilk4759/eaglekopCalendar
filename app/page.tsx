@@ -11,7 +11,7 @@ export default function Page(){
     supabase.auth.getUser().then(({data})=> setCanEdit(!!data.user));
     const { data: sub } = supabase.auth.onAuthStateChange((_e,s)=> setCanEdit(!!s?.user));
     return ()=> sub.subscription?.unsubscribe();
-  },[]);
+  },[supabase.auth]);
 
   return (
     <main className="container">

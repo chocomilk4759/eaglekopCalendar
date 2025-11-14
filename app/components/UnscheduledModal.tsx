@@ -121,7 +121,7 @@ export default function UnscheduledModal({
     return () => {
       cancelled = true;
     };
-  }, [open, canEdit]);
+  }, [open, canEdit, size.w, size.h, supabase]);
 
   // ── 외부에서 갱신 요청이 왔을 때 데이터 다시 로드 ──────────────────────
   useEffect(() => {

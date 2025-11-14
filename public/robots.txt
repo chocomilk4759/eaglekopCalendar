@@ -1,0 +1,17 @@
+# 이글콥 캘린더 - 검색 엔진 크롤링 정책
+
+# 모든 검색 엔진 허용
+User-agent: *
+Allow: /
+
+# 차단할 경로 (빌드 디렉토리, API, 비공개 파일)
+Disallow: /.next/
+Disallow: /api/
+Disallow: /_next/static/
+Disallow: /node_modules/
+
+# 사이트맵 위치
+Sitemap: https://eaglekopcalendar.vercel.app/sitemap.xml
+
+# 크롤링 속도 조절 (1초당 1회)
+Crawl-delay: 1

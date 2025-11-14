@@ -1,20 +1,25 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { createClient } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
-import SearchModal from './SearchModal';
-import UnscheduledModal from './UnscheduledModal';
-import ChipActionModal from './ChipActionModal';
-import NoteActionModal from './NoteActionModal';
-import AlertModal from './AlertModal';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
-import ModifyChipInfoModal, { ChipPreset } from './ModifyChipInfoModal';
+import type { ChipPreset } from './ModifyChipInfoModal';
 import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
 import { isMobileDevice } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/imageCache';
+import { safeSetItem } from '@/lib/localStorageUtils';
+
+// 동적 import로 모달 컴포넌트 지연 로딩 (초기 번들 크기 감소)
+const SearchModal = dynamic(() => import('./SearchModal'), { ssr: false });
+const UnscheduledModal = dynamic(() => import('./UnscheduledModal'), { ssr: false });
+const ChipActionModal = dynamic(() => import('./ChipActionModal'), { ssr: false });
+const NoteActionModal = dynamic(() => import('./NoteActionModal'), { ssr: false });
+const AlertModal = dynamic(() => import('./AlertModal'), { ssr: false });
+const ModifyChipInfoModal = dynamic(() => import('./ModifyChipInfoModal'), { ssr: false });
 
 function daysInMonth(y: number, m: number) {
   return new Date(y, m + 1, 0).getDate();
@@ -66,7 +71,7 @@ function loadMonthLS(y:number, m:number): unknown[] | null
   } catch { return null; }
 }
 function saveMonthLS(y:number, m:number, rows:unknown[]){
-  try { localStorage.setItem(lsKey(y,m), JSON.stringify(rows||[])); } catch {}
+  safeSetItem(lsKey(y,m), JSON.stringify(rows||[]));
 }
 function normMonth(y:number, m:number){ 
   // m 범위 보정(예: -1 -> 이전해 11월)
@@ -112,7 +117,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       }
       // 수집된 키를 한 번에 삭제
       keysToRemove.forEach(k => localStorage.removeItem(k));
-      localStorage.setItem('cal:ver', VER);
+      safeSetItem('cal:ver', VER);
     }
   }, []);
 
@@ -241,6 +246,25 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setSelectedKeys(new Set());
     }
   }, [canEdit]);
+
+  // 타이머 정리 (컴포넌트 언마운트 시 race condition 방지)
+  useEffect(() => {
+    return () => {
+      // 모든 타이머 정리
+      if (pulseTimerRef.current) {
+        window.clearTimeout(pulseTimerRef.current);
+        pulseTimerRef.current = undefined;
+      }
+      if (pressTimerRef.current) {
+        window.clearTimeout(pressTimerRef.current);
+        pressTimerRef.current = undefined;
+      }
+      if (chipPressTimerRef.current) {
+        window.clearTimeout(chipPressTimerRef.current);
+        chipPressTimerRef.current = undefined;
+      }
+    };
+  }, []);
 
   // 스와이프 핸들러 (제거됨 - 드래그와 충돌)
   // function onTouchStart(e: React.TouchEvent) { ... }
