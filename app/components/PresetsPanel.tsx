@@ -32,7 +32,7 @@ export default function PresetsPanel({
     supabase.from('presets').select('*').order('sort_order',{ascending:true})
       .then(({data,error})=>{
         if(error){ console.error(error); return; }
-        setPresets((data||[]) as Preset[]);
+        setPresets((data||[]) as unknown as Preset[]);
       });
   },[]);
 
@@ -54,7 +54,7 @@ export default function PresetsPanel({
       setAlertOpen(true);
       return;
     }
-    setPresets(p=>[...p, data as Preset]);
+    setPresets(p=>[...p, data as unknown as Preset]);
     setEmoji(''); setLabel(''); setShowAdd(false);
   }
   async function deletePreset(id:number){

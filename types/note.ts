@@ -79,7 +79,7 @@ export function normalizeNote(row: Partial<Note> | (Partial<Note> & Record<strin
     m: row.m ?? 0,
     d: row.d ?? 1,
     content: row.content ?? '',
-    items: (Array.isArray(row.items) ? row.items : []) as Item[],
+    items: (Array.isArray(row.items) ? row.items : []) as unknown as Item[],
     color: row.color === 'red' || row.color === 'blue' ? row.color : null,
     link: row.link ?? null,
     image_url: row.image_url ?? null,
