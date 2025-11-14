@@ -92,8 +92,8 @@ export default function ModifyChipInfoModal({
       const seen = new Set<string>();
       const list: ChipPreset[] = [];
       for (const r of data) {
-        const e = r.emoji ?? null;
-        const key = e ?? 'null';
+        const e = (r.emoji as string | null) ?? null;
+        const key = (e ?? 'null') as string;
         if (seen.has(key)) continue;
         seen.add(key);
         list.push({ emoji: e, label: String(r.label ?? '') });
