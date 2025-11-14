@@ -1,23 +1,8 @@
-// Google Calendar API - 한국 공휴일
-// https://developers.google.com/calendar/api/guides/overview
+// 한국 공휴일 API (서버 사이드 프록시 사용)
 
 export interface HolidayInfo {
-  dateName: string;     // 공휴일명
-  date: string;         // YYYY-MM-DD 형식
-}
-
-interface GoogleCalendarEvent {
-  summary: string;
-  start: {
-    date: string;       // YYYY-MM-DD
-  };
-  end: {
-    date: string;
-  };
-}
-
-interface GoogleCalendarResponse {
-  items: GoogleCalendarEvent[];
+  dateName: string; // 공휴일명
+  date: string; // YYYY-MM-DD 형식
 }
 
 interface CachedHolidays {
@@ -25,22 +10,18 @@ interface CachedHolidays {
   exp: number; // 만료 시간 (timestamp)
 }
 
-const API_KEY = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || '';
-const CALENDAR_ID = 'ko.south_korea%23holiday%40group.v.calendar.google.com'; // 한국 공휴일 캘린더
 const CACHE_KEY_PREFIX = 'holiday-cache:';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24시간
 
 /**
- * Google Calendar API를 사용해 한국 공휴일 정보 조회 (localStorage 캐싱 포함)
+ * 서버 사이드 API를 통해 한국 공휴일 정보 조회 (localStorage 캐싱 포함)
  * @param year 연도 (4자리)
  * @param month 월 (1-12)
  */
-export async function getHolidays(year: number, month: number): Promise<Map<string, HolidayInfo>> {
-  if (!API_KEY || API_KEY === 'your_google_api_key_here') {
-    console.warn('Google API 키가 설정되지 않았습니다.');
-    return new Map();
-  }
-
+export async function getHolidays(
+  year: number,
+  month: number
+): Promise<Map<string, HolidayInfo>> {
   const cacheKey = `${CACHE_KEY_PREFIX}${year}-${String(month).padStart(2, '0')}`;
   const now = Date.now();
 
@@ -61,43 +42,26 @@ export async function getHolidays(year: number, month: number): Promise<Map<stri
     console.warn('공휴일 캐시 로드 실패:', error);
   }
 
-  // 2) API 호출
-  const startDate = `${year}-${String(month).padStart(2, '0')}-01`;
-  const lastDay = new Date(year, month, 0).getDate();
-  const endDate = `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  const params = new URLSearchParams({
-    key: API_KEY,
-    timeMin: `${startDate}T00:00:00Z`,
-    timeMax: `${endDate}T23:59:59Z`,
-    singleEvents: 'true',
-    orderBy: 'startTime'
-  });
-
+  // 2) 서버 API 호출 (Google API 키 노출 방지)
   try {
-    const response = await fetch(
-      `https://www.googleapis.com/calendar/v3/calendars/${CALENDAR_ID}/events?${params}`,
-      { next: { revalidate: 86400 } } // 24시간 캐시
-    );
+    const response = await fetch(`/api/holidays?year=${year}&month=${month}`);
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    const data: GoogleCalendarResponse = await response.json();
+    const data = await response.json();
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
 
     // YYYYMMDD를 키로 하는 Map 생성
     const holidayMap = new Map<string, HolidayInfo>();
 
-    if (data.items && Array.isArray(data.items)) {
-      data.items.forEach(event => {
-        if (event.start?.date) {
-          const dateKey = event.start.date.replace(/-/g, ''); // YYYYMMDD 형식으로 변환
-          holidayMap.set(dateKey, {
-            dateName: event.summary,
-            date: event.start.date
-          });
-        }
+    if (data.holidays && Array.isArray(data.holidays)) {
+      data.holidays.forEach(([dateKey, holidayInfo]: [string, HolidayInfo]) => {
+        holidayMap.set(dateKey, holidayInfo);
       });
     }
 
@@ -105,7 +69,7 @@ export async function getHolidays(year: number, month: number): Promise<Map<stri
     try {
       const cacheData: CachedHolidays = {
         data: Array.from(holidayMap.entries()),
-        exp: now + CACHE_TTL_MS
+        exp: now + CACHE_TTL_MS,
       };
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
     } catch (error) {
@@ -114,7 +78,7 @@ export async function getHolidays(year: number, month: number): Promise<Map<stri
 
     return holidayMap;
   } catch (error) {
-    console.error('Google Calendar API 호출 실패:', error);
+    console.error('공휴일 API 호출 실패:', error);
     return new Map();
   }
 }
