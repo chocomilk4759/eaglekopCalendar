@@ -87,7 +87,7 @@ export default function UnscheduledModal({
         if (error) throw error;
 
         if (data) {
-          setRecordId(data.id);
+          setRecordId((data as any).id);
           setItems(Array.isArray(data.items) ? data.items : []);
         } else {
           // 레코드가 없으면 초기화만 (실제 저장은 하지 않음)
@@ -210,7 +210,7 @@ export default function UnscheduledModal({
       .single();
 
     if (error) throw new Error(error.message);
-    setRecordId(data.id);
+    setRecordId((data as any).id);
     setItems(newItems);
   }
 
@@ -221,7 +221,7 @@ export default function UnscheduledModal({
     try {
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
-        setPresets(data.map((r) => ({ emoji: r.emoji, label: String(r.label ?? '') })));
+        setPresets(data.map((r) => ({ emoji: (r as any).emoji, label: String((r as any).label ?? '') })));
       } else {
         setPresets([
           { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },

@@ -47,8 +47,8 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       if (!error && data) {
         // search_mappings에서 키워드 추출
         data.forEach((mapping) => {
-          const keyword = (mapping.keyword || '').trim();
-          const target = (mapping.target || '').trim();
+          const keyword = ((mapping.keyword as string) || '').trim();
+          const target = ((mapping.target as string) || '').trim();
 
           if (keyword && target) {
             map[keyword.toLowerCase()] = target.toLowerCase();
