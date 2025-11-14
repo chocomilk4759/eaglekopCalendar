@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Item } from '@/types/note';
 import type { Preset as DbPreset } from '@/types/database';
@@ -30,8 +30,6 @@ export default function UnscheduledModal({
   onChipMovedFromCalendar?: (sourceY: number, sourceM: number, sourceD: number, chipIndex: number) => Promise<void>;
   refreshTrigger?: number;
 }) {
-  const supabase = useMemo(() => createClient(), []);
-
   const [items, setItems] = useState<Item[]>([]);
   const [recordId, setRecordId] = useState<number | null>(null);
 

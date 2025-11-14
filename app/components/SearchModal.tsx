@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Note } from '@/types/note';
 import { normalizeNote } from '@/types/note';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 
 interface SearchResult {
   date: { y: number; m: number; d: number };
@@ -20,7 +20,6 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ open, onClose, notes, onSelectDate }: SearchModalProps) {
-  const supabase = useMemo(() => createClient(), []);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);

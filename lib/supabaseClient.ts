@@ -1,6 +1,13 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
-export function createClient(){
+// Singleton instance to prevent multiple GoTrueClient instances
+let supabaseInstance: ReturnType<typeof createSupabaseClient> | null = null;
+
+export function createClient() {
+  if (supabaseInstance) {
+    return supabaseInstance;
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -11,5 +18,9 @@ export function createClient(){
     );
   }
 
-  return createSupabaseClient(url, anon);
+  supabaseInstance = createSupabaseClient(url, anon);
+  return supabaseInstance;
 }
+
+// Export singleton instance directly for components that don't need lazy initialization
+export const supabase = createClient();

@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import PresetsDock from './PresetsDock';
 
 export default function PresetsDockMount(){
-  const supabase = createClient();
   const [canEdit,setCanEdit]=useState(false);
 
   useEffect(()=>{

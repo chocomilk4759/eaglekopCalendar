@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
 import type { Preset } from '@/types/database';
@@ -12,7 +12,6 @@ export default function PresetsPanel({
   canEdit: boolean;
   mode?: 'vertical' | 'inline' | 'section';
 }){
-  const supabase = createClient();
   const [presets,setPresets]=useState<Preset[]>([]);
   const [activeId,setActiveId]=useState<number|null>(null);
 

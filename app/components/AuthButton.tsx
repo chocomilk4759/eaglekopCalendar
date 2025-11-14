@@ -1,11 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import AlertModal from './AlertModal';
 
 export default function AuthButton() {
-  const supabase = useMemo(() => createClient(), []);
   const [open, setOpen] = useState(false);
 
   // 로그인 상태

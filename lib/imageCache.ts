@@ -73,7 +73,7 @@ export async function getSignedUrl(
 
   // 3) API 호출하여 새로 생성
   try {
-    const supabase = createClient();
+    const supabase = createClient(); // Use factory function here to maintain lazy initialization
     const { data, error } = await supabase.storage
       .from(bucket)
       .createSignedUrl(path, ttlSec);

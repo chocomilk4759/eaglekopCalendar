@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabaseClient';
+import { supabase, createClient } from '@/lib/supabaseClient';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
@@ -70,8 +70,6 @@ export default function DateInfoModal({
   addChipPreset?: { emoji: string; label: string } | null;
   onConsumedAddPreset?: () => void;
 }){
-  const supabase = createClient();
-
   const emptyNote: Note = normalizeNote({
     y:date.y, m:date.m, d:date.d, content:'', items:[], color:null, link:null, image_url:null
   });

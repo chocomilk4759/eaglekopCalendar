@@ -1,0 +1,26 @@
+{
+  "name": "Eaglekop Calendar",
+  "short_name": "이글콥캘린더",
+  "description": "이글콥 캘린더 - 코푸땅과 벤치단의 일대기",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "lifestyle"],
+  "lang": "ko-KR",
+  "dir": "ltr"
+}

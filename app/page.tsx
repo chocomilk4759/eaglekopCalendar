@@ -1,10 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import Calendar from './components/Calendar';
 
 export default function Page(){
-  const supabase = createClient();
   const [canEdit,setCanEdit]=useState(false);
 
   useEffect(()=>{

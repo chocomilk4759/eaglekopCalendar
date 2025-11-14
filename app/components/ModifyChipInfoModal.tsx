@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import TimePickerModal from './TimePickerModal';
 import AlertModal from './AlertModal';
 import { isValidStartTime, normalizeStartTime } from '@/types/note';
@@ -47,7 +47,6 @@ export default function ModifyChipInfoModal({
   const [options, setOptions] = useState<ChipPreset[]>([]);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
-  const supabase = createClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);

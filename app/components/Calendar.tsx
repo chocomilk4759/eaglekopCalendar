@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { createClient } from '@/lib/supabaseClient';
+import { supabase } from '@/lib/supabaseClient';
 import DateInfoModal from './DateInfoModal';
 import TopRibbon from './TopRibbon';
 import type { Note, Item } from '@/types/note';
@@ -81,8 +81,6 @@ function normMonth(y:number, m:number){
 }
 
 export default function Calendar({ canEdit }: { canEdit: boolean }) {
-  const supabase = useMemo(() => createClient(), []);
-
   const todayParts = useMemo(() => seoulParts(new Date()), []);
   const todayLabel = `${todayParts.y}.${pad(todayParts.m + 1)}.${pad(todayParts.d)}`;
 
