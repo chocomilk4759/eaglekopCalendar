@@ -1189,23 +1189,6 @@ a:focus-visible {
   }
 }
 
-/* --- Calendar Top Container Query Layout --- */
-.calendar-top {
-  container-type: inline-size;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
-}
-
-/* Switch to horizontal layout when container is wide enough (>=1200px) */
-@container (min-width: 1200px) {
-  .calendar-top {
-    flex-direction: row;
-  }
-}
-
 /* --- Mobile Header Spacing --- */
 @media (max-width: 768px) {
   .calendar-top {
