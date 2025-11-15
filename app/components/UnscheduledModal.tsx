@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabaseClient';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Item } from '@/types/note';
 import type { Preset as DbPreset } from '@/types/database';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
@@ -9,13 +9,6 @@ import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
 
 type Preset = Pick<DbPreset, 'emoji' | 'label'>;
-
-interface UndatedItems {
-  id: number;
-  items: Item[];
-  updated_at?: string;
-  updated_by?: string | null;
-}
 
 export default function UnscheduledModal({
   open,
@@ -27,7 +20,12 @@ export default function UnscheduledModal({
   open: boolean;
   onClose: () => void;
   canEdit: boolean;
-  onChipMovedFromCalendar?: (sourceY: number, sourceM: number, sourceD: number, chipIndex: number) => Promise<void>;
+  onChipMovedFromCalendar?: (
+    sourceY: number,
+    sourceM: number,
+    sourceD: number,
+    chipIndex: number
+  ) => Promise<void>;
   refreshTrigger?: number;
 }) {
   const [items, setItems] = useState<Item[]>([]);
@@ -42,7 +40,9 @@ export default function UnscheduledModal({
   const [chipModalNextDay, setChipModalNextDay] = useState<boolean>(false);
 
   const [confirmChipDeleteOpen, setConfirmChipDeleteOpen] = useState(false);
-  const [confirmChipDeleteAction, setConfirmChipDeleteAction] = useState<(() => Promise<void>) | null>(null);
+  const [confirmChipDeleteAction, setConfirmChipDeleteAction] = useState<
+    (() => Promise<void>) | null
+  >(null);
 
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
@@ -59,9 +59,11 @@ export default function UnscheduledModal({
   const [pos, setPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [size, setSize] = useState<{ w: number; h: number }>({ w: 550, h: 400 });
   const sheetRef = useRef<HTMLDivElement>(null);
-  const dragRef = useRef<{ dx: number; dy: number; active: boolean }>({ dx: 0, dy: 0, active: false });
-
-  const disabled = !canEdit;
+  const dragRef = useRef<{ dx: number; dy: number; active: boolean }>({
+    dx: 0,
+    dy: 0,
+    active: false,
+  });
 
   // ── 포커스 관리 ──────────────────────────────────────────────────────────
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -224,27 +226,43 @@ export default function UnscheduledModal({
     try {
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
-        setPresets(data.map((r) => ({ emoji: (r as any).emoji, label: String((r as any).label ?? '') })));
+        setPresets(
+          data.map((r) => ({ emoji: (r as any).emoji, label: String((r as any).label ?? '') }))
+        );
       } else {
         setPresets([
-          { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
-          { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
-          { emoji: '🏁', label: 'F1' }, { emoji: '🥎', label: '촌지' },
-          { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
-          { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
-          { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
-          { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
+          { emoji: '📢', label: '공지' },
+          { emoji: '🔔', label: '알림' },
+          { emoji: '⚽', label: '축구' },
+          { emoji: '⚾', label: '야구' },
+          { emoji: '🏁', label: 'F1' },
+          { emoji: '🥎', label: '촌지' },
+          { emoji: '🏆', label: '대회' },
+          { emoji: '🎮', label: '게임' },
+          { emoji: '📺', label: '함께' },
+          { emoji: '🤼‍♂️', label: '합방' },
+          { emoji: '👄', label: '저챗' },
+          { emoji: '🍚', label: '광고' },
+          { emoji: '🎤', label: '노래' },
+          { emoji: '💙', label: '컨텐츠' },
         ]);
       }
     } catch {
       setPresets([
-        { emoji: '📢', label: '공지' }, { emoji: '🔔', label: '알림' },
-        { emoji: '⚽', label: '축구' }, { emoji: '⚾', label: '야구' },
-        { emoji: '🏁', label: 'F1' }, { emoji: '🥎', label: '촌지' },
-        { emoji: '🏆', label: '대회' }, { emoji: '🎮', label: '게임' },
-        { emoji: '📺', label: '함께' }, { emoji: '🤼‍♂️', label: '합방' },
-        { emoji: '👄', label: '저챗' }, { emoji: '🍚', label: '광고' },
-        { emoji: '🎤', label: '노래' }, { emoji: '💙', label: '컨텐츠' },
+        { emoji: '📢', label: '공지' },
+        { emoji: '🔔', label: '알림' },
+        { emoji: '⚽', label: '축구' },
+        { emoji: '⚾', label: '야구' },
+        { emoji: '🏁', label: 'F1' },
+        { emoji: '🥎', label: '촌지' },
+        { emoji: '🏆', label: '대회' },
+        { emoji: '🎮', label: '게임' },
+        { emoji: '📺', label: '함께' },
+        { emoji: '🤼‍♂️', label: '합방' },
+        { emoji: '👄', label: '저챗' },
+        { emoji: '🍚', label: '광고' },
+        { emoji: '🎤', label: '노래' },
+        { emoji: '💙', label: '컨텐츠' },
       ]);
     } finally {
       loadingPresetsRef.current = false;
@@ -282,8 +300,13 @@ export default function UnscheduledModal({
     setChipModalOpen(true);
   }
 
-  async function applyAddChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
-    if(!canEdit) return;
+  async function applyAddChip(
+    text: string,
+    startTime: string,
+    nextDay: boolean,
+    overridePreset?: ChipPreset
+  ) {
+    if (!canEdit) return;
     const base = overridePreset ?? chipModalPreset;
     const newItem: Item = {
       emoji: base.emoji ?? null,
@@ -291,11 +314,12 @@ export default function UnscheduledModal({
       text: text || undefined,
       emojiOnly: !text,
       startTime: startTime || undefined,
-      nextDay: nextDay || undefined
+      nextDay: nextDay || undefined,
     };
     const newItems = [...items, newItem];
-    try{ await persist(newItems); }
-    catch(e){
+    try {
+      await persist(newItems);
+    } catch (e) {
       const errorMessage = e instanceof Error ? e.message : '아이템 추가 중 오류가 발생했습니다.';
       setAlertMessage({ title: '아이템 추가 실패', message: errorMessage });
       setAlertOpen(true);
@@ -303,20 +327,27 @@ export default function UnscheduledModal({
     setChipModalOpen(false);
   }
 
-  async function applyEditChip(text: string, startTime: string, nextDay: boolean, overridePreset?: ChipPreset){
-    if(!canEdit || chipEditIndex==null) return;
+  async function applyEditChip(
+    text: string,
+    startTime: string,
+    nextDay: boolean,
+    overridePreset?: ChipPreset
+  ) {
+    if (!canEdit || chipEditIndex == null) return;
     const newItems = [...items];
-    const cur = newItems[chipEditIndex]; if(!cur) return;
+    const cur = newItems[chipEditIndex];
+    if (!cur) return;
     newItems[chipEditIndex] = {
       ...cur,
       text: text || undefined,
       emojiOnly: !text,
-      emoji: (overridePreset?.emoji !== undefined) ? (overridePreset?.emoji ?? null) : cur.emoji,
+      emoji: overridePreset?.emoji !== undefined ? (overridePreset?.emoji ?? null) : cur.emoji,
       startTime: startTime || undefined,
-      nextDay: nextDay || undefined
+      nextDay: nextDay || undefined,
     };
-    try{ await persist(newItems); }
-    catch(e){
+    try {
+      await persist(newItems);
+    } catch (e) {
       const errorMessage = e instanceof Error ? e.message : '아이템 수정 중 오류가 발생했습니다.';
       setAlertMessage({ title: '아이템 수정 실패', message: errorMessage });
       setAlertOpen(true);
@@ -324,8 +355,8 @@ export default function UnscheduledModal({
     setChipModalOpen(false);
   }
 
-  async function deleteChip(){
-    if(!canEdit || chipEditIndex==null) return;
+  async function deleteChip() {
+    if (!canEdit || chipEditIndex == null) return;
 
     // ConfirmModal 사용
     setConfirmChipDeleteAction(() => async () => {
@@ -335,7 +366,7 @@ export default function UnscheduledModal({
         await persist(newItems);
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
-      } catch(e) {
+      } catch (e) {
         const errorMessage = e instanceof Error ? e.message : '아이템 삭제 중 오류가 발생했습니다.';
         setAlertMessage({ title: '아이템 삭제 실패', message: errorMessage });
         setAlertOpen(true);
@@ -383,7 +414,8 @@ export default function UnscheduledModal({
 
     let payload: any = null;
     try {
-      const json = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
+      const json =
+        e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
       if (json) payload = JSON.parse(json);
     } catch {}
 
@@ -405,8 +437,17 @@ export default function UnscheduledModal({
       await persist(newItems);
 
       // Calendar 셀에서 온 경우 원본 삭제
-      if ((payload.sourceType === 'cell' || payload.sourceType === 'modal') && payload.sourceDate && onChipMovedFromCalendar) {
-        await onChipMovedFromCalendar(payload.sourceDate.y, payload.sourceDate.m, payload.sourceDate.d, payload.chipIndex);
+      if (
+        (payload.sourceType === 'cell' || payload.sourceType === 'modal') &&
+        payload.sourceDate &&
+        onChipMovedFromCalendar
+      ) {
+        await onChipMovedFromCalendar(
+          payload.sourceDate.y,
+          payload.sourceDate.m,
+          payload.sourceDate.d,
+          payload.chipIndex
+        );
       }
 
       setAlertMessage({ title: '칩 이동 완료', message: '미정 일정으로 이동되었습니다.' });
@@ -482,157 +523,193 @@ export default function UnscheduledModal({
           }}
           onClick={(e) => e.stopPropagation()}
         >
-        {/* 상단(드래그 핸들) */}
-        <div
-          className="date-head drag-handle"
-          onMouseDown={onDragDown}
-          style={{ cursor: 'move', userSelect: 'none', padding: '16px', borderBottom: '1px solid var(--border)', textAlign: 'center' }}
-        >
-          <h3 style={{ margin: 0 }}>미정 일정</h3>
-        </div>
-
-        {/* 미정 일정 추가 버튼 영역 (편집 가능할 때만 표시) */}
-        {canEdit && (
-          <div style={{ position: 'relative', padding: '12px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
-            <button
-              onClick={onClickAddChip}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '8px',
-                border: '1px solid var(--border)',
-                background: 'var(--button-bg)',
-                color: 'var(--button-text)',
-                cursor: 'pointer',
-                fontSize: '14px',
-              }}
-              aria-label="칩 추가"
-            >
-              미정 일정 추가
-            </button>
-
-            {/* 프리셋 콤보박스 */}
-            {comboOpen && presets && (
-              <div
-                className="combo-panel"
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  marginTop: '4px',
-                  background: 'var(--bg)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  zIndex: 100,
-                  maxHeight: '300px',
-                  overflowY: 'auto',
-                  minWidth: '200px',
-                }}
-              >
-                {presets.map((p, i) => (
-                  <button
-                    key={i}
-                    onClick={() => selectPresetAndOpenModal(p)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 12px',
-                      width: '100%',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontSize: '14px',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    <span style={{ fontSize: '18px' }}>{p.emoji}</span>
-                    <span>{p.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Chip 목록 영역 */}
-        <div
-          style={{
-            padding: '16px',
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '8px',
-            alignContent: 'flex-start',
-            overflowY: 'auto',
-            flex: 1,
-          }}
-          onDragOver={onDragOver}
-          onDrop={onDrop}
-        >
-          {items.length === 0 ? (
-            <div style={{ width: '100%', textAlign: 'center', color: 'var(--text-muted)', padding: '32px 0' }}>
-              미정 일정이 없습니다
-            </div>
-          ) : (
-            items.map((item, idx) => {
-              return (
-                <span
-                  key={idx}
-                  className="chip"
-                  draggable={canEdit}
-                  onDragStart={(e) => onDragStartChip(e, idx)}
-                  onDragEnd={onDragEndChip}
-                  onDoubleClick={() => onDoubleClickChip(idx)}
-                  title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동' : '보기 전용'}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 6,
-                    border: '1px solid var(--border)',
-                    borderRadius: 999,
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    background: 'var(--card)',
-                    color: 'inherit',
-                    cursor: canEdit ? 'grab' : 'default',
-                    opacity: draggedChipIndex === idx ? 0.4 : 1,
-                  }}
-                >
-                  <span style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                    <span className="chip-emoji">{item.emoji ?? ''}</span>
-                    {item.startTime && (
-                      <span className="chip-time" style={{ fontSize: 11, opacity: 0.7 }}>
-                        {item.startTime}{item.nextDay ? '+1' : ''}
-                      </span>
-                    )}
-                  </span>
-                  <span className="chip-text">{item.text?.length ? item.text : item.label}</span>
-                </span>
-              );
-            })
-          )}
-        </div>
-
-        {/* 닫기 버튼 */}
-        <div style={{ padding: '12px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'center' }}>
-          <button
-            onClick={onClose}
+          {/* 상단(드래그 핸들) */}
+          <div
+            className="date-head drag-handle"
+            onMouseDown={onDragDown}
             style={{
-              padding: '8px 24px',
-              borderRadius: '8px',
-              background: 'var(--button-bg)',
-              color: 'var(--button-text)',
-              border: '1px solid var(--border)',
-              cursor: 'pointer',
+              cursor: 'move',
+              userSelect: 'none',
+              padding: '16px',
+              borderBottom: '1px solid var(--border)',
+              textAlign: 'center',
             }}
           >
-            닫기
-          </button>
-        </div>
+            <h3 style={{ margin: 0 }}>미정 일정</h3>
+          </div>
+
+          {/* 미정 일정 추가 버튼 영역 (편집 가능할 때만 표시) */}
+          {canEdit && (
+            <div
+              style={{
+                position: 'relative',
+                padding: '12px',
+                borderBottom: '1px solid var(--border)',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <button
+                onClick={onClickAddChip}
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border)',
+                  background: 'var(--button-bg)',
+                  color: 'var(--button-text)',
+                  cursor: 'pointer',
+                  fontSize: '14px',
+                }}
+                aria-label="칩 추가"
+              >
+                미정 일정 추가
+              </button>
+
+              {/* 프리셋 콤보박스 */}
+              {comboOpen && presets && (
+                <div
+                  className="combo-panel"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    marginTop: '4px',
+                    background: 'var(--bg)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                    zIndex: 100,
+                    maxHeight: '300px',
+                    overflowY: 'auto',
+                    minWidth: '200px',
+                  }}
+                >
+                  {presets.map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => selectPresetAndOpenModal(p)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '8px 12px',
+                        width: '100%',
+                        border: 'none',
+                        background: 'transparent',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontSize: '14px',
+                      }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--hover-bg)')}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                    >
+                      <span style={{ fontSize: '18px' }}>{p.emoji}</span>
+                      <span>{p.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Chip 목록 영역 */}
+          <div
+            style={{
+              padding: '16px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '8px',
+              alignContent: 'flex-start',
+              overflowY: 'auto',
+              flex: 1,
+            }}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+          >
+            {items.length === 0 ? (
+              <div
+                style={{
+                  width: '100%',
+                  textAlign: 'center',
+                  color: 'var(--text-muted)',
+                  padding: '32px 0',
+                }}
+              >
+                미정 일정이 없습니다
+              </div>
+            ) : (
+              items.map((item, idx) => {
+                return (
+                  <span
+                    key={idx}
+                    className="chip"
+                    draggable={canEdit}
+                    onDragStart={(e) => onDragStartChip(e, idx)}
+                    onDragEnd={onDragEndChip}
+                    onDoubleClick={() => onDoubleClickChip(idx)}
+                    title={canEdit ? '더블클릭: 편집, 드래그: Calendar로 이동' : '보기 전용'}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                      border: '1px solid var(--border)',
+                      borderRadius: 999,
+                      padding: '4px 10px',
+                      fontSize: 12,
+                      background: 'var(--card)',
+                      color: 'inherit',
+                      cursor: canEdit ? 'grab' : 'default',
+                      opacity: draggedChipIndex === idx ? 0.4 : 1,
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 2,
+                      }}
+                    >
+                      <span className="chip-emoji">{item.emoji ?? ''}</span>
+                      {item.startTime && (
+                        <span className="chip-time" style={{ fontSize: 11, opacity: 0.7 }}>
+                          {item.startTime}
+                          {item.nextDay ? '+1' : ''}
+                        </span>
+                      )}
+                    </span>
+                    <span className="chip-text">{item.text?.length ? item.text : item.label}</span>
+                  </span>
+                );
+              })
+            )}
+          </div>
+
+          {/* 닫기 버튼 */}
+          <div
+            style={{
+              padding: '12px',
+              borderTop: '1px solid var(--border)',
+              display: 'flex',
+              justifyContent: 'center',
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                padding: '8px 24px',
+                borderRadius: '8px',
+                background: 'var(--button-bg)',
+                color: 'var(--button-text)',
+                border: '1px solid var(--border)',
+                cursor: 'pointer',
+              }}
+            >
+              닫기
+            </button>
+          </div>
         </div>
       </div>
 

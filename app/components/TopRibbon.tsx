@@ -5,9 +5,9 @@ import { debounce } from '@/lib/utils';
 
 type RibbonButton = {
   id: string;
-  src: string;          // /public 기준 경로
+  src: string; // /public 기준 경로
   alt?: string;
-  href?: string;        // 클릭 시 열 링크(새 탭)
+  href?: string; // 클릭 시 열 링크(새 탭)
   onClick?: () => void; // 필요 시 직접 핸들러
 };
 
@@ -15,8 +15,8 @@ export default function TopRibbon({
   buttons,
   extraText,
   containerHeight, // 선택: 지정 시 버튼 높이를 이 값에 맞춤. 없으면 부모 높이 추정.
-  gap = 10,        // 버튼 사이 간격(px)
-  minSize = 24,    // 자동 축소 시 최소 버튼 크기(px)
+  gap = 10, // 버튼 사이 간격(px)
+  minSize = 24, // 자동 축소 시 최소 버튼 크기(px)
 }: {
   buttons: RibbonButton[];
   extraText?: React.ReactNode;
@@ -143,12 +143,10 @@ export default function TopRibbon({
         className="top-ribbon-scroll"
       >
         {/* 선택적 텍스트 */}
-        {extraText && (
-          <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{extraText}</span>
-        )}
+        {extraText && <span style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>{extraText}</span>}
 
         {/* 버튼들 */}
-        {buttons.map((b, i) => (
+        {buttons.map((b) => (
           <button
             key={b.id}
             title={b.alt}

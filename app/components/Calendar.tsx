@@ -9,7 +9,7 @@ import TopRibbon from './TopRibbon';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import type { ChipPreset } from './ModifyChipInfoModal';
-import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
+import { getHolidays, isHoliday, type HolidayInfo } from '@/lib/holidayApi';
 import { isMobileDevice, debounce } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/imageCache';
 import { safeSetItem } from '@/lib/localStorageUtils';
@@ -34,8 +34,6 @@ interface ChipPayload {
   chipIndex: number;
   item: Item;
 }
-
-type DragPayload = NoteCopyPayload | PresetPayload | ChipPayload;
 
 // 동적 import로 모달 컴포넌트 지연 로딩 (초기 번들 크기 감소)
 const SearchModal = dynamic(() => import('./SearchModal'), { ssr: false });
@@ -149,16 +147,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   const ymKey = `${ym.y}-${ym.m}`;
   const [loading, setLoading] = useState(false);
-  const [loadingHolidays, setLoadingHolidays] = useState(false);
   const [bgUrls, setBgUrls] = useState<Record<string, string>>({});
   // 그리드 칼럼 수 관찰 → 7칸 가능 여부
   const gridRef = useRef<HTMLDivElement>(null);
   const [canShowSeven, setCanShowSeven] = useState(true);
-  const [cols, setCols] = useState(7);
-
-  const lastDecisionRef = useRef<'seven' | 'compact'>('seven');
-  const pendingRef = useRef<'seven' | 'compact' | null>(null);
-  const tRef = useRef<number | undefined>(undefined);
 
   // ---------- 모바일 스와이프 (제거됨 - 드래그와 충돌) ----------
   // const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -261,7 +253,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // 공휴일 데이터 로드 (DB 로드보다 먼저 실행)
   useEffect(() => {
     let cancelled = false;
-    setLoadingHolidays(true);
     (async () => {
       try {
         const holidayMap = await getHolidays(ym.y, ym.m + 1);
@@ -270,10 +261,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
       } catch (error) {
         console.error('Failed to load holidays:', error);
-      } finally {
-        if (!cancelled) {
-          setLoadingHolidays(false);
-        }
       }
     })();
     return () => {
@@ -464,17 +451,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // ----- 드래그 중인 데이터 (모바일용 fallback) -----
   const draggedChipDataRef = useRef<any>(null);
   const draggedNoteDataRef = useRef<any>(null);
-
-  function triggerPulse(k: string) {
-    const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
-    if (isCoarse) return; // 터치 환경에서는 생략
-    if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current);
-    setDragPulseKey(k);
-    pulseTimerRef.current = window.setTimeout(() => {
-      setDragPulseKey(null);
-      pulseTimerRef.current = undefined;
-    }, 200); // 0.2s 반짝
-  }
 
   function clearPressTimer() {
     if (pressTimerRef.current) {
@@ -902,13 +878,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     for (const k of ak) if (a[k] !== b[k]) return false;
     return true;
   }
-
-  function extractStoragePath(url: string): { bucket: string; key: string } | null {
-    const m = url.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
-    if (!m || !m[1] || !m[2]) return null;
-    return { bucket: m[1], key: decodeURIComponent(m[2]) };
-  }
-  const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
   // 배경 이미지가 필요한 노트의 키만 추출 (의존성 최적화)
   const bgImageKeys = useMemo(() => {

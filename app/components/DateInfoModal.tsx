@@ -97,7 +97,6 @@ export default function DateInfoModal({
 
   const [note, setNote] = useState<Note>(initial || emptyNote);
   const [memo, setMemo] = useState(note.content || '');
-  const [initialMemo, setInitialMemo] = useState(note.content || '');
   const [titleInput, setTitleInput] = useState<string>(note.title ?? '');
   const isRest = useMemo(() => note.color === 'red' && note.content?.trim() === '휴방', [note]);
 
@@ -186,7 +185,6 @@ export default function DateInfoModal({
     const base = initial || emptyNote;
     setNote(base);
     setMemo(base.content || '');
-    setInitialMemo(base.content || '');
     setTitleInput(base.title ?? '');
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
@@ -364,7 +362,6 @@ export default function DateInfoModal({
         title: titleInput.trim() ? titleInput.trim() : null,
         image_url: imageUrl ?? null,
       });
-      setInitialMemo(saved.content || '');
       setAlertMessage({ title: '저장 완료', message: '저장되었습니다.' });
       setAlertOpen(true);
     } catch (e: unknown) {
@@ -408,7 +405,6 @@ export default function DateInfoModal({
         const cleared = normalizeNote({ ...emptyNote });
         setNote(cleared);
         setMemo('');
-        setInitialMemo('');
         setLinkInput('');
         setImageUrl(null);
         setDisplayImageUrl(null);
@@ -977,23 +973,6 @@ export default function DateInfoModal({
       ]);
     } finally {
       loadingPresetsRef.current = false;
-    }
-  }
-
-  async function addPresetItem(p: Preset) {
-    if (!canEdit) return;
-    const items = [...(note.items || [])];
-    const newItem: Item = { emoji: p.emoji ?? null, label: p.label, emojiOnly: true };
-    items.push(newItem);
-    try {
-      await persist({ items });
-      setComboOpen(false);
-    } catch (e: unknown) {
-      setAlertMessage({
-        title: '아이템 추가 실패',
-        message: isError(e) ? e.message : '아이템 추가 중 오류가 발생했습니다.',
-      });
-      setAlertOpen(true);
     }
   }
 

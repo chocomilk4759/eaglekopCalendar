@@ -20,7 +20,12 @@ interface SearchModalProps {
   onSelectDate: (y: number, m: number, d: number) => void;
 }
 
-export default function SearchModal({ open, onClose, notes, onSelectDate }: SearchModalProps) {
+export default function SearchModal({
+  open,
+  onClose,
+  notes: _notes,
+  onSelectDate,
+}: SearchModalProps) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -87,144 +92,152 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
       setReplacements(map);
     })();
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const performSearchImmediate = useCallback(async (searchQuery: string) => {
-    if (!searchQuery.trim()) {
-      setResults([]);
-      setLoading(false);
-      return;
-    }
-
-    // 이전 요청 취소
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-
-    // 새 AbortController 생성 및 요청 ID 증가
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-    const currentRequestId = ++requestIdRef.current;
-
-    setLoading(true);
-
-    // 검색어 확장: 원본 + 매핑된 키워드들
-    const baseQuery = searchQuery.toLowerCase().trim();
-    const searchTerms = new Set<string>([baseQuery]);
-
-    // replacements에서 매칭되는 모든 변환 키워드 추가
-    Object.entries(replacements).forEach(([from, to]) => {
-      if (baseQuery.includes(from.toLowerCase())) {
-        searchTerms.add(to.toLowerCase());
-      }
-    });
-
-    const found: SearchResult[] = [];
-
-    try {
-      // Supabase에서 전체 notes 가져오기
-      const { data: allNotes, error } = await supabase
-        .from('notes')
-        .select('*')
-        .order('y', { ascending: false })
-        .order('m', { ascending: false })
-        .order('d', { ascending: false })
-        .abortSignal(abortController.signal);
-
-      if (error) throw error;
-      if (!allNotes) {
-        if (currentRequestId === requestIdRef.current) {
-          setResults([]);
-          setLoading(false);
-        }
+  const performSearchImmediate = useCallback(
+    async (searchQuery: string) => {
+      if (!searchQuery.trim()) {
+        setResults([]);
+        setLoading(false);
         return;
       }
 
-      allNotes.forEach((row) => {
-        const note = normalizeNote(row);
-        const { y, m, d } = note;
-        const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      // 이전 요청 취소
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
 
-        // 확장된 검색어 중 하나라도 매칭되는지 확인
-        const matchesAnyTerm = (text: string): boolean => {
-          const lowerText = text.toLowerCase();
-          return Array.from(searchTerms).some(term => lowerText.includes(term));
-        };
+      // 새 AbortController 생성 및 요청 ID 증가
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+      const currentRequestId = ++requestIdRef.current;
 
-        // 날짜 검색
-        if (matchesAnyTerm(dateStr) || matchesAnyTerm(`${m + 1}월 ${d}일`)) {
-          found.push({
-            date: { y, m, d },
-            note,
-            matchType: 'date',
-            matchText: dateStr,
-          });
-          return;
-        }
+      setLoading(true);
 
-        // 제목 검색
-        if (note.title && matchesAnyTerm(note.title)) {
-          found.push({
-            date: { y, m, d },
-            note,
-            matchType: 'title',
-            matchText: note.title,
-          });
-          return;
-        }
+      // 검색어 확장: 원본 + 매핑된 키워드들
+      const baseQuery = searchQuery.toLowerCase().trim();
+      const searchTerms = new Set<string>([baseQuery]);
 
-        // 내용 검색
-        if (note.content && matchesAnyTerm(note.content)) {
-          found.push({
-            date: { y, m, d },
-            note,
-            matchType: 'content',
-            matchText: note.content.substring(0, 100),
-          });
-          return;
-        }
-
-        // 칩 검색
-        if (note.items && note.items.length > 0) {
-          for (const item of note.items) {
-            const chipText = item.text || item.label;
-            const chipEmoji = item.emoji || '';
-            // 텍스트 또는 이모지로 검색 (확장 검색어 적용)
-            if (matchesAnyTerm(chipText) || Array.from(searchTerms).some(term => chipEmoji.includes(term))) {
-              found.push({
-                date: { y, m, d },
-                note,
-                matchType: 'chip',
-                matchText: chipText,
-              });
-              return;
-            }
-          }
+      // replacements에서 매칭되는 모든 변환 키워드 추가
+      Object.entries(replacements).forEach(([from, to]) => {
+        if (baseQuery.includes(from.toLowerCase())) {
+          searchTerms.add(to.toLowerCase());
         }
       });
 
-      // 최신 요청인 경우에만 결과 업데이트
-      if (currentRequestId === requestIdRef.current) {
-        setResults(found);
+      const found: SearchResult[] = [];
+
+      try {
+        // Supabase에서 전체 notes 가져오기
+        const { data: allNotes, error } = await supabase
+          .from('notes')
+          .select('*')
+          .order('y', { ascending: false })
+          .order('m', { ascending: false })
+          .order('d', { ascending: false })
+          .abortSignal(abortController.signal);
+
+        if (error) throw error;
+        if (!allNotes) {
+          if (currentRequestId === requestIdRef.current) {
+            setResults([]);
+            setLoading(false);
+          }
+          return;
+        }
+
+        allNotes.forEach((row) => {
+          const note = normalizeNote(row);
+          const { y, m, d } = note;
+          const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+
+          // 확장된 검색어 중 하나라도 매칭되는지 확인
+          const matchesAnyTerm = (text: string): boolean => {
+            const lowerText = text.toLowerCase();
+            return Array.from(searchTerms).some((term) => lowerText.includes(term));
+          };
+
+          // 날짜 검색
+          if (matchesAnyTerm(dateStr) || matchesAnyTerm(`${m + 1}월 ${d}일`)) {
+            found.push({
+              date: { y, m, d },
+              note,
+              matchType: 'date',
+              matchText: dateStr,
+            });
+            return;
+          }
+
+          // 제목 검색
+          if (note.title && matchesAnyTerm(note.title)) {
+            found.push({
+              date: { y, m, d },
+              note,
+              matchType: 'title',
+              matchText: note.title,
+            });
+            return;
+          }
+
+          // 내용 검색
+          if (note.content && matchesAnyTerm(note.content)) {
+            found.push({
+              date: { y, m, d },
+              note,
+              matchType: 'content',
+              matchText: note.content.substring(0, 100),
+            });
+            return;
+          }
+
+          // 칩 검색
+          if (note.items && note.items.length > 0) {
+            for (const item of note.items) {
+              const chipText = item.text || item.label;
+              const chipEmoji = item.emoji || '';
+              // 텍스트 또는 이모지로 검색 (확장 검색어 적용)
+              if (
+                matchesAnyTerm(chipText) ||
+                Array.from(searchTerms).some((term) => chipEmoji.includes(term))
+              ) {
+                found.push({
+                  date: { y, m, d },
+                  note,
+                  matchType: 'chip',
+                  matchText: chipText,
+                });
+                return;
+              }
+            }
+          }
+        });
+
+        // 최신 요청인 경우에만 결과 업데이트
+        if (currentRequestId === requestIdRef.current) {
+          setResults(found);
+        }
+      } catch (error) {
+        // AbortError는 정상적인 취소이므로 무시
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+        console.error('Search error:', error);
+        // 최신 요청인 경우에만 상태 업데이트
+        if (currentRequestId === requestIdRef.current) {
+          setResults([]);
+        }
+      } finally {
+        // 최신 요청인 경우에만 로딩 상태 해제
+        if (currentRequestId === requestIdRef.current) {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      // AbortError는 정상적인 취소이므로 무시
-      if (error instanceof Error && error.name === 'AbortError') {
-        return;
-      }
-      console.error('Search error:', error);
-      // 최신 요청인 경우에만 상태 업데이트
-      if (currentRequestId === requestIdRef.current) {
-        setResults([]);
-      }
-    } finally {
-      // 최신 요청인 경우에만 로딩 상태 해제
-      if (currentRequestId === requestIdRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [replacements]);
+    },
+    [replacements]
+  );
 
   // 디바운스된 검색 함수 (300ms)
   const performSearch = useMemo(
@@ -261,11 +274,16 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
   const getMatchTypeLabel = (type: string) => {
     switch (type) {
-      case 'title': return '제목';
-      case 'content': return '내용';
-      case 'chip': return '태그';
-      case 'date': return '날짜';
-      default: return '';
+      case 'title':
+        return '제목';
+      case 'content':
+        return '내용';
+      case 'chip':
+        return '태그';
+      case 'date':
+        return '날짜';
+      default:
+        return '';
     }
   };
 
@@ -330,43 +348,50 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
-          <button className="search-close" onClick={onClose} aria-label="닫기">✕</button>
+          <button className="search-close" onClick={onClose} aria-label="닫기">
+            ✕
+          </button>
         </div>
 
         <div className="search-results" aria-live="polite" aria-atomic="true">
           {loading && (
-            <div className="search-empty" role="status">검색 중...</div>
+            <div className="search-empty" role="status">
+              검색 중...
+            </div>
           )}
 
           {!loading && query.trim() && results.length === 0 && (
-            <div className="search-empty" role="status">검색 결과가 없습니다.</div>
+            <div className="search-empty" role="status">
+              검색 결과가 없습니다.
+            </div>
           )}
 
-          {!loading && results.map((result, idx) => (
-            <div
-              key={`${result.date.y}-${result.date.m}-${result.date.d}-${idx}`}
-              className="search-result-item"
-              onClick={() => handleSelect(result)}
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleSelect(result);
-                }
-              }}
-            >
-              <div className="search-result-header">
-                <span className="search-result-date">
-                  {result.date.y}년 {result.date.m + 1}월 {result.date.d}일
-                </span>
-                <span className="search-result-type">{getMatchTypeLabel(result.matchType)}</span>
+          {!loading &&
+            results.map((result, idx) => (
+              <div
+                key={`${result.date.y}-${result.date.m}-${result.date.d}-${idx}`}
+                className="search-result-item"
+                onClick={() => handleSelect(result)}
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleSelect(result);
+                  }
+                }}
+              >
+                <div className="search-result-header">
+                  <span className="search-result-date">
+                    {result.date.y}년 {result.date.m + 1}월 {result.date.d}일
+                  </span>
+                  <span className="search-result-type">{getMatchTypeLabel(result.matchType)}</span>
+                </div>
+                {result.note.title && (
+                  <div className="search-result-title">{result.note.title}</div>
+                )}
+                <div className="search-result-text">{result.matchText}</div>
               </div>
-              {result.note.title && (
-                <div className="search-result-title">{result.note.title}</div>
-              )}
-              <div className="search-result-text">{result.matchText}</div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>
