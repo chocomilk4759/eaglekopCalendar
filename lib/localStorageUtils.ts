@@ -19,8 +19,7 @@ export function safeSetItem(key: string, value: string): boolean {
     // QuotaExceededError 처리
     if (
       error instanceof DOMException &&
-      (error.name === 'QuotaExceededError' ||
-        error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
+      (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')
     ) {
       console.warn('localStorage 할당량 초과. 오래된 캐시를 정리합니다.');
 
@@ -28,6 +27,7 @@ export function safeSetItem(key: string, value: string): boolean {
       const cleaned = cleanOldCaches();
 
       if (cleaned > 0) {
+        // eslint-disable-next-line no-console
         console.log(`${cleaned}개의 오래된 캐시를 삭제했습니다.`);
 
         // 재시도
@@ -67,9 +67,7 @@ export function cleanOldCaches(): number {
 
       // 캐시 키 패턴 확인
       const isCacheKey =
-        key.startsWith('cal:') ||
-        key.startsWith('holiday-cache:') ||
-        key.startsWith('img-cache:');
+        key.startsWith('cal:') || key.startsWith('holiday-cache:') || key.startsWith('img-cache:');
 
       if (!isCacheKey) continue;
 

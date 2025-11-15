@@ -277,6 +277,7 @@ export default function DateInfoModal({
     window.addEventListener('resize', debouncedResize);
     onResize(); // Call immediately on mount
     return () => window.removeEventListener('resize', debouncedResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, imageUrl, note.image_url]);
 
   function computeLimits(hasImg: boolean) {

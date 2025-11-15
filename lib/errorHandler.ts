@@ -5,9 +5,9 @@
  */
 
 export type ErrorContext = {
-  action: string;      // 예: "이미지 업로드", "노트 저장"
-  detail?: string;     // 추가 컨텍스트
-  error?: unknown;     // 원본 에러 객체
+  action: string; // 예: "이미지 업로드", "노트 저장"
+  detail?: string; // 추가 컨텍스트
+  error?: unknown; // 원본 에러 객체
 };
 
 /**
@@ -53,6 +53,7 @@ export function handleError(context: ErrorContext): void {
  * 성공 메시지 표시 (향후 Toast UI로 업그레이드 가능)
  */
 export function showSuccess(message: string): void {
+  // eslint-disable-next-line no-console
   console.log(`[Success] ${message}`);
   // 현재는 조용히 처리, 향후 Toast 라이브러리 추가 시 여기서 호출
 }
