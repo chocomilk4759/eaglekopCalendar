@@ -1576,7 +1576,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         style={{
           opacity: loading ? 0 : 1,
           transition: 'opacity 0.3s ease-in-out',
-          position: loading ? 'absolute' : 'relative',
+          pointerEvents: loading ? 'none' : 'auto',
           visibility: loading ? 'hidden' : 'visible',
         }}
       >
