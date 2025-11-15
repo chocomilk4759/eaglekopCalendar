@@ -769,8 +769,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     let alive = true;
 
     const run = async () => {
-      // 1) 캐시가 있으면 즉시 표시 → 없으면 로컬스토리지 폴백
+      // 1) 캐시 확인
       const cached = monthCache.get(ymKey) || loadMonthLS(ym.y, ym.m);
+
+      // 2) 캐시가 있으면 즉시 표시, 없으면 즉시 loading 시작
       if (cached) {
         const map: Record<string, Note> = {};
         // Type guard: cached가 배열인지 확인
@@ -783,10 +785,13 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
           });
         }
         setNotes(map);
+      } else {
+        // 캐시 없으면 바로 loading 시작 (빈 그리드 렌더 방지)
+        setLoading(true);
       }
 
-      // 2) 최신 데이터로 갱신
-      setLoading(true);
+      // 3) 최신 데이터로 갱신
+      if (cached) setLoading(true);
       try {
         const { data, error } = await supabase
           .from('notes')

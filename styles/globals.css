@@ -1443,7 +1443,8 @@ a:focus-visible {
 
 .skeleton-cell {
   padding: 8px;
-  min-height: 100px;
+  min-height: var(--cell-h);
+  max-height: var(--cell-h);
   pointer-events: none;
 }
 
