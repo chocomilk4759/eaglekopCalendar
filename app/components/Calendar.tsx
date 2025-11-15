@@ -15,6 +15,7 @@ import { getSignedUrl } from '@/lib/imageCache';
 import { safeSetItem } from '@/lib/localStorageUtils';
 import { sanitizeText } from '@/lib/sanitize';
 import { isSupabaseRow } from '@/lib/typeGuards';
+import { computeCellMinWidth } from '@/lib/calendar-utils';
 
 // 드래그&드롭 payload 타입 정의 (제거됨 - 실제로는 JSON string으로만 전달)
 
@@ -712,7 +713,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setPendingNoteDrop(null);
   }
 
-  // grid 너비와 gap로 7칸 가능 여부 계산 (CSS 변수 --cell-min-w 기준)
+  // grid 너비와 gap로 7칸 가능 여부 계산 (순수 함수 기반, DOM 조작 제거)
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
@@ -721,17 +722,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
 
-      // CSS 변수에서 동적으로 최소 너비 읽기
-      const rootStyles = getComputedStyle(document.documentElement);
-      const cellMinWStr = rootStyles.getPropertyValue('--cell-min-w').trim();
-      // clamp()의 현재 계산된 값을 얻기 위해 임시 요소 사용
-      const tempDiv = document.createElement('div');
-      tempDiv.style.width = cellMinWStr;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.visibility = 'hidden';
-      document.body.appendChild(tempDiv);
-      const cellMinWidth = parseFloat(getComputedStyle(tempDiv).width) || 140;
-      document.body.removeChild(tempDiv);
+      // 순수 함수로 계산 (DOM 조작 없음)
+      const cellMinWidth = computeCellMinWidth(window.innerWidth);
 
       const width = el.clientWidth;
       const cols = Math.floor((width + gap) / (cellMinWidth + gap));

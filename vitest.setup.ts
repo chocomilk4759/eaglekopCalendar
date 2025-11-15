@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom';
+import React from 'react';
+
+// Make React globally available for JSX in tests
+(global as any).React = React;
 
 // Mock Supabase environment variables for testing
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
