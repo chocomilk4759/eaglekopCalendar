@@ -164,7 +164,7 @@ describe('sanitizeUrl', () => {
     });
 
     test('should handle non-string input', () => {
-      expect(sanitizeUrl(123 as any)).toBe(null);
+      expect(sanitizeUrl(123 as unknown as string)).toBe(null);
     });
   });
 });
@@ -219,8 +219,8 @@ describe('sanitizeNote', () => {
       link: 'https://example.com',
       items: [
         { text: '<script>Bad</script>Good', emoji: '🔥' },
-        { text: 'Clean text', emoji: '✅' }
-      ]
+        { text: 'Clean text', emoji: '✅' },
+      ],
     };
 
     const cleaned = sanitizeNote(maliciousNote);
@@ -236,7 +236,7 @@ describe('sanitizeNote', () => {
   test('should block malicious URLs in link field', () => {
     const maliciousNote = {
       content: 'Content',
-      link: 'javascript:alert(1)'
+      link: 'javascript:alert(1)',
     };
 
     const cleaned = sanitizeNote(maliciousNote);
@@ -245,7 +245,7 @@ describe('sanitizeNote', () => {
 
   test('should handle undefined fields', () => {
     const note = {
-      content: 'Content'
+      content: 'Content',
     };
 
     const cleaned = sanitizeNote(note);
@@ -256,9 +256,7 @@ describe('sanitizeNote', () => {
 
   test('should sanitize emoji field (防 XSS in emoji)', () => {
     const note = {
-      items: [
-        { emoji: '<script>alert(1)</script>🔥', text: 'Text' }
-      ]
+      items: [{ emoji: '<script>alert(1)</script>🔥', text: 'Text' }],
     };
 
     const cleaned = sanitizeNote(note);
@@ -283,7 +281,7 @@ describe('Real-world XSS Attack Scenarios', () => {
     '<details open ontoggle=alert(1)>',
   ];
 
-  XSS_VECTORS.forEach(vector => {
+  XSS_VECTORS.forEach((vector) => {
     test(`should block XSS vector: ${vector.substring(0, 30)}...`, () => {
       const result = sanitizeText(vector);
 
