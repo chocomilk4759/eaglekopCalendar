@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { debounce } from '@/lib/utils';
 
 type RibbonButton = {
   id: string;
@@ -66,21 +67,19 @@ export default function TopRibbon({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // ResizeObserver로 컨테이너 크기 변화 감지
+    // ResizeObserver로 컨테이너 크기 변화 감지 (150ms 디바운스)
+    const handleResize = debounce(() => {
+      computeSize();
+      updateScrollFade();
+    }, 150);
+
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => {
-        computeSize();
-        updateScrollFade();
-      });
+      ro = new ResizeObserver(handleResize);
       ro.observe(container);
     } else {
-      const onResize = () => {
-        computeSize();
-        updateScrollFade();
-      };
-      window.addEventListener('resize', onResize);
-      return () => window.removeEventListener('resize', onResize);
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
     }
 
     return () => ro?.disconnect();

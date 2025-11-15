@@ -10,7 +10,7 @@ import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import type { ChipPreset } from './ModifyChipInfoModal';
 import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holidayApi';
-import { isMobileDevice } from '@/lib/utils';
+import { isMobileDevice, debounce } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/imageCache';
 import { safeSetItem } from '@/lib/localStorageUtils';
 import { sanitizeText } from '@/lib/sanitize';
@@ -626,7 +626,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   useEffect(() => {
     const el = gridRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
+
+    const handleResize = debounce(() => {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
 
@@ -645,7 +646,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const width = el.clientWidth;
       const cols = Math.floor((width + gap) / (cellMinWidth + gap));
       setCanShowSeven(cols >= 7);
-    });
+    }, 150);
+
+    const ro = new ResizeObserver(handleResize);
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
