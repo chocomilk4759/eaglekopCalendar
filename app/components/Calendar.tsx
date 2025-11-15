@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
@@ -295,90 +295,93 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // function onTouchEnd(e: React.TouchEvent) { ... }
 
   // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
-  function onCellClick(e: React.MouseEvent, y: number, m: number, d: number, key: string) {
-    if (ctrlSelecting && canEdit) {
-      e.preventDefault();
-      e.stopPropagation();
-      const next = new Set(selectedKeysRef.current);
-      if (next.has(key)) {
-        next.delete(key);
+  const onCellClick = useCallback(
+    (e: React.MouseEvent, y: number, m: number, d: number, key: string) => {
+      if (ctrlSelecting && canEdit) {
+        e.preventDefault();
+        e.stopPropagation();
+        const next = new Set(selectedKeysRef.current);
+        if (next.has(key)) {
+          next.delete(key);
+        } else {
+          next.add(key);
+        }
+        selectedKeysRef.current = next;
+        setSelectedKeys(new Set(next));
       } else {
-        next.add(key);
+        setModalDate({ y, m, d });
+        setModalOpen(true);
       }
-      selectedKeysRef.current = next;
-      setSelectedKeys(new Set(next));
-    } else {
-      openInfo(y, m, d);
-    }
-  }
+    },
+    [ctrlSelecting, canEdit]
+  );
 
   // 일괄 칩 추가
-  async function applyBulkAddChip(
-    text: string,
-    startTime: string,
-    nextDay: boolean,
-    preset?: ChipPreset
-  ) {
-    const targets = bulkTargets.slice();
-    if (!targets.length) {
+  const applyBulkAddChip = useCallback(
+    async (text: string, startTime: string, nextDay: boolean, preset?: ChipPreset) => {
+      const targets = bulkTargets.slice();
+      if (!targets.length) {
+        setBulkOpen(false);
+        return;
+      }
+
+      // 먼저 로컬 상태 업데이트
+      const updatedNotes: Note[] = [];
+      for (const t of targets) {
+        const k = `${t.y}-${t.m}-${t.d}`;
+        const existing = notes[k];
+        const n = existing
+          ? { ...existing }
+          : normalizeNote({
+              y: t.y,
+              m: t.m,
+              d: t.d,
+              content: '',
+              items: [],
+              color: null,
+              link: null,
+              image_url: null,
+            });
+        const items = Array.isArray(n.items) ? [...n.items] : [];
+        items.push({
+          text,
+          emoji: preset?.emoji ?? null,
+          label: preset?.label ?? '',
+          startTime: startTime || undefined,
+          nextDay: nextDay || undefined,
+        });
+        const updated = normalizeNote({ ...n, items });
+        updatedNotes.push(updated);
+      }
+
+      // DB에 저장 (병렬 처리)
+      try {
+        const savePromises = updatedNotes.map((note) => upsertNote(note));
+        const savedNotes = await Promise.all(savePromises);
+
+        // 로컬 상태 업데이트
+        setNotes((prev) => {
+          const next = { ...prev };
+          for (const saved of savedNotes) {
+            next[cellKey(saved.y, saved.m, saved.d)] = saved;
+          }
+          return next;
+        });
+      } catch (e) {
+        const errorMessage =
+          e instanceof Error ? e.message : '일괄 칩 추가 중 오류가 발생했습니다.';
+        setAlertMessage({ title: '일괄 저장 실패', message: errorMessage });
+        setAlertOpen(true);
+      }
+
       setBulkOpen(false);
-      return;
-    }
-
-    // 먼저 로컬 상태 업데이트
-    const updatedNotes: Note[] = [];
-    for (const t of targets) {
-      const k = `${t.y}-${t.m}-${t.d}`;
-      const existing = notes[k];
-      const n = existing
-        ? { ...existing }
-        : normalizeNote({
-            y: t.y,
-            m: t.m,
-            d: t.d,
-            content: '',
-            items: [],
-            color: null,
-            link: null,
-            image_url: null,
-          });
-      const items = Array.isArray(n.items) ? [...n.items] : [];
-      items.push({
-        text,
-        emoji: preset?.emoji ?? null,
-        label: preset?.label ?? '',
-        startTime: startTime || undefined,
-        nextDay: nextDay || undefined,
-      });
-      const updated = normalizeNote({ ...n, items });
-      updatedNotes.push(updated);
-    }
-
-    // DB에 저장 (병렬 처리)
-    try {
-      const savePromises = updatedNotes.map((note) => upsertNote(note));
-      const savedNotes = await Promise.all(savePromises);
-
-      // 로컬 상태 업데이트
-      setNotes((prev) => {
-        const next = { ...prev };
-        for (const saved of savedNotes) {
-          next[cellKey(saved.y, saved.m, saved.d)] = saved;
-        }
-        return next;
-      });
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : '일괄 칩 추가 중 오류가 발생했습니다.';
-      setAlertMessage({ title: '일괄 저장 실패', message: errorMessage });
-      setAlertOpen(true);
-    }
-
-    setBulkOpen(false);
-    setBulkTargets([]);
-  }
+      setBulkTargets([]);
+    },
+    [bulkTargets, notes]
+  );
 
   // ★ Ctrl 일괄: '휴방' 적용(기존 휴방 로직과 동일하게 content='휴방', color='red')
-  async function applyBulkRest() {
+  const applyBulkRest = useCallback(async () => {
     const targets = bulkTargets.slice();
     if (!targets.length) {
       setBulkOpen(false);
@@ -428,7 +431,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     setBulkOpen(false);
     setBulkTargets([]);
-  }
+  }, [bulkTargets, notes]);
 
   // ----- 롱프레스 드래그 상태 -----
   const [longReadyKey, setLongReadyKey] = useState<string | null>(null);
@@ -990,13 +993,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     }
   }
 
-  function openInfo(y: number, m: number, d: number) {
-    setModalDate({ y, m, d });
-    setModalOpen(true);
-  }
-  function onSaved(note: Note) {
+  const onSaved = useCallback((note: Note) => {
     setNotes((prev) => ({ ...prev, [cellKey(note.y, note.m, note.d)]: note }));
-  }
+  }, []);
 
   // 프리셋 드롭 처리: 내용 입력이 비었으면 아이콘만 추가(emojiOnly)
   async function dropPreset(y: number, m: number, d: number, dataStr: string) {
@@ -1354,7 +1353,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       setYM({ y, m });
     }
 
-    openInfo(y, m, d.getDate());
+    setModalDate({ y, m, d: d.getDate() });
+    setModalOpen(true);
   }
 
   // 셀 상단 중앙 타이틀:
@@ -2020,7 +2020,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
             setYM({ y, m });
           }
-          openInfo(y, m, d);
+          setModalDate({ y, m, d });
+          setModalOpen(true);
         }}
       />
 
