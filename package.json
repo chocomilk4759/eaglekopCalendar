@@ -1,7 +1,7 @@
 {
   "name": "vercel-shared-planner",
   "private": true,
-  "version": "0.33.15",
+  "version": "0.33.16",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

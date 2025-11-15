@@ -7,8 +7,30 @@ import type { Preset as DbPreset } from '@/types/database';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
+import type { DragPayload } from '@/types/window';
 
 type Preset = Pick<DbPreset, 'emoji' | 'label'>;
+
+function isUndatedItemsRow(row: unknown): row is { id: number; items: Item[] } {
+  return (
+    typeof row === 'object' &&
+    row !== null &&
+    'id' in row &&
+    'items' in row &&
+    (typeof row.id === 'number' || typeof row.id === 'string')
+  );
+}
+
+function isPresetRow(row: unknown): row is { emoji: string; label: string } {
+  return (
+    typeof row === 'object' &&
+    row !== null &&
+    'emoji' in row &&
+    'label' in row &&
+    typeof row.emoji === 'string' &&
+    (typeof row.label === 'string' || typeof row.label === 'number')
+  );
+}
 
 export default function UnscheduledModal({
   open,
@@ -88,8 +110,8 @@ export default function UnscheduledModal({
         if (cancelled) return;
         if (error) throw error;
 
-        if (data) {
-          setRecordId((data as any).id);
+        if (data && isUndatedItemsRow(data)) {
+          setRecordId(typeof data.id === 'number' ? data.id : Number(data.id));
           setItems(Array.isArray(data.items) ? data.items : []);
         } else {
           // 레코드가 없으면 초기화만 (실제 저장은 하지 않음)
@@ -215,7 +237,9 @@ export default function UnscheduledModal({
       .single();
 
     if (error) throw new Error(error.message);
-    setRecordId((data as any).id);
+    if (isUndatedItemsRow(data)) {
+      setRecordId(typeof data.id === 'number' ? data.id : Number(data.id));
+    }
     setItems(newItems);
   }
 
@@ -227,7 +251,7 @@ export default function UnscheduledModal({
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
         setPresets(
-          data.map((r) => ({ emoji: (r as any).emoji, label: String((r as any).label ?? '') }))
+          data.filter(isPresetRow).map((r) => ({ emoji: r.emoji, label: String(r.label ?? '') }))
         );
       } else {
         setPresets([
@@ -412,11 +436,16 @@ export default function UnscheduledModal({
     e.preventDefault();
     if (!canEdit) return;
 
-    let payload: any = null;
+    let payload: DragPayload | null = null;
     try {
       const json =
         e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
-      if (json) payload = JSON.parse(json);
+      if (json) {
+        const parsed = JSON.parse(json);
+        if (parsed && typeof parsed === 'object' && 'type' in parsed && parsed.type === 'chip') {
+          payload = parsed as DragPayload;
+        }
+      }
     } catch {}
 
     // Fallback: window 객체에서 가져오기
