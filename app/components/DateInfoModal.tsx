@@ -357,7 +357,7 @@ export default function DateInfoModal({
   async function saveMemo() {
     if (!canEdit) return;
     try {
-      const saved = await persist({
+      await persist({
         content: memo,
         title: titleInput.trim() ? titleInput.trim() : null,
         image_url: imageUrl ?? null,

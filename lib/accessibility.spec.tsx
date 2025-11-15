@@ -18,7 +18,7 @@
 
 import React from 'react';
 import { describe, test, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import AlertModal from '@/app/components/AlertModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
 import SearchModal from '@/app/components/SearchModal';
@@ -133,12 +133,7 @@ describe('ARIA Accessibility', () => {
   describe('SearchModal - Dialog Semantics', () => {
     test('should have role="dialog"', () => {
       const { container } = render(
-        <SearchModal
-          open={true}
-          onClose={() => {}}
-          notes={{}}
-          onSelectDate={() => {}}
-        />
+        <SearchModal open={true} onClose={() => {}} notes={{}} onSelectDate={() => {}} />
       );
 
       const dialog = container.querySelector('[role="dialog"]');
@@ -147,12 +142,7 @@ describe('ARIA Accessibility', () => {
 
     test('should have aria-modal="true"', () => {
       const { container } = render(
-        <SearchModal
-          open={true}
-          onClose={() => {}}
-          notes={{}}
-          onSelectDate={() => {}}
-        />
+        <SearchModal open={true} onClose={() => {}} notes={{}} onSelectDate={() => {}} />
       );
 
       const dialog = container.querySelector('[role="dialog"]');
@@ -161,12 +151,7 @@ describe('ARIA Accessibility', () => {
 
     test('should have aria-label', () => {
       const { container } = render(
-        <SearchModal
-          open={true}
-          onClose={() => {}}
-          notes={{}}
-          onSelectDate={() => {}}
-        />
+        <SearchModal open={true} onClose={() => {}} notes={{}} onSelectDate={() => {}} />
       );
 
       const dialog = container.querySelector('[role="dialog"]');
@@ -175,12 +160,7 @@ describe('ARIA Accessibility', () => {
 
     test('close button should have aria-label', () => {
       const { container } = render(
-        <SearchModal
-          open={true}
-          onClose={() => {}}
-          notes={{}}
-          onSelectDate={() => {}}
-        />
+        <SearchModal open={true} onClose={() => {}} notes={{}} onSelectDate={() => {}} />
       );
 
       const closeBtn = container.querySelector('.search-close');
@@ -189,12 +169,7 @@ describe('ARIA Accessibility', () => {
 
     test('search results should have aria-live region', () => {
       const { container } = render(
-        <SearchModal
-          open={true}
-          onClose={() => {}}
-          notes={{}}
-          onSelectDate={() => {}}
-        />
+        <SearchModal open={true} onClose={() => {}} notes={{}} onSelectDate={() => {}} />
       );
 
       const results = container.querySelector('.search-results');

@@ -16,16 +16,7 @@ import { safeSetItem } from '@/lib/localStorageUtils';
 import { sanitizeText } from '@/lib/sanitize';
 import { isSupabaseRow } from '@/lib/typeGuards';
 
-// 드래그&드롭 payload 타입 정의
-interface NoteCopyPayload {
-  type: 'note-copy';
-  note: Note;
-}
-
-interface PresetPayload {
-  type: 'preset';
-  preset: ChipPreset;
-}
+// 드래그&드롭 payload 타입 정의 (제거됨 - 실제로는 JSON string으로만 전달)
 
 interface ChipPayload {
   type: 'chip';
@@ -438,7 +429,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // ----- 롱프레스 드래그 상태 -----
   const [longReadyKey, setLongReadyKey] = useState<string | null>(null);
-  const [dragPulseKey, setDragPulseKey] = useState<string | null>(null); // ★ 펄스(반짝) 표시 대상 셀
   const pressTimerRef = useRef<number | undefined>(undefined);
   const pressKeyRef = useRef<string | null>(null);
   const pulseTimerRef = useRef<number | undefined>(undefined);
@@ -850,7 +840,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             });
             saveMonthLS(y, m, data);
           }
-        } catch (e) {
+        } catch {
           // 프리페치 실패는 무시 (백그라운드 작업)
         }
       };
@@ -1361,13 +1351,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     openInfo(y, m, d.getDate());
   }
 
-  // 칩 표시 문자열(emojiOnly 지원)
-  function chipLabel(it: Item) {
-    if (it.text && it.text.length) return it.text;
-    if (it.emojiOnly) return it.emoji ? it.emoji : it.label;
-    return `${it.emoji ? it.emoji + ' ' : ''}${it.label}`;
-  }
-
   // 셀 상단 중앙 타이틀:
   // - note.title 이 설정되어 있으면 그 값을 사용
   // - 설정하지 않으면 '', 7칸 미만일 때는 요일만 노출
@@ -1724,7 +1707,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                     } else if (json?.type === 'chip') {
                       dropChip(c.y, c.m, c.d, raw);
                     }
-                  } catch (err) {
+                  } catch {
                     // 에러 무시
                   }
 

@@ -36,7 +36,6 @@ vi.mock('./utils', () => ({
   },
 }));
 
-import { createClient } from './supabaseClient';
 import { storage } from './utils';
 
 describe('imageCache', () => {
