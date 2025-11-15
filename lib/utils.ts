@@ -111,6 +111,7 @@ export function isMobileDevice(): boolean {
 }
 
 // 디바운스: 연속 호출을 지연시켜 마지막 호출만 실행
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   ms: number

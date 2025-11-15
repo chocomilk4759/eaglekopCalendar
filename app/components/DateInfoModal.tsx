@@ -10,6 +10,7 @@ import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
 import { isMobileDevice } from '@/lib/utils';
 import type { Preset as DbPreset } from '@/types/database';
+import { isError } from '@/lib/typeGuards';
 
 type Preset = Pick<DbPreset, 'emoji' | 'label'>;
 
@@ -284,8 +285,8 @@ export default function DateInfoModal({
     if(!canEdit) return;
     const next: 'red'|'blue'|null = note.color===color ? null : color;
     try{ await persist({ color: next }); }
-    catch(e:any){
-      setAlertMessage({ title: '플래그 저장 실패', message: e?.message ?? '플래그 저장 중 오류가 발생했습니다.' });
+    catch(e: unknown) {
+      setAlertMessage({ title: '플래그 저장 실패', message: isError(e) ? e.message : '플래그 저장 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
@@ -298,8 +299,8 @@ export default function DateInfoModal({
       } else {
         await persist({ color: 'red', content: '휴방' });
       }
-    }catch(e:any){
-      setAlertMessage({ title: '휴 상태 변경 실패', message: e?.message ?? '휴 상태 변경 중 오류가 발생했습니다.' });
+    }catch(e: unknown) {
+      setAlertMessage({ title: '휴 상태 변경 실패', message: isError(e) ? e.message : '휴 상태 변경 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
@@ -316,8 +317,8 @@ export default function DateInfoModal({
       setInitialMemo(saved.content || '');
       setAlertMessage({ title: '저장 완료', message: '저장되었습니다.' });
       setAlertOpen(true);
-    }catch(e:any){
-      setAlertMessage({ title: '저장 실패', message: e?.message ?? '저장 중 오류가 발생했습니다.' });
+    }catch(e: unknown) {
+      setAlertMessage({ title: '저장 실패', message: isError(e) ? e.message : '저장 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
@@ -326,8 +327,8 @@ export default function DateInfoModal({
     if (!canEdit) return;
     setUseImageAsBg(checked);
     try { await persist({ use_image_as_bg: checked }); }
-    catch (e:any) {
-      setAlertMessage({ title: '배경 설정 실패', message: e?.message ?? '배경 사용 여부 저장 중 오류가 발생했습니다.' });
+    catch (e: unknown) {
+      setAlertMessage({ title: '배경 설정 실패', message: isError(e) ? e.message : '배경 사용 여부 저장 중 오류가 발생했습니다.' });
       setAlertOpen(true);
       setUseImageAsBg(!checked);
     }
@@ -361,7 +362,7 @@ export default function DateInfoModal({
       } catch (e: any) {
         setConfirmOpen(false);
         // 오류 알림 모달 표시
-        setAlertMessage({ title: '초기화 실패', message: e?.message ?? '초기화 중 오류가 발생했습니다.' });
+        setAlertMessage({ title: '초기화 실패', message: isError(e) ? e.message : '초기화 중 오류가 발생했습니다.' });
         setAlertOpen(true);
       }
     });
@@ -470,8 +471,8 @@ export default function DateInfoModal({
     };
     const items = [...(note.items || []), newItem];
     try{ await persist({ items }); }
-    catch(e:any){
-      setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
+    catch(e: unknown) {
+      setAlertMessage({ title: '아이템 추가 실패', message: isError(e) ? e.message : '아이템 추가 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
@@ -490,8 +491,8 @@ export default function DateInfoModal({
       nextDay: nextDay || undefined
     };
     try{ await persist({ items }); }
-    catch(e:any){
-      setAlertMessage({ title: '아이템 수정 실패', message: e?.message ?? '아이템 수정 중 오류가 발생했습니다.' });
+    catch(e: unknown) {
+      setAlertMessage({ title: '아이템 수정 실패', message: isError(e) ? e.message : '아이템 수정 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
     setChipModalOpen(false);
@@ -508,8 +509,8 @@ export default function DateInfoModal({
         await persist({ items });
         setChipModalOpen(false);
         setConfirmChipDeleteOpen(false);
-      } catch(e: any) {
-        setAlertMessage({ title: '아이템 삭제 실패', message: e?.message ?? '아이템 삭제 중 오류가 발생했습니다.' });
+      } catch(e: unknown) {
+        setAlertMessage({ title: '아이템 삭제 실패', message: isError(e) ? e.message : '아이템 삭제 중 오류가 발생했습니다.' });
         setAlertOpen(true);
       }
     });
@@ -611,7 +612,7 @@ export default function DateInfoModal({
       setDropTargetIndex(null);
       setDropPosition('before');
     } catch (e: any) {
-      setAlertMessage({ title: '칩 순서 변경 실패', message: e?.message ?? '칩 순서 변경 중 오류가 발생했습니다.' });
+      setAlertMessage({ title: '칩 순서 변경 실패', message: isError(e) ? e.message : '칩 순서 변경 중 오류가 발생했습니다.' });
       setAlertOpen(true);
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
@@ -632,16 +633,16 @@ export default function DateInfoModal({
       setLinkInput(saved.link ?? '');
       setAlertMessage({ title: '링크 저장 완료', message: '링크가 저장되었습니다.' });
       setAlertOpen(true);
-    } catch (e:any) {
-      setAlertMessage({ title: '링크 저장 실패', message: e?.message ?? '링크 저장 중 오류가 발생했습니다.' });
+    } catch (e: unknown) {
+      setAlertMessage({ title: '링크 저장 실패', message: isError(e) ? e.message : '링크 저장 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
   async function deleteLink() {
     if (!canEdit) return;
     try { await persist({ link: null }); setLinkInput(''); }
-    catch (e:any) {
-      setAlertMessage({ title: '링크 삭제 실패', message: e?.message ?? '링크 삭제 중 오류가 발생했습니다.' });
+    catch (e: unknown) {
+      setAlertMessage({ title: '링크 삭제 실패', message: isError(e) ? e.message : '링크 삭제 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
@@ -788,8 +789,8 @@ export default function DateInfoModal({
       const saved = await persist({ image_url: null });
       setImageUrl(saved.image_url);
       setDisplayImageUrl(null);
-    } catch (e:any) {
-      setAlertMessage({ title: '이미지 제거 실패', message: e?.message ?? '이미지 제거 중 오류가 발생했습니다.' });
+    } catch (e: unknown) {
+      setAlertMessage({ title: '이미지 제거 실패', message: isError(e) ? e.message : '이미지 제거 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }
@@ -831,8 +832,8 @@ export default function DateInfoModal({
     const newItem: Item = { emoji: p.emoji ?? null, label: p.label, emojiOnly: true };
     items.push(newItem);
     try { await persist({ items }); setComboOpen(false); }
-    catch (e:any) {
-      setAlertMessage({ title: '아이템 추가 실패', message: e?.message ?? '아이템 추가 중 오류가 발생했습니다.' });
+    catch (e: unknown) {
+      setAlertMessage({ title: '아이템 추가 실패', message: isError(e) ? e.message : '아이템 추가 중 오류가 발생했습니다.' });
       setAlertOpen(true);
     }
   }

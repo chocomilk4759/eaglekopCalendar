@@ -14,6 +14,28 @@ import { isMobileDevice, debounce } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/imageCache';
 import { safeSetItem } from '@/lib/localStorageUtils';
 import { sanitizeText } from '@/lib/sanitize';
+import { isSupabaseRow } from '@/lib/typeGuards';
+
+// 드래그&드롭 payload 타입 정의
+interface NoteCopyPayload {
+  type: 'note-copy';
+  note: Note;
+}
+
+interface PresetPayload {
+  type: 'preset';
+  preset: ChipPreset;
+}
+
+interface ChipPayload {
+  type: 'chip';
+  sourceType: 'modal' | 'cell' | 'unscheduled';
+  sourceDate?: { y: number; m: number; d: number };
+  chipIndex: number;
+  item: Item;
+}
+
+type DragPayload = NoteCopyPayload | PresetPayload | ChipPayload;
 
 // 동적 import로 모달 컴포넌트 지연 로딩 (초기 번들 크기 감소)
 const SearchModal = dynamic(() => import('./SearchModal'), { ssr: false });
@@ -520,9 +542,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // note 복제 드롭 처리
-  async function dropNoteCopy(targetY:number, targetM:number, targetD:number, json: any) {
+  async function dropNoteCopy(targetY:number, targetM:number, targetD:number, json: unknown) {
     if (!canEdit) return;
-    if (!json || json.type !== 'note-copy' || !json.note) return;
+    // Type guard: NoteCopyPayload 확인
+    if (
+      !json ||
+      typeof json !== 'object' ||
+      !('type' in json) ||
+      json.type !== 'note-copy' ||
+      !('note' in json) ||
+      !json.note
+    ) return;
     const src: Note = normalizeNote(json.note);
     if (src.y === targetY && src.m === targetM && src.d === targetD) return; // 동일 셀은 무시
 
@@ -679,10 +709,15 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const cached = monthCache.get(ymKey) || loadMonthLS(ym.y, ym.m);
       if (cached) {
         const map: Record<string, Note> = {};
-        (cached as any[]).forEach((row: any) => {
-          const n = normalizeNote(row);
-          map[cellKey(n.y, n.m, n.d)] = n;
-        });
+        // Type guard: cached가 배열인지 확인
+        if (Array.isArray(cached)) {
+          cached.forEach((row: unknown) => {
+            if (isSupabaseRow(row)) {
+              const n = normalizeNote(row);
+              map[cellKey(n.y, n.m, n.d)] = n;
+            }
+          });
+        }
         setNotes(map);
       }
 
@@ -702,9 +737,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
 
         const map: Record<string, Note> = {};
-        (data || []).forEach((row: any) => {
-          const n = normalizeNote(row);
-          map[cellKey(n.y, n.m, n.d)] = n;
+        (data || []).forEach((row: unknown) => {
+          if (isSupabaseRow(row)) {
+            const n = normalizeNote(row);
+            map[cellKey(n.y, n.m, n.d)] = n;
+          }
         });
         setNotes(map);
         setMonthCache((prev) => {
@@ -895,13 +932,20 @@ useEffect(() => {
   // 프리셋 드롭 처리: 내용 입력이 비었으면 아이콘만 추가(emojiOnly)
   async function dropPreset(y: number, m: number, d: number, dataStr: string) {
     if (!canEdit) return;
-    let payload: any;
+    let payload: unknown;
     try {
       payload = JSON.parse(dataStr);
     } catch {
       return;
     }
-    if (payload?.type !== 'preset') return;
+    // Type guard: PresetPayload 확인
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      !('type' in payload) ||
+      payload.type !== 'preset' ||
+      !('preset' in payload)
+    ) return;
     const preset = payload.preset as { emoji: string; label: string };
     // 저장하지 않고, 해당 날짜 모달을 열고 프리셋을 전달한다.
     setPresetToAdd(preset);
@@ -912,17 +956,26 @@ useEffect(() => {
   // 칩 드롭 처리
   async function dropChip(targetY: number, targetM: number, targetD: number, dataStr: string) {
     if (!canEdit) return;
-    let payload: any;
+    let payload: unknown;
     try {
       payload = JSON.parse(dataStr);
     } catch {
       return;
     }
-    if (payload?.type !== 'chip') {
+    // Type guard: ChipPayload 확인
+    if (
+      !payload ||
+      typeof payload !== 'object' ||
+      !('type' in payload) ||
+      payload.type !== 'chip' ||
+      !('sourceType' in payload) ||
+      !('chipIndex' in payload) ||
+      !('item' in payload)
+    ) {
       return;
     }
 
-    const { sourceDate, chipIndex, item, sourceType } = payload;
+    const { sourceDate, chipIndex, item, sourceType } = payload as ChipPayload;
 
     // 동일 날짜로 드롭하면 무시 (unscheduled 제외)
     if (sourceType !== 'unscheduled' && sourceDate && sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
@@ -1144,10 +1197,15 @@ useEffect(() => {
       // notes 상태 업데이트
       if (cached) {
         const map: Record<string, Note> = {};
-        (cached as any[]).forEach((row: any) => {
-          const n = normalizeNote(row);
-          map[cellKey(n.y, n.m, n.d)] = n;
-        });
+        // Type guard: cached가 배열인지 확인
+        if (Array.isArray(cached)) {
+          cached.forEach((row: unknown) => {
+            if (isSupabaseRow(row)) {
+              const n = normalizeNote(row);
+              map[cellKey(n.y, n.m, n.d)] = n;
+            }
+          });
+        }
         setNotes(map);
       }
 
