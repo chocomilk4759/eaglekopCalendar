@@ -1184,6 +1184,7 @@ useEffect(() => {
                 prefetchMonth(p.y, p.m);
               }}
               onClick={() => setYM(prevOf(ym))}
+              aria-label="이전 달"
               style={{ minWidth: 32 }}
             >
               ◀
@@ -1197,6 +1198,7 @@ useEffect(() => {
                 prefetchMonth(n.y, n.m);
               }}
               onClick={() => setYM(nextOf(ym))}
+              aria-label="다음 달"
               style={{ minWidth: 32 }}
             >
               ▶

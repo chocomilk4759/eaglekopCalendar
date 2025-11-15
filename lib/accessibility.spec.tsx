@@ -7,6 +7,13 @@
  * ♻️ Refactor: 코드 개선
  *
  * WCAG 2.1 Level AA 준수 목표
+ *
+ * 수동 검증 체크리스트 (Calendar.tsx):
+ * ✅ 이전 달 버튼 (◀): aria-label="이전 달" - Line 1187
+ * ✅ 다음 달 버튼 (▶): aria-label="다음 달" - Line 1201
+ * ✅ 날짜 이동 버튼 (➜): aria-label="이동" - Already implemented
+ * ✅ 검색 버튼 (🔍): aria-label="검색" - Already implemented
+ * ✅ 미정 일정 버튼 (?): aria-label="미정 일정" - Already implemented
  */
 
 import React from 'react';
