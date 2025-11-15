@@ -8,7 +8,7 @@ import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
 import ConfirmModal from './ConfirmModal';
 import AlertModal from './AlertModal';
-import { isMobileDevice } from '@/lib/utils';
+import { isMobileDevice, debounce } from '@/lib/utils';
 import type { Preset as DbPreset } from '@/types/database';
 import { isError } from '@/lib/typeGuards';
 
@@ -257,10 +257,11 @@ export default function DateInfoModal({
       });
     }
 
-    window.addEventListener('resize', onResize);
-    onResize();
-    return () => window.removeEventListener('resize', onResize);
-  }, [open, imageUrl, note.image_url, size.w, size.h]);
+    const debouncedResize = debounce(onResize, 150);
+    window.addEventListener('resize', debouncedResize);
+    onResize(); // Call immediately on mount
+    return () => window.removeEventListener('resize', debouncedResize);
+  }, [open, imageUrl, note.image_url]);
 
   function computeLimits(hasImg: boolean) {
     const margin = 12;
