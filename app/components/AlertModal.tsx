@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+
 export default function AlertModal({
   open,
   onClose,
@@ -16,9 +18,13 @@ export default function AlertModal({
   if (!open) return null;
 
   return (
-    <div className="modal" onClick={onClose}>
+    <div className="modal" onClick={onClose} role="presentation">
       <div
         className="sheet"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="alert-title"
+        aria-describedby="alert-desc"
         style={{
           position: 'fixed',
           top: '50%',
@@ -33,8 +39,8 @@ export default function AlertModal({
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 style={{ margin: '0 0 16px', fontSize: 18 }}>{title}</h3>
-        <p style={{ margin: '0 0 20px', fontSize: 14, opacity: 0.8, whiteSpace: 'pre-wrap' }}>
+        <h3 id="alert-title" style={{ margin: '0 0 16px', fontSize: 18 }}>{title}</h3>
+        <p id="alert-desc" style={{ margin: '0 0 20px', fontSize: 14, opacity: 0.8, whiteSpace: 'pre-wrap' }}>
           {message}
         </p>
 
