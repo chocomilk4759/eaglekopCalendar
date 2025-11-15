@@ -718,7 +718,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     const el = gridRef.current;
     if (!el) return;
 
-    const handleResize = debounce(() => {
+    const handleResize = () => {
       const cs = getComputedStyle(el);
       const gap = parseFloat(cs.columnGap || cs.gap || '12') || 12;
 
@@ -728,11 +728,23 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const width = el.clientWidth;
       const cols = Math.floor((width + gap) / (cellMinWidth + gap));
       setCanShowSeven(cols >= 7);
-    }, 200);
+    };
 
-    const ro = new ResizeObserver(handleResize);
+    // 초기 실행
+    handleResize();
+
+    // ResizeObserver: 즉시 실행 + debounce로 연속 호출 방지
+    const debouncedResize = debounce(handleResize, 50);
+    const ro = new ResizeObserver(() => {
+      handleResize(); // 즉시 반영
+      debouncedResize(); // 연속 호출 방지
+    });
+
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      debouncedResize.cancel();
+    };
   }, []);
 
   // 7칸 불가 여부(data-compact)를 전역 속성으로만 전달

@@ -115,10 +115,20 @@ export function isMobileDevice(): boolean {
 export function debounce<T extends (...args: any[]) => any>(
   fn: T,
   ms: number
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) & { cancel: () => void } {
   let timer: NodeJS.Timeout | null = null;
-  return (...args: Parameters<T>) => {
+
+  const debouncedFn = (...args: Parameters<T>) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => fn(...args), ms);
   };
+
+  debouncedFn.cancel = () => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  };
+
+  return debouncedFn;
 }

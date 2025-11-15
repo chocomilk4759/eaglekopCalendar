@@ -343,4 +343,28 @@ describe('debounce', () => {
 
     expect(fn).toHaveBeenCalledTimes(2);
   });
+
+  it('ShouldCancelPendingCallWhenCancelIsInvoked', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, 100);
+
+    debounced('arg');
+    expect(fn).not.toHaveBeenCalled();
+
+    debounced.cancel();
+    vi.advanceTimersByTime(100);
+
+    expect(fn).not.toHaveBeenCalled();
+  });
+
+  it('ShouldHandleMultipleCancelCalls', () => {
+    const fn = vi.fn();
+    const debounced = debounce(fn, 100);
+
+    debounced.cancel();
+    debounced.cancel();
+
+    // Should not throw
+    expect(fn).not.toHaveBeenCalled();
+  });
 });
