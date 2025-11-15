@@ -1,0 +1,60 @@
+# Next.js 16.x TDD Patterns Configuration
+
+test_framework:
+  prefix: "describe"
+  suffix: ""
+  include_headers:
+    - "vitest"
+    - "@testing-library/react"
+    - "@testing-library/user-event"
+
+naming_conventions:
+  component_suffix: ""
+  test_file_suffix: ".test.tsx"
+  hook_prefix: "use"
+  action_suffix: "Action"
+  
+test_patterns:
+  component: "Should{Render|Display}{Element}When{Condition}"
+  interaction: "Should{Action}When{UserInteraction}"
+  hook: "Should{Return|Update}{Value}When{Condition}"
+  server_action: "Should{Succeed|Fail}When{Input}"
+  api: "Should{ReturnStatus}When{Request}"
+  
+  # Next.js 16 specific patterns
+  server_component: "ShouldFetch{Data}AndRender{Component}"
+  client_component: "ShouldHandle{Event}AndUpdate{State}"
+  metadata: "ShouldGenerate{Metadata}For{Page}"
+  
+common_actions:
+  - "Click"
+  - "Submit"
+  - "Change"
+  - "Focus"
+  - "Blur"
+  - "Scroll"
+  - "Navigate"
+  - "Load"
+  - "Fetch"
+  - "Mutate"
+  
+test_structure:
+  unit:
+    - "Arrange: Setup test data and mocks"
+    - "Act: Execute the function/component"
+    - "Assert: Verify the expected outcome"
+  
+  integration:
+    - "Setup: Initialize test environment"
+    - "Execute: Run the integration flow"
+    - "Verify: Check end-to-end behavior"
+    
+examples:
+  - pattern: "component"
+    example: "ShouldRenderErrorMessageWhenValidationFails"
+  - pattern: "interaction"
+    example: "ShouldSubmitFormWhenUserClicksButton"
+  - pattern: "server_action"
+    example: "ShouldSucceedWhenInputIsValid"
+  - pattern: "server_component"
+    example: "ShouldFetchPostsAndRenderList"

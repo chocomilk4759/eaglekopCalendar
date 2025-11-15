@@ -1,0 +1,86 @@
+# UE 5.0 TDD Patterns Configuration
+test_framework:
+  prefix: "UTEST"
+  suffix: ""
+  include_headers:
+    - "Engine.h"
+    - "CoreMinimal.h"
+    - "Tests/AutomationCommon.h"
+
+naming_conventions:
+  class_prefix: "U"
+  actor_prefix: "A"
+  component_prefix: "U"
+  interface_prefix: "I"
+  struct_prefix: "F"
+  enum_prefix: "E"
+  test_class_suffix: "Tests"
+
+test_patterns:
+  creation: "Should{Action}When{Condition}"
+  validation: "ShouldValidate{Property}With{Input}"
+  behavior: "Should{Behavior}When{Trigger}"
+  integration: "ShouldIntegrateWith{System}When{Condition}"
+  performance: "ShouldMaintain{Metric}Under{Condition}"
+
+common_actions:
+  - "Create"
+  - "Initialize"
+  - "Configure"
+  - "Process"
+  - "Update"
+  - "Destroy"
+  - "Validate"
+  - "Trigger"
+  - "Spawn"
+  - "Despawn"
+  - "Activate"
+  - "Deactivate"
+  - "Enable"
+  - "Disable"
+
+# UE 5.0 limitations (different from 5.3)
+limitations:
+  nanite: "Early stage - requires validation and fallbacks"
+  lumen: "Basic implementation - limited reflection quality"
+  input_system: "Legacy input component - Enhanced Input not required"
+  world_partition: "Optional for large worlds"
+
+test_categories:
+  unit:
+    description: "Individual component testing"
+    examples:
+      - "Component initialization"
+      - "Property validation"
+      - "Method behavior"
+      
+  integration:
+    description: "System interaction testing"
+    examples:
+      - "Actor-Component interaction"
+      - "Subsystem integration"
+      - "Blueprint-C++ interaction"
+      
+  performance:
+    description: "Performance validation testing"
+    examples:
+      - "Frame rate maintenance"
+      - "Memory usage validation"
+      - "Basic rendering performance"
+
+complexity_hints:
+  simple:
+    indicators: ["property", "getter", "setter", "flag"]
+    test_count: 1-2
+    
+  medium:
+    indicators: ["component", "actor", "system", "manager"]
+    test_count: 3-5
+    
+  complex:
+    indicators: ["subsystem", "framework", "pipeline"]
+    test_count: 5-10
+    
+  high:
+    indicators: ["animation", "particle", "effect", "rendering"]
+    test_count: 10+

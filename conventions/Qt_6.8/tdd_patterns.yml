@@ -1,0 +1,107 @@
+# Qt 6.8 TDD Patterns Configuration
+test_framework:
+  prefix: "TEST_F"
+  suffix: ""
+  include_headers:
+    - "QTest"
+    - "QObject"
+    - "QSignalSpy"
+    - "QEventLoop"
+
+naming_conventions:
+  class_prefix: "Q"
+  widget_suffix: "Widget"
+  model_suffix: "Model"
+  controller_suffix: "Controller"
+  test_class_suffix: "Tests"
+
+test_patterns:
+  signal_slot: "Should{Signal}When{Action}"
+  widget: "ShouldUpdate{Widget}When{Input}"
+  model: "ShouldNotify{Model}When{Change}"
+  validation: "ShouldValidate{Input}With{Validator}"
+  async: "ShouldComplete{Operation}Asynchronously"
+  
+  # Qt 6.8 specific patterns
+  qml_performance: "ShouldLoad{Component}WithinTimeLimit"
+  multimedia: "ShouldDetect{Feature}Support"
+  theming: "ShouldApply{Theme}Consistently"
+  cpp20: "ShouldUse{Feature}WithConcepts"
+
+common_actions:
+  - "Create"
+  - "Update" 
+  - "Delete"
+  - "Select"
+  - "Filter"
+  - "Sort"
+  - "Validate"
+  - "Connect"
+  - "Disconnect"
+  - "Show"
+  - "Hide"
+  - "Enable"
+  - "Disable"
+  - "Emit"
+  - "Receive"
+
+qt68_specific_actions:
+  - "LoadAsync"        # QML Async loading
+  - "OptimizeBindings" # QML optimizations
+  - "DetectHardware"   # Multimedia
+  - "ApplyTheme"       # Theming
+  - "ValidateStyle"    # Styling
+  - "SetupCoroutine"   # C++20 coroutines
+
+test_categories:
+  widget:
+    description: "Qt Widget testing"
+    examples:
+      - "UI component behavior"
+      - "Layout management"
+      - "Event handling"
+      
+  qml:
+    description: "QML component testing"
+    examples:
+      - "Component loading"
+      - "Binding performance"
+      - "Property updates"
+      
+  model:
+    description: "Data model testing"
+    examples:
+      - "Data manipulation"
+      - "Signal emission"
+      - "View synchronization"
+      
+  multimedia:
+    description: "Multimedia functionality testing"
+    examples:
+      - "Codec support"
+      - "Hardware acceleration"
+      - "Playback performance"
+      
+  performance:
+    description: "Performance optimization testing"
+    examples:
+      - "Binding optimization"
+      - "Component loading speed"
+      - "Memory usage"
+
+complexity_hints:
+  simple:
+    indicators: ["property", "signal", "slot", "getter", "setter"]
+    test_count: 1-2
+    
+  medium:
+    indicators: ["widget", "component", "model", "controller"]
+    test_count: 3-5
+    
+  complex:
+    indicators: ["system", "manager", "framework", "multimedia"]
+    test_count: 5-10
+    
+  high:
+    indicators: ["async", "threading", "performance", "optimization"]
+    test_count: 10+

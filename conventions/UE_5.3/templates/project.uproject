@@ -1,0 +1,47 @@
+{
+    "FileVersion": 3,
+    "EngineAssociation": "5.3",
+    "Category": "",
+    "Description": "{{PROJECT_DESCRIPTION}}",
+    "Modules": [
+        {
+            "Name": "{{PROJECT_NAME}}",
+            "Type": "Runtime",
+            "LoadingPhase": "Default",
+            "AdditionalDependencies": [
+                "Engine",
+                "CoreUObject",
+                "EnhancedInput",
+                "PCG",
+                "UnrealEd"
+            ]
+        }
+    ],
+    "Plugins": [
+        {
+            "Name": "EnhancedInput",
+            "Enabled": true
+        },
+        {
+            "Name": "PCG",
+            "Enabled": true
+        },
+        {
+            "Name": "Nanite",
+            "Enabled": true
+        },
+        {
+            "Name": "Lumen",
+            "Enabled": true
+        },
+        {
+            "Name": "AutomationTest",
+            "Enabled": true
+        }
+    ],
+    "TargetPlatforms": [
+        "Windows",
+        "Linux"
+    ],
+    "EpicSampleNameHash": "0"
+}

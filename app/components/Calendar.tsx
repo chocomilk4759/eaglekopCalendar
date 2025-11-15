@@ -717,8 +717,49 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     };
 
     run();
+
+    // 성능 최적화: 500ms 후 이전/다음 달 자동 프리페치
+    const prefetchTimer = setTimeout(() => {
+      if (!alive) return;
+
+      const prefetchMonth = async (y: number, m: number) => {
+        const key = `${y}-${m}`;
+        // 이미 캐시되어 있으면 스킵
+        if (monthCache.has(key)) return;
+
+        try {
+          const { data } = await supabase
+            .from('notes')
+            .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
+            .eq('y', y)
+            .eq('m', m);
+
+          if (!alive) return;
+          if (data) {
+            setMonthCache((prev) => {
+              const next = new Map(prev);
+              next.set(key, data);
+              return next;
+            });
+            saveMonthLS(y, m, data);
+          }
+        } catch (e) {
+          // 프리페치 실패는 무시 (백그라운드 작업)
+        }
+      };
+
+      // 이전 달
+      const { y: py, m: pm } = ym.m > 0 ? { y: ym.y, m: ym.m - 1 } : { y: ym.y - 1, m: 11 };
+      prefetchMonth(py, pm);
+
+      // 다음 달
+      const { y: ny, m: nm } = ym.m < 11 ? { y: ym.y, m: ym.m + 1 } : { y: ym.y + 1, m: 0 };
+      prefetchMonth(ny, nm);
+    }, 500);
+
     return () => {
       alive = false;
+      clearTimeout(prefetchTimer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ymKey]);
