@@ -23,8 +23,24 @@ const ALLOWED = [
   'image/apng',
   'image/avif',
 ] as const;
+type AllowedImageType = (typeof ALLOWED)[number];
 const MAX_IMAGE_MB = 5; // 일반 이미지 최대 크기
 const MAX_GIF_MB = 10; // GIF 최대 크기 (애니메이션 고려)
+
+function isAllowedImageType(type: string): type is AllowedImageType {
+  return (ALLOWED as readonly string[]).includes(type);
+}
+
+function isPresetRow(row: unknown): row is { emoji: string; label: string } {
+  return (
+    typeof row === 'object' &&
+    row !== null &&
+    'emoji' in row &&
+    'label' in row &&
+    typeof row.emoji === 'string' &&
+    (typeof row.label === 'string' || typeof row.label === 'number')
+  );
+}
 
 function derivePreviewPath(p: string) {
   const i = p.lastIndexOf('.');
@@ -231,10 +247,10 @@ export default function DateInfoModal({
     const base = initial;
     setNote(base);
     setMemo(base.content || '');
-    setTitleInput(((base as any)?.title ?? '') as string);
+    setTitleInput((base.title ?? '') as string);
     setLinkInput(base.link ?? '');
     setImageUrl(base.image_url ?? null);
-    setUseImageAsBg(!!(base as any)?.use_image_as_bg);
+    setUseImageAsBg(!!base.use_image_as_bg);
   }, [open, initial]);
 
   useEffect(() => {
@@ -303,7 +319,7 @@ export default function DateInfoModal({
     }
   }
 
-  async function persist(upd: Partial<Note> & Record<string, any>): Promise<Note> {
+  async function persist(upd: Partial<Note> & Record<string, unknown>): Promise<Note> {
     const payload = normalizeNote({
       ...note,
       ...upd,
@@ -317,7 +333,7 @@ export default function DateInfoModal({
       .select()
       .single();
     if (error) throw new Error(error.message);
-    const saved = normalizeNote(data as any);
+    const saved = normalizeNote(data);
     setNote(saved);
     onSaved(saved);
     return saved;
@@ -420,7 +436,7 @@ export default function DateInfoModal({
           message: '해당 날짜의 모든 내용이 삭제되었습니다.',
         });
         setAlertOpen(true);
-      } catch (e: any) {
+      } catch (e: unknown) {
         setConfirmOpen(false);
         // 오류 알림 모달 표시
         setAlertMessage({
@@ -700,7 +716,7 @@ export default function DateInfoModal({
       setDraggedChipIndex(null);
       setDropTargetIndex(null);
       setDropPosition('before');
-    } catch (e: any) {
+    } catch (e: unknown) {
       setAlertMessage({
         title: '칩 순서 변경 실패',
         message: isError(e) ? e.message : '칩 순서 변경 중 오류가 발생했습니다.',
@@ -815,7 +831,7 @@ export default function DateInfoModal({
         return;
       }
 
-      if (!ALLOWED.includes(f.type as any)) {
+      if (!isAllowedImageType(f.type)) {
         setAlertMessage({
           title: '형식 오류',
           message: '이미지 형식은 PNG/JPEG/WebP/GIF/APNG/AVIF만 허용합니다.',
@@ -898,10 +914,10 @@ export default function DateInfoModal({
       setImageUrl(path);
       setUseImageAsBg(true);
       await loadPreviewThenFull(supabase, path, (u) => setDisplayImageUrl(u));
-    } catch (err: any) {
+    } catch (err: unknown) {
       setAlertMessage({
         title: '이미지 업로드 실패',
-        message: err?.message ?? '이미지 업로드 중 오류가 발생했습니다.',
+        message: isError(err) ? err.message : '이미지 업로드 중 오류가 발생했습니다.',
       });
       setAlertOpen(true);
     } finally {
@@ -936,7 +952,9 @@ export default function DateInfoModal({
     try {
       const { data, error } = await supabase.from('presets').select('emoji,label');
       if (!error && data && Array.isArray(data) && data.length) {
-        setPresets(data.map((r: any) => ({ emoji: r.emoji, label: String(r.label ?? '') })));
+        setPresets(
+          data.filter(isPresetRow).map((r) => ({ emoji: r.emoji, label: String(r.label ?? '') }))
+        );
       } else {
         setPresets([
           { emoji: '📢', label: '공지' },
