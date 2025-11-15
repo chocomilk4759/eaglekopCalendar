@@ -1378,11 +1378,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       <div
         className="calendar-top"
         style={{
-          display: 'flex',
-          flexDirection: canShowSeven ? 'row' : 'column',
-          justifyContent: 'space-between',
-          alignItems: 'stretch',
-          gap: 16,
           margin: '6px 0 14px',
         }}
       >

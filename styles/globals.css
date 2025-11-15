@@ -20,8 +20,8 @@
   --sat: #05c;
 
   /* 플래그 색상 */
-  --flagRed: #E74C4C;
-  --flagBlue: #4C88DB;
+  --flagRed: #e74c4c;
+  --flagBlue: #4c88db;
 
   /* 캘린더 셀 크기 (Viewport 기반 스케일링) */
   --cell-min-w: clamp(170px, 10vw, 220px);
@@ -52,7 +52,7 @@
   --emoji-box: 1.25em;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --bg: #0e0f12;
   --fg: #e9eaee;
   --muted: #a1a6b3;
@@ -64,15 +64,17 @@
   --sat: #6ab0ff;
 }
 
-
 /* =====================================================================================
   2. BASE RESET & TYPOGRAPHY
 ===================================================================================== */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   height: 100%;
 }
 
@@ -80,7 +82,14 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    Segoe UI,
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -90,7 +99,10 @@ a {
   text-decoration: none;
 }
 
-button, input, textarea, select {
+button,
+input,
+textarea,
+select {
   color: inherit;
   background: var(--card);
   border: 1px solid var(--border);
@@ -101,15 +113,18 @@ button, input, textarea, select {
 
 button {
   cursor: pointer;
-  transition: background .12s ease, box-shadow .12s ease, transform .06s ease;
+  transition:
+    background 0.12s ease,
+    box-shadow 0.12s ease,
+    transform 0.06s ease;
 }
 
 button:hover {
-  background: rgba(0, 0, 0, .03);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 button:active {
-  transform: translateY(.5px);
+  transform: translateY(0.5px);
 }
 
 button:focus-visible,
@@ -124,7 +139,6 @@ a:focus-visible {
   padding: 24px;
   max-width: none;
 }
-
 
 /* =====================================================================================
   3. LAYOUT - FIXED HEADER
@@ -166,7 +180,6 @@ a:focus-visible {
   pointer-events: auto;
 }
 
-
 /* =====================================================================================
   4. CALENDAR - GRID & CELLS
 ===================================================================================== */
@@ -188,7 +201,7 @@ a:focus-visible {
 /* --- Day Names --- */
 .day-name {
   font-size: var(--font-date);
-  opacity: .7;
+  opacity: 0.7;
   text-align: center;
 }
 
@@ -269,7 +282,7 @@ a:focus-visible {
 
 .calendar-grid .cell-date {
   font-size: var(--font-date);
-  opacity: .8;
+  opacity: 0.8;
   text-align: left;
   line-height: 1.2;
 }
@@ -325,11 +338,11 @@ a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
-  opacity: .95;
+  opacity: 0.95;
 }
 
 .calendar-grid .cell .link-ico:hover {
-  background: rgba(0, 0, 0, .03);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 /* --- Cell Content --- */
@@ -369,7 +382,7 @@ a:focus-visible {
   height: 100%;
   color: #fff;
   font-weight: 800;
-  letter-spacing: .2px;
+  letter-spacing: 0.2px;
   font-size: clamp(20px, 2.8vw, 32px);
 }
 
@@ -451,7 +464,9 @@ a:focus-visible {
   position: absolute;
   inset: 4px;
   border-radius: 10px;
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 8px rgba(0, 145, 255, 0.25);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 0 8px rgba(0, 145, 255, 0.25);
   animation: calendarPulse 220ms ease-out forwards;
   pointer-events: none;
 }
@@ -473,7 +488,6 @@ a:focus-visible {
   }
 }
 
-
 /* =====================================================================================
   5. CHIPS (태그)
 ===================================================================================== */
@@ -494,26 +508,30 @@ a:focus-visible {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(242, 242, 242, .95));
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 1px 2px rgba(0, 0, 0, .06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(242, 242, 242, 0.95));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 1px 2px rgba(0, 0, 0, 0.06);
   touch-action: pan-y;
   -webkit-user-drag: element;
   position: relative;
   transition: transform 0.15s ease;
 }
 
-[data-theme="dark"] .chip {
+[data-theme='dark'] .chip {
   background: linear-gradient(180deg, #1b1d23, #14161b);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06), 0 1px 2px rgba(0, 0, 0, .4);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* ✅ 드래그 중 칩 반투명 */
-.chip[data-dragging="true"] {
+.chip[data-dragging='true'] {
   opacity: 0.6;
 }
 
 /* ✅ 드래그 오버: 왼쪽 삽입 인디케이터 */
-.chip[data-drag-over="left"]::before {
+.chip[data-drag-over='left']::before {
   content: '';
   position: absolute;
   left: -3px;
@@ -526,7 +544,7 @@ a:focus-visible {
 }
 
 /* ✅ 드래그 오버: 오른쪽 삽입 인디케이터 */
-.chip[data-drag-over="right"]::after {
+.chip[data-drag-over='right']::after {
   content: '';
   position: absolute;
   right: -3px;
@@ -540,8 +558,13 @@ a:focus-visible {
 
 /* ✅ 펄스 애니메이션 */
 @keyframes pulse-indicator {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .chip-text {
@@ -569,13 +592,13 @@ a:focus-visible {
   gap: clamp(3px, 0.4vw, 6px);
   line-height: 1.25;
   background: var(--card);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
   margin: 1px;
 }
 
-[data-theme="dark"] .calendar-grid .chip {
+[data-theme='dark'] .calendar-grid .chip {
   background: #171a20;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 .calendar-grid .chip-text {
@@ -638,7 +661,6 @@ a:focus-visible {
   height: 100%;
 }
 
-
 /* =====================================================================================
   6. PRESETS DOCK (프리셋 도크)
 ===================================================================================== */
@@ -658,8 +680,8 @@ a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: var(--dock-padding);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, .06);
-  transition: width .18s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  transition: width 0.18s ease;
 }
 
 .dock-toggle-wrap {
@@ -682,7 +704,7 @@ a:focus-visible {
 }
 
 .dock-toggle:hover {
-  background: rgba(0, 0, 0, .03);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .presets-dock.collapsed {
@@ -769,7 +791,6 @@ a:focus-visible {
   align-self: flex-end;
 }
 
-
 /* =====================================================================================
   7. MODALS
 ===================================================================================== */
@@ -784,14 +805,16 @@ a:focus-visible {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, .1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   padding: 12px;
   opacity: 0;
-  transform: scale(.96);
+  transform: scale(0.96);
   transform-origin: top right;
   font-size: 12px;
   pointer-events: none;
-  transition: opacity .12s ease, transform .12s ease;
+  transition:
+    opacity 0.12s ease,
+    transform 0.12s ease;
   z-index: 9998;
 }
 
@@ -824,7 +847,7 @@ a:focus-visible {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 16px;
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .22);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.22);
   container-type: inline-size;
 }
 
@@ -874,7 +897,7 @@ a:focus-visible {
 }
 
 .rest-btn:hover {
-  background: rgba(0, 0, 0, .03);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .rest-btn.active {
@@ -1019,7 +1042,6 @@ a:focus-visible {
   cursor: default !important;
 }
 
-
 /* =====================================================================================
   8. LOADING STATES (로딩 스켈레톤)
 ===================================================================================== */
@@ -1063,7 +1085,6 @@ a:focus-visible {
   z-index: 1;
 }
 
-
 /* =====================================================================================
   9. UTILITIES (유틸리티)
 ===================================================================================== */
@@ -1086,7 +1107,7 @@ a:focus-visible {
 /* --- Top Ribbon Scroll --- */
 .top-ribbon-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(0, 0, 0, .2) transparent;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 }
 
 .top-ribbon-scroll::-webkit-scrollbar {
@@ -1098,26 +1119,25 @@ a:focus-visible {
 }
 
 .top-ribbon-scroll::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, .2);
+  background: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
 
 .top-ribbon-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, .3);
+  background: rgba(0, 0, 0, 0.3);
 }
 
-[data-theme="dark"] .top-ribbon-scroll {
-  scrollbar-color: rgba(255, 255, 255, .3) transparent;
+[data-theme='dark'] .top-ribbon-scroll {
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
 }
 
-[data-theme="dark"] .top-ribbon-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, .3);
+[data-theme='dark'] .top-ribbon-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
 }
 
-[data-theme="dark"] .top-ribbon-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, .4);
+[data-theme='dark'] .top-ribbon-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4);
 }
-
 
 /* =====================================================================================
   10. RESPONSIVE (반응형)
@@ -1156,16 +1176,33 @@ a:focus-visible {
   }
 
   .chips-scroll::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, .3);
+    background: rgba(0, 0, 0, 0.3);
     border-radius: 3px;
   }
 
   .chips-scroll::-webkit-scrollbar-track {
-    background: rgba(0, 0, 0, .05);
+    background: rgba(0, 0, 0, 0.05);
   }
 
   .chips-scroll {
     scrollbar-width: thin;
+  }
+}
+
+/* --- Calendar Top Container Query Layout --- */
+.calendar-top {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 16px;
+}
+
+/* Switch to horizontal layout when container is wide enough (>=1200px) */
+@container (min-width: 1200px) {
+  .calendar-top {
+    flex-direction: row;
   }
 }
 
@@ -1268,7 +1305,6 @@ a:focus-visible {
     --cell-min-w: clamp(140px, 11vw, 240px);
   }
 }
-
 
 /* =====================================================================================
   11. SEARCH MODAL (검색)
@@ -1396,7 +1432,6 @@ a:focus-visible {
   white-space: nowrap;
 }
 
-
 /* =====================================================================================
   12. SKELETON UI (스켈레톤 로딩)
 ===================================================================================== */
@@ -1405,13 +1440,22 @@ a:focus-visible {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .skeleton-cell {
@@ -1453,7 +1497,12 @@ a:focus-visible {
   13. PRINT (인쇄)
 ===================================================================================== */
 @media print {
-  button, input, textarea, .link-ico, .top-ribbon, .toolbar {
+  button,
+  input,
+  textarea,
+  .link-ico,
+  .top-ribbon,
+  .toolbar {
     display: none !important;
   }
 
