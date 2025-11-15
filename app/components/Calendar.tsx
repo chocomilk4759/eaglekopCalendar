@@ -1723,8 +1723,6 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                 aria-label="calendar cell"
                 style={{ position: 'relative' }} // 오버레이 기준 컨테이너
               >
-                {/* 롱프레스 성립 순간에만 0.2s 펄스(PC 전용) */}
-                {dragPulseKey === k && <div aria-hidden className="calendar-cell-pulse" />}
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
                   <div className={`cell-date ${c.w == 0 ? 'sun' : c.w == 6 ? 'sat' : ''}`}>
