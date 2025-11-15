@@ -67,11 +67,11 @@ export default function TopRibbon({
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    // ResizeObserver로 컨테이너 크기 변화 감지 (150ms 디바운스)
+    // ResizeObserver로 컨테이너 크기 변화 감지 (200ms 디바운스)
     const handleResize = debounce(() => {
       computeSize();
       updateScrollFade();
-    }, 150);
+    }, 200);
 
     let ro: ResizeObserver | null = null;
     if (typeof ResizeObserver !== 'undefined') {

@@ -728,7 +728,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const width = el.clientWidth;
       const cols = Math.floor((width + gap) / (cellMinWidth + gap));
       setCanShowSeven(cols >= 7);
-    }, 150);
+    }, 200);
 
     const ro = new ResizeObserver(handleResize);
     ro.observe(el);
