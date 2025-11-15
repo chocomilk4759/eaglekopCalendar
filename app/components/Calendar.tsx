@@ -745,7 +745,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       ro.disconnect();
       debouncedResize.cancel();
     };
-  }, []);
+  }, [ymKey]);
 
   // 7칸 불가 여부(data-compact)를 전역 속성으로만 전달
   useEffect(() => {
