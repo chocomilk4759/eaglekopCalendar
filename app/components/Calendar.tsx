@@ -1675,17 +1675,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                       return;
                     }
                     // DateInfoModal에서 chip 드래그
-                    else if ((window as any).__draggedModalChip) {
-                      const payload = (window as any).__draggedModalChip;
+                    else if (window.__draggedModalChip) {
+                      const payload = window.__draggedModalChip;
                       dropChip(c.y, c.m, c.d, JSON.stringify(payload));
-                      (window as any).__draggedModalChip = null;
+                      window.__draggedModalChip = null;
                       return;
                     }
                     // UnscheduledModal에서 chip 드래그
-                    else if ((window as any).__draggedUnscheduledChip) {
-                      const payload = (window as any).__draggedUnscheduledChip;
+                    else if (window.__draggedUnscheduledChip) {
+                      const payload = window.__draggedUnscheduledChip;
                       dropChip(c.y, c.m, c.d, JSON.stringify(payload));
-                      (window as any).__draggedUnscheduledChip = null;
+                      window.__draggedUnscheduledChip = null;
                       return;
                     }
                   }
@@ -1705,7 +1705,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
                   draggedChipDataRef.current = null;
                   draggedNoteDataRef.current = null;
-                  (window as any).__draggedModalChip = null;
+                  window.__draggedModalChip = null;
                 }
               }}
             >

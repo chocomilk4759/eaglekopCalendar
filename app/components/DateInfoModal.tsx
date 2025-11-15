@@ -617,8 +617,8 @@ export default function DateInfoModal({
     if (item) {
       // 칩을 Calendar 셀로 드래그할 수 있도록 payload 추가
       const payload = {
-        type: 'chip',
-        sourceType: 'modal',
+        type: 'chip' as const,
+        sourceType: 'modal' as const,
         sourceDate: { y: date.y, m: date.m, d: date.d },
         chipIndex: idx,
         item,
@@ -627,14 +627,14 @@ export default function DateInfoModal({
       e.dataTransfer.setData('application/json', payloadStr);
       e.dataTransfer.setData('text/plain', payloadStr);
       // 모바일 fallback용으로 window 객체에 임시 저장
-      (window as any).__draggedModalChip = payload;
+      window.__draggedModalChip = payload;
     }
     e.dataTransfer.effectAllowed = 'move';
   }
 
   function onDragEndChip() {
     // 드래그 종료 시 window 객체 정리
-    (window as any).__draggedModalChip = null;
+    window.__draggedModalChip = null;
     setDraggedChipIndex(null);
     setDropTargetIndex(null);
     setDropPosition('before');

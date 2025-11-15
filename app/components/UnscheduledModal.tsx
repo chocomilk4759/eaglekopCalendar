@@ -382,8 +382,8 @@ export default function UnscheduledModal({
     const item = items[idx];
     if (item) {
       const payload = {
-        type: 'chip',
-        sourceType: 'unscheduled',
+        type: 'chip' as const,
+        sourceType: 'unscheduled' as const,
         chipIndex: idx,
         item,
       };
@@ -391,13 +391,13 @@ export default function UnscheduledModal({
       e.dataTransfer.setData('application/json', payloadStr);
       e.dataTransfer.setData('text/plain', payloadStr);
       // 모바일 fallback용
-      (window as any).__draggedUnscheduledChip = payload;
+      window.__draggedUnscheduledChip = payload;
     }
     e.dataTransfer.effectAllowed = 'move';
   }
 
   function onDragEndChip() {
-    (window as any).__draggedUnscheduledChip = null;
+    window.__draggedUnscheduledChip = null;
     setDraggedChipIndex(null);
   }
 
@@ -421,7 +421,7 @@ export default function UnscheduledModal({
 
     // Fallback: window 객체에서 가져오기
     if (!payload) {
-      payload = (window as any).__draggedModalChip || (window as any).__draggedCellChip;
+      payload = window.__draggedModalChip || window.__draggedCellChip;
     }
 
     if (!payload || payload.type !== 'chip') return;
@@ -459,8 +459,8 @@ export default function UnscheduledModal({
     }
 
     // Cleanup
-    (window as any).__draggedModalChip = null;
-    (window as any).__draggedCellChip = null;
+    window.__draggedModalChip = null;
+    window.__draggedCellChip = null;
   }
 
   // ── 드래그 이동 핸들러 ───────────────────────────────────────────────────
