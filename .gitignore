@@ -54,3 +54,7 @@ Thumbs.db
 #
 *.md
 .claude/*
+
+# Database schema and data (sensitive - public repo)
+supabase.sql
+*_rows.sql
