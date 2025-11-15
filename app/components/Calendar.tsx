@@ -17,6 +17,7 @@ import { sanitizeText } from '@/lib/sanitize';
 import { isSupabaseRow } from '@/lib/typeGuards';
 import { computeCellMinWidth } from '@/lib/calendar-utils';
 import type { DragPayload, NoteCopyPayload } from '@/types/window';
+import { TIMING } from '@/lib/constants';
 
 // 드래그&드롭 payload 타입 정의 (제거됨 - 실제로는 JSON string으로만 전달)
 
@@ -456,7 +457,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     clearPressTimer();
     pressKeyRef.current = k;
     const isMobile = isMobileDevice();
-    const LONGPRESS_MS = isMobile ? 200 : 350;
+    const LONGPRESS_MS = isMobile ? TIMING.LONGPRESS_MOBILE : TIMING.LONGPRESS_DESKTOP;
 
     pressTimerRef.current = window.setTimeout(() => {
       setLongReadyKey(k);
@@ -481,7 +482,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     clearChipPressTimer();
     chipPressKeyRef.current = chipKey;
     const isMobile = isMobileDevice();
-    const LONGPRESS_MS = isMobile ? 200 : 350;
+    const LONGPRESS_MS = isMobile ? TIMING.LONGPRESS_MOBILE : TIMING.LONGPRESS_DESKTOP;
 
     chipPressTimerRef.current = window.setTimeout(() => {
       setLongReadyChip(chipKey);
@@ -734,7 +735,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     handleResize();
 
     // ResizeObserver: 즉시 실행 + debounce로 연속 호출 방지
-    const debouncedResize = debounce(handleResize, 50);
+    const debouncedResize = debounce(handleResize, TIMING.RESIZE_DEBOUNCE);
     const ro = new ResizeObserver(() => {
       handleResize(); // 즉시 반영
       debouncedResize(); // 연속 호출 방지

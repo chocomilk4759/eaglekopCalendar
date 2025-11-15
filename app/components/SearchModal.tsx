@@ -5,6 +5,7 @@ import type { Note } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import { supabase } from '@/lib/supabaseClient';
 import { debounce } from '@/lib/utils';
+import { TIMING } from '@/lib/constants';
 
 interface SearchResult {
   date: { y: number; m: number; d: number };
@@ -251,9 +252,9 @@ export default function SearchModal({
     [replacements]
   );
 
-  // 디바운스된 검색 함수 (300ms)
+  // 디바운스된 검색 함수
   const performSearch = useMemo(
-    () => debounce(performSearchImmediate, 300),
+    () => debounce(performSearchImmediate, TIMING.SEARCH_DEBOUNCE),
     [performSearchImmediate]
   );
 

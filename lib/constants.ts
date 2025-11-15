@@ -32,6 +32,10 @@ export const TIMING = {
   HOLIDAY_CACHE_TTL: 86400,
   /** Drag pulse 애니메이션 지속 시간 (ms) */
   DRAG_PULSE_DURATION: 200,
+  /** 검색 디바운스 지연 시간 (ms) */
+  SEARCH_DEBOUNCE: 300,
+  /** 윈도우 리사이즈 디바운스 지연 시간 (ms) */
+  RESIZE_DEBOUNCE: 50,
 } as const;
 
 // ── Cache Version ─────────────────────────────────────────────────────
@@ -77,10 +81,7 @@ export const ALLOWED_IMAGE_TYPES = [
 ] as const;
 
 // ── 애니메이션 포맷 (압축 안함) ────────────────────────────────────────
-export const ANIMATED_IMAGE_TYPES = [
-  'image/gif',
-  'image/apng',
-] as const;
+export const ANIMATED_IMAGE_TYPES = ['image/gif', 'image/apng'] as const;
 
 // ── 키보드 단축키 ─────────────────────────────────────────────────────
 export const KEYBOARD_SHORTCUTS = {
