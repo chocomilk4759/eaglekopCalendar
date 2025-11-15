@@ -2,6 +2,7 @@
 
 import { supabase, createClient } from '@/lib/supabaseClient';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import NextImage from 'next/image';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
@@ -1116,13 +1117,15 @@ export default function DateInfoModal({
           {/* 이미지 프리뷰: 모달 크기에 반응. 기본 210x210 (CSS에서 설정) */}
           {displayImageUrl && (
             <div className="note-image-wrap">
-              <div className="note-image-box" style={{ height: imgBoxHeight }}>
-                <img
-                  src={displayImageUrl ?? undefined}
+              <div className="note-image-box" style={{ height: imgBoxHeight, position: 'relative' }}>
+                <NextImage
+                  src={displayImageUrl}
                   alt="미리보기"
-                  decoding="async"
-                  loading="eager"
-                  ref={(el) => { if (el) el.setAttribute('fetchpriority', 'high'); }}
+                  fill
+                  sizes="(max-width: 768px) 90vw, 600px"
+                  style={{ objectFit: 'contain' }}
+                  unoptimized
+                  priority
                   onError={() => { fallbackToSignedUrlIfNeeded(); }}
                 />
               </div>
