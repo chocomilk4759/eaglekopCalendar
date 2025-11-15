@@ -13,6 +13,7 @@ import { getHolidays, isHoliday, isSunday, type HolidayInfo } from '@/lib/holida
 import { isMobileDevice } from '@/lib/utils';
 import { getSignedUrl } from '@/lib/imageCache';
 import { safeSetItem } from '@/lib/localStorageUtils';
+import { sanitizeText } from '@/lib/sanitize';
 
 // 동적 import로 모달 컴포넌트 지연 로딩 (초기 번들 크기 감소)
 const SearchModal = dynamic(() => import('./SearchModal'), { ssr: false });
@@ -1121,7 +1122,7 @@ useEffect(() => {
   // - 7칸 미만 + title 존재 → "요일:타이틀"
   // - 공휴일이면 공휴일명 추가
   function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean, y: number, m: number, d: number) {
-    const rawTitle = (((note as any)?.title) ?? '').trim();  // title 컬럼 사용
+    const rawTitle = sanitizeText(((note as any)?.title) ?? '');  // XSS 방지: title sanitize
     const holiday = isHoliday(y, m, d, holidays);
 
     if (!showWeekday) {
@@ -1538,15 +1539,15 @@ useEffect(() => {
                               <span className="chip-emoji">{it.emoji ?? ''}</span>
                               {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
                             </span>
-                            <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
+                            <span className="chip-text">{sanitizeText(it.text?.length ? it.text : it.label)}</span>
                           </span>
                           );
                         })}
                       </div>
-                      <div className="cell-content-text">{note.content}</div>
+                      <div className="cell-content-text">{sanitizeText(note.content)}</div>
                     </div>
                   ) : showMemo ? (
-                    <div className="cell-content-text">{note!.content}</div>
+                    <div className="cell-content-text">{sanitizeText(note!.content)}</div>
                   ) : (showChips && note) ? (
                     <div className="chips">
                       {note!.items.map((it: Item, i: number) => {
@@ -1607,7 +1608,7 @@ useEffect(() => {
                             <span className="chip-emoji">{it.emoji ?? ''}</span>
                             {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
                           </span>
-                          <span className="chip-text">{it.text?.length ? it.text : it.label}</span>
+                          <span className="chip-text">{sanitizeText(it.text?.length ? it.text : it.label)}</span>
                         </span>
                         );
                       })}
