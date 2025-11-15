@@ -1,7 +1,7 @@
 {
   "name": "vercel-shared-planner",
   "private": true,
-  "version": "0.33.1",
+  "version": "0.33.2",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,8 @@
     "test:coverage": "vitest --coverage",
     "analyze": "cross-env ANALYZE=true next build",
     "analyze:server": "cross-env BUNDLE_ANALYZE=server next build",
-    "analyze:browser": "cross-env BUNDLE_ANALYZE=browser next build"
+    "analyze:browser": "cross-env BUNDLE_ANALYZE=browser next build",
+    "prepare": "husky"
   },
   "dependencies": {
     "@supabase/ssr": "0.4.0",
@@ -46,5 +47,14 @@
     "prettier": "^3.6.2",
     "typescript": "^5.5.4",
     "vitest": "^2.1.8"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{js,jsx,json,css,md}": [
+      "prettier --write"
+    ]
   }
 }
