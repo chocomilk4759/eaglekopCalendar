@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase, createClient } from '@/lib/supabaseClient';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Note, Item } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import ModifyChipInfoModal, { ChipPreset, ModifyChipMode } from './ModifyChipInfoModal';
@@ -870,6 +870,9 @@ export default function DateInfoModal({
           }
         }}
         className="sheet modal-draggable"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="date-modal-title"
         style={{
           position:'absolute',
           left: pos.x, top: pos.y,
@@ -884,7 +887,7 @@ export default function DateInfoModal({
       >
         {/* 상단(드래그 핸들) */}
         <div className="date-head drag-handle" onMouseDown={onDragDown} style={{cursor:'move', userSelect:'none'}}>
-          <h3 style={{margin:'8px 0'}}>{title}</h3>
+          <h3 id="date-modal-title" style={{margin:'8px 0'}}>{title}</h3>
           <input
             type="text"
             value={titleInput}

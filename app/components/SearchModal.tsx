@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Note } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import { supabase } from '@/lib/supabaseClient';
@@ -306,7 +306,14 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div ref={modalRef} className="search-modal" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={modalRef}
+        className="search-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="검색"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="search-header">
           <input
             type="text"
@@ -316,16 +323,16 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
           />
-          <button className="search-close" onClick={onClose}>✕</button>
+          <button className="search-close" onClick={onClose} aria-label="닫기">✕</button>
         </div>
 
-        <div className="search-results">
+        <div className="search-results" aria-live="polite" aria-atomic="true">
           {loading && (
-            <div className="search-empty">검색 중...</div>
+            <div className="search-empty" role="status">검색 중...</div>
           )}
 
           {!loading && query.trim() && results.length === 0 && (
-            <div className="search-empty">검색 결과가 없습니다.</div>
+            <div className="search-empty" role="status">검색 결과가 없습니다.</div>
           )}
 
           {!loading && results.map((result, idx) => (

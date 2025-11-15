@@ -14,6 +14,8 @@ import { describe, test, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import AlertModal from '@/app/components/AlertModal';
 import ConfirmModal from '@/app/components/ConfirmModal';
+import SearchModal from '@/app/components/SearchModal';
+import DateInfoModal from '@/app/components/DateInfoModal';
 
 describe('ARIA Accessibility', () => {
   describe('AlertModal - Dialog Semantics', () => {
@@ -121,27 +123,129 @@ describe('ARIA Accessibility', () => {
     });
   });
 
-  describe('Button Accessible Names', () => {
-    test('icon-only buttons should have aria-label', () => {
-      // This test will be implemented as we refactor Calendar.tsx
-      // Testing strategy: Mock Calendar component and verify button aria-labels
-      expect(true).toBe(true); // Placeholder
+  describe('SearchModal - Dialog Semantics', () => {
+    test('should have role="dialog"', () => {
+      const { container } = render(
+        <SearchModal
+          open={true}
+          onClose={() => {}}
+          notes={{}}
+          onSelectDate={() => {}}
+        />
+      );
+
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog).toBeTruthy();
+    });
+
+    test('should have aria-modal="true"', () => {
+      const { container } = render(
+        <SearchModal
+          open={true}
+          onClose={() => {}}
+          notes={{}}
+          onSelectDate={() => {}}
+        />
+      );
+
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog?.getAttribute('aria-modal')).toBe('true');
+    });
+
+    test('should have aria-label', () => {
+      const { container } = render(
+        <SearchModal
+          open={true}
+          onClose={() => {}}
+          notes={{}}
+          onSelectDate={() => {}}
+        />
+      );
+
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog?.getAttribute('aria-label')).toBe('검색');
+    });
+
+    test('close button should have aria-label', () => {
+      const { container } = render(
+        <SearchModal
+          open={true}
+          onClose={() => {}}
+          notes={{}}
+          onSelectDate={() => {}}
+        />
+      );
+
+      const closeBtn = container.querySelector('.search-close');
+      expect(closeBtn).toHaveAttribute('aria-label', '닫기');
+    });
+
+    test('search results should have aria-live region', () => {
+      const { container } = render(
+        <SearchModal
+          open={true}
+          onClose={() => {}}
+          notes={{}}
+          onSelectDate={() => {}}
+        />
+      );
+
+      const results = container.querySelector('.search-results');
+      expect(results).toHaveAttribute('aria-live', 'polite');
     });
   });
 
-  describe('Keyboard Navigation', () => {
-    test('interactive elements should be keyboard accessible', () => {
-      // This test will verify Tab, Enter, Space, Escape handlers
-      // Testing strategy: Use fireEvent.keyDown to simulate keyboard interaction
-      expect(true).toBe(true); // Placeholder
-    });
-  });
+  describe('DateInfoModal - Dialog Semantics', () => {
+    test('should have role="dialog"', () => {
+      const { container } = render(
+        <DateInfoModal
+          open={true}
+          onClose={() => {}}
+          date={{ y: 2025, m: 0, d: 15 }}
+          note={null}
+          canEdit={false}
+          onSaved={() => {}}
+        />
+      );
 
-  describe('Live Regions for Status Messages', () => {
-    test('status messages should use aria-live regions', () => {
-      // This test will verify that dynamic status messages are announced
-      // Testing strategy: Check for elements with role="status" or aria-live
-      expect(true).toBe(true); // Placeholder
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog).toBeTruthy();
+    });
+
+    test('should have aria-modal="true"', () => {
+      const { container } = render(
+        <DateInfoModal
+          open={true}
+          onClose={() => {}}
+          date={{ y: 2025, m: 0, d: 15 }}
+          note={null}
+          canEdit={false}
+          onSaved={() => {}}
+        />
+      );
+
+      const dialog = container.querySelector('[role="dialog"]');
+      expect(dialog?.getAttribute('aria-modal')).toBe('true');
+    });
+
+    test('should have aria-labelledby pointing to title', () => {
+      const { container } = render(
+        <DateInfoModal
+          open={true}
+          onClose={() => {}}
+          date={{ y: 2025, m: 0, d: 15 }}
+          note={null}
+          canEdit={false}
+          onSaved={() => {}}
+        />
+      );
+
+      const dialog = container.querySelector('[role="dialog"]');
+      const labelId = dialog?.getAttribute('aria-labelledby');
+      expect(labelId).toBe('date-modal-title');
+
+      const title = document.getElementById(labelId!);
+      expect(title).toBeTruthy();
     });
   });
 });
