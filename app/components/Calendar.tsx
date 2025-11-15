@@ -53,7 +53,7 @@ function startWeekday(y: number, m: number) {
 }
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (y: number, m: number, d: number) => `${y}-${pad(m + 1)}-${pad(d)}`;
-const DAY_NAMES = ['일','월','화','수','목','금','토'];
+const DAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'];
 
 function prevOf({ y, m }: { y: number; m: number }) {
   return m ? { y, m: m - 1 } : { y: y - 1, m: 11 };
@@ -66,18 +66,19 @@ function cellKey(y: number, m: number, d: number) {
 }
 // 한국(서울) 기준 날짜 파츠
 const SEOUL_TZ = 'Asia/Seoul';
-function seoulParts(d = new Date())
-{
+function seoulParts(d = new Date()) {
   const f = new Intl.DateTimeFormat('en-CA', {
-    timeZone: SEOUL_TZ, year: 'numeric', month: '2-digit', day: '2-digit'
+    timeZone: SEOUL_TZ,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
   });
   const [y = 0, m = 1, day = 1] = f.format(d).split('-').map(Number);
   return { y, m: m - 1, d: day }; // m: 0~11
 }
 
 // 외부 링크 안전화
-function safeUrl(raw: string | null | undefined): string | null
-{
+function safeUrl(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const s = raw.trim().replace(/[\u0000-\u001F\u007F]/g, '');
   if (/^(https?):\/\//i.test(s)) return s;
@@ -85,22 +86,25 @@ function safeUrl(raw: string | null | undefined): string | null
   return null; // 허용 스킴/도메인 패턴 아니면 링크 미노출
 }
 
-function lsKey(y:number, m:number) { return `cal:${y}-${m}`; }
-function loadMonthLS(y:number, m:number): unknown[] | null
-{
+function lsKey(y: number, m: number) {
+  return `cal:${y}-${m}`;
+}
+function loadMonthLS(y: number, m: number): unknown[] | null {
   try {
-    const raw = localStorage.getItem(lsKey(y,m));
+    const raw = localStorage.getItem(lsKey(y, m));
     const arr = raw ? JSON.parse(raw) : null;
     return Array.isArray(arr) ? arr : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
-function saveMonthLS(y:number, m:number, rows:unknown[]){
-  safeSetItem(lsKey(y,m), JSON.stringify(rows||[]));
+function saveMonthLS(y: number, m: number, rows: unknown[]) {
+  safeSetItem(lsKey(y, m), JSON.stringify(rows || []));
 }
-function normMonth(y:number, m:number){ 
+function normMonth(y: number, m: number) {
   // m 범위 보정(예: -1 -> 이전해 11월)
-  const yy = y + Math.floor(m/12);
-  const mm = ((m%12)+12)%12;
+  const yy = y + Math.floor(m / 12);
+  const mm = ((m % 12) + 12) % 12;
   return [yy, mm] as const;
 }
 
@@ -138,7 +142,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
       }
       // 수집된 키를 한 번에 삭제
-      keysToRemove.forEach(k => localStorage.removeItem(k));
+      keysToRemove.forEach((k) => localStorage.removeItem(k));
       safeSetItem('cal:ver', VER);
     }
   }, []);
@@ -152,9 +156,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [canShowSeven, setCanShowSeven] = useState(true);
   const [cols, setCols] = useState(7);
 
-  const lastDecisionRef = useRef<'seven'|'compact'>('seven');
-  const pendingRef = useRef<'seven'|'compact'|null>(null);
-  const tRef = useRef<number|undefined>(undefined);
+  const lastDecisionRef = useRef<'seven' | 'compact'>('seven');
+  const pendingRef = useRef<'seven' | 'compact' | null>(null);
+  const tRef = useRef<number | undefined>(undefined);
 
   // ---------- 모바일 스와이프 (제거됨 - 드래그와 충돌) ----------
   // const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -164,7 +168,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const selectedKeysRef = useRef<Set<string>>(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
-  const [bulkTargets, setBulkTargets] = useState<Array<{y:number;m:number;d:number}>>([]);
+  const [bulkTargets, setBulkTargets] = useState<Array<{ y: number; m: number; d: number }>>([]);
 
   // 칩 드롭 액션 모달 상태
   const [chipActionOpen, setChipActionOpen] = useState(false);
@@ -191,17 +195,25 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   } | null>(null);
 
   // 선택 날짜 타이틀(최대 5개 표시)
-  function fmtBulkTitle(ts: Array<{y:number;m:number;d:number}>){
+  function fmtBulkTitle(ts: Array<{ y: number; m: number; d: number }>) {
     if (!ts.length) return null;
-    const parts = ts.slice().sort((a,b)=>a.y-b.y||a.m-b.m||a.d-b.d).map(t=>`${t.m+1}/${t.d}`);
-    const head = parts.slice(0,5).join(', ');
-    const more = parts.length>5 ? ` 외 ${parts.length-5}일` : '';
-    return <>선택한 날짜: {head}{more}</>;
+    const parts = ts
+      .slice()
+      .sort((a, b) => a.y - b.y || a.m - b.m || a.d - b.d)
+      .map((t) => `${t.m + 1}/${t.d}`);
+    const head = parts.slice(0, 5).join(', ');
+    const more = parts.length > 5 ? ` 외 ${parts.length - 5}일` : '';
+    return (
+      <>
+        선택한 날짜: {head}
+        {more}
+      </>
+    );
   }
 
   // Ctrl+F: 검색 모달 열기 (모든 사용자)
   useEffect(() => {
-    function onSearchKey(e: KeyboardEvent){
+    function onSearchKey(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         setSearchOpen(true);
@@ -213,22 +225,22 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   // 전역 키 리스너: Ctrl 누르면 선택 모드 시작, 떼면 모달 오픈 후 선택 초기화
   useEffect(() => {
-    if (!canEdit) return;  // 권한 없으면 비활성화
-    function onKeyDown(e: KeyboardEvent){
-      if (e.key === 'Control' && !ctrlSelecting){
+    if (!canEdit) return; // 권한 없으면 비활성화
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Control' && !ctrlSelecting) {
         setCtrlSelecting(true);
         selectedKeysRef.current = new Set();
         setSelectedKeys(new Set());
       }
     }
-    function onKeyUp(e: KeyboardEvent){
-      if (e.key === 'Control' && ctrlSelecting){
+    function onKeyUp(e: KeyboardEvent) {
+      if (e.key === 'Control' && ctrlSelecting) {
         const picked = Array.from(selectedKeysRef.current);
-        if (picked.length){
+        if (picked.length) {
           // Safe: cellKey format is guaranteed to be "y-m-d" with valid numbers
-          const targets = picked.map(k => {
+          const targets = picked.map((k) => {
             const [y = 0, m = 0, d = 0] = k.split('-').map(Number);
-            return {y, m, d};
+            return { y, m, d };
           });
           setBulkTargets(targets);
           setBulkOpen(true);
@@ -240,7 +252,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     }
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
-    return () => { window.removeEventListener('keydown', onKeyDown); window.removeEventListener('keyup', onKeyUp); };
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, [ctrlSelecting, canEdit]);
 
   // 공휴일 데이터 로드 (DB 로드보다 먼저 실행)
@@ -261,15 +276,17 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         }
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [ym.y, ym.m]);
 
   // 월 전환 시 선택 상태 초기화
   useEffect(() => {
-    if(!canEdit) {
-    setCtrlSelecting(false);
-    selectedKeysRef.current = new Set();
-    setSelectedKeys(new Set());
+    if (!canEdit) {
+      setCtrlSelecting(false);
+      selectedKeysRef.current = new Set();
+      setSelectedKeys(new Set());
     }
   }, [canEdit]);
 
@@ -297,42 +314,72 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   // function onTouchEnd(e: React.TouchEvent) { ... }
 
   // 셀 클릭: Ctrl-선택 토글 / 기본은 정보 모달 오픈
-  function onCellClick(e: React.MouseEvent, y:number, m:number, d:number, key:string){
-    if (ctrlSelecting && canEdit){
-      e.preventDefault(); e.stopPropagation();
+  function onCellClick(e: React.MouseEvent, y: number, m: number, d: number, key: string) {
+    if (ctrlSelecting && canEdit) {
+      e.preventDefault();
+      e.stopPropagation();
       const next = new Set(selectedKeysRef.current);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
       selectedKeysRef.current = next;
       setSelectedKeys(new Set(next));
     } else {
-      openInfo(y,m,d);
+      openInfo(y, m, d);
     }
   }
 
   // 일괄 칩 추가
-  async function applyBulkAddChip(text: string, startTime: string, nextDay: boolean, preset?: ChipPreset){
+  async function applyBulkAddChip(
+    text: string,
+    startTime: string,
+    nextDay: boolean,
+    preset?: ChipPreset
+  ) {
     const targets = bulkTargets.slice();
-    if (!targets.length){ setBulkOpen(false); return; }
+    if (!targets.length) {
+      setBulkOpen(false);
+      return;
+    }
 
     // 먼저 로컬 상태 업데이트
     const updatedNotes: Note[] = [];
-    for (const t of targets){
+    for (const t of targets) {
       const k = `${t.y}-${t.m}-${t.d}`;
       const existing = notes[k];
-      const n = existing ? { ...existing } : normalizeNote({ y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null });
-      const items = Array.isArray(n.items) ? [ ...n.items ] : [];
-      items.push({ text, emoji: preset?.emoji ?? null, label: preset?.label ?? '', startTime: startTime || undefined, nextDay: nextDay || undefined });
+      const n = existing
+        ? { ...existing }
+        : normalizeNote({
+            y: t.y,
+            m: t.m,
+            d: t.d,
+            content: '',
+            items: [],
+            color: null,
+            link: null,
+            image_url: null,
+          });
+      const items = Array.isArray(n.items) ? [...n.items] : [];
+      items.push({
+        text,
+        emoji: preset?.emoji ?? null,
+        label: preset?.label ?? '',
+        startTime: startTime || undefined,
+        nextDay: nextDay || undefined,
+      });
       const updated = normalizeNote({ ...n, items });
       updatedNotes.push(updated);
     }
 
     // DB에 저장 (병렬 처리)
     try {
-      const savePromises = updatedNotes.map(note => upsertNote(note));
+      const savePromises = updatedNotes.map((note) => upsertNote(note));
       const savedNotes = await Promise.all(savePromises);
 
       // 로컬 상태 업데이트
-      setNotes(prev => {
+      setNotes((prev) => {
         const next = { ...prev };
         for (const saved of savedNotes) {
           next[cellKey(saved.y, saved.m, saved.d)] = saved;
@@ -348,29 +395,43 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setBulkOpen(false);
     setBulkTargets([]);
   }
-  
+
   // ★ Ctrl 일괄: '휴방' 적용(기존 휴방 로직과 동일하게 content='휴방', color='red')
-  async function applyBulkRest(){
+  async function applyBulkRest() {
     const targets = bulkTargets.slice();
-    if (!targets.length){ setBulkOpen(false); return; }
+    if (!targets.length) {
+      setBulkOpen(false);
+      return;
+    }
 
     // 로컬 상태로 업데이트할 노트 준비
     const updatedNotes: Note[] = [];
-    for (const t of targets){
+    for (const t of targets) {
       const k = `${t.y}-${t.m}-${t.d}`;
       const existing = notes[k];
-      const n = existing ? { ...existing } : normalizeNote({ y:t.y, m:t.m, d:t.d, content:'', items:[], color:null, link:null, image_url:null });
+      const n = existing
+        ? { ...existing }
+        : normalizeNote({
+            y: t.y,
+            m: t.m,
+            d: t.d,
+            content: '',
+            items: [],
+            color: null,
+            link: null,
+            image_url: null,
+          });
       const updated = normalizeNote({ ...n, content: '휴방', color: 'red' as const });
       updatedNotes.push(updated);
     }
 
     // DB에 저장 (병렬 처리)
     try {
-      const savePromises = updatedNotes.map(note => upsertNote(note));
+      const savePromises = updatedNotes.map((note) => upsertNote(note));
       const savedNotes = await Promise.all(savePromises);
 
       // 로컬 상태 업데이트
-      setNotes(prev => {
+      setNotes((prev) => {
         const next = { ...prev };
         for (const saved of savedNotes) {
           next[cellKey(saved.y, saved.m, saved.d)] = saved;
@@ -378,7 +439,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         return next;
       });
     } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : '일괄 휴방 설정 중 오류가 발생했습니다.';
+      const errorMessage =
+        e instanceof Error ? e.message : '일괄 휴방 설정 중 오류가 발생했습니다.';
       setAlertMessage({ title: '휴방 설정 실패', message: errorMessage });
       setAlertOpen(true);
     }
@@ -386,28 +448,26 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setBulkOpen(false);
     setBulkTargets([]);
   }
-  
+
   // ----- 롱프레스 드래그 상태 -----
-  const [longReadyKey, setLongReadyKey] = useState<string|null>(null);
-  const [dragPulseKey, setDragPulseKey] = useState<string|null>(null); // ★ 펄스(반짝) 표시 대상 셀
-  const pressTimerRef = useRef<number|undefined>(undefined);
-  const pressKeyRef = useRef<string|null>(null);
-  const pulseTimerRef = useRef<number|undefined>(undefined);
+  const [longReadyKey, setLongReadyKey] = useState<string | null>(null);
+  const [dragPulseKey, setDragPulseKey] = useState<string | null>(null); // ★ 펄스(반짝) 표시 대상 셀
+  const pressTimerRef = useRef<number | undefined>(undefined);
+  const pressKeyRef = useRef<string | null>(null);
+  const pulseTimerRef = useRef<number | undefined>(undefined);
 
   // ----- 칩 롱프레스 드래그 상태 -----
-  const [longReadyChip, setLongReadyChip] = useState<string|null>(null);
-  const chipPressTimerRef = useRef<number|undefined>(undefined);
-  const chipPressKeyRef = useRef<string|null>(null);
+  const [longReadyChip, setLongReadyChip] = useState<string | null>(null);
+  const chipPressTimerRef = useRef<number | undefined>(undefined);
+  const chipPressKeyRef = useRef<string | null>(null);
 
   // ----- 드래그 중인 데이터 (모바일용 fallback) -----
   const draggedChipDataRef = useRef<any>(null);
   const draggedNoteDataRef = useRef<any>(null);
 
-
-  
   function triggerPulse(k: string) {
     const isCoarse = window.matchMedia?.('(pointer: coarse)').matches;
-    if (isCoarse) return;                 // 터치 환경에서는 생략
+    if (isCoarse) return; // 터치 환경에서는 생략
     if (pulseTimerRef.current) window.clearTimeout(pulseTimerRef.current);
     setDragPulseKey(k);
     pulseTimerRef.current = window.setTimeout(() => {
@@ -466,20 +526,30 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     setLongReadyChip(null);
   }
 
-
-
   // 드래그 시작 시 데이터 적재
-  function onCellDragStart(e: React.DragEvent<HTMLDivElement>, k: string, note: Note|undefined|null) {
+  function onCellDragStart(
+    e: React.DragEvent<HTMLDivElement>,
+    k: string,
+    note: Note | undefined | null
+  ) {
     // 모바일: longReadyKey 체크 우회 (항상 허용)
     const isMobile = isMobileDevice();
 
-    if (!isMobile && longReadyKey !== k) { e.preventDefault(); return; }
-    if (!note || !hasAnyContent(note)) { e.preventDefault(); return; }
+    if (!isMobile && longReadyKey !== k) {
+      e.preventDefault();
+      return;
+    }
+    if (!note || !hasAnyContent(note)) {
+      e.preventDefault();
+      return;
+    }
     // 복제 페이로드(필요 필드만)
     const payload = {
       type: 'note-copy',
       note: {
-        y: note.y, m: note.m, d: note.d,
+        y: note.y,
+        m: note.m,
+        d: note.d,
         content: note.content ?? '',
         items: Array.isArray(note.items) ? note.items : [],
         color: note.color ?? null,
@@ -487,7 +557,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         image_url: note.image_url ?? null,
         title: (note as any)?.title ?? null,
         use_image_as_bg: (note as any)?.use_image_as_bg ?? false,
-      }
+      },
     };
     const payloadStr = JSON.stringify(payload);
     try {
@@ -504,7 +574,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // 내용 존재 여부 판단
-  function hasAnyContent(n?: Note|null) {
+  function hasAnyContent(n?: Note | null) {
     if (!n) return false;
     if (n.content && n.content.trim().length) return true;
     if (Array.isArray(n.items) && n.items.length) return true;
@@ -525,7 +595,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       image_url: dst.image_url ?? src.image_url ?? null,
       color: dst.color ?? src.color ?? null,
       title: (dst as any)?.title ?? (src as any)?.title ?? null,
-      use_image_as_bg: ((dst as any)?.use_image_as_bg ?? false) || ((src as any)?.use_image_as_bg ?? false),
+      use_image_as_bg:
+        ((dst as any)?.use_image_as_bg ?? false) || ((src as any)?.use_image_as_bg ?? false),
     });
     return merged;
   }
@@ -542,7 +613,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
 
   // note 복제 드롭 처리
-  async function dropNoteCopy(targetY:number, targetM:number, targetD:number, json: unknown) {
+  async function dropNoteCopy(targetY: number, targetM: number, targetD: number, json: unknown) {
     if (!canEdit) return;
     // Type guard: NoteCopyPayload 확인
     if (
@@ -552,12 +623,24 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       json.type !== 'note-copy' ||
       !('note' in json) ||
       !json.note
-    ) return;
+    )
+      return;
     const src: Note = normalizeNote(json.note);
     if (src.y === targetY && src.m === targetM && src.d === targetD) return; // 동일 셀은 무시
 
     const k = cellKey(targetY, targetM, targetD);
-    const dst = notes[k] || normalizeNote({ y: targetY, m: targetM, d: targetD, content:'', items:[], color:null, link:null, image_url:null });
+    const dst =
+      notes[k] ||
+      normalizeNote({
+        y: targetY,
+        m: targetM,
+        d: targetD,
+        content: '',
+        items: [],
+        color: null,
+        link: null,
+        image_url: null,
+      });
 
     if (hasAnyContent(dst)) {
       // 기존 내용이 있으면 모달 열기
@@ -574,7 +657,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const finalNote = normalizeNote({ ...src, y: targetY, m: targetM, d: targetD });
       try {
         const saved = await upsertNote(finalNote);
-        setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+        setNotes((prev) => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
       } catch (e) {
         const errorMessage = e instanceof Error ? e.message : '복제 저장 중 오류가 발생했습니다.';
         setAlertMessage({ title: '복제 저장 실패', message: errorMessage });
@@ -591,7 +674,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
     try {
       const saved = await upsertNote(finalNote);
-      setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+      setNotes((prev) => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : '덮어쓰기 중 오류가 발생했습니다.';
       setAlertMessage({ title: '덮어쓰기 실패', message: errorMessage });
@@ -606,11 +689,14 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   async function mergeNote() {
     if (!pendingNoteDrop) return;
     const { targetY, targetM, targetD, src, dst } = pendingNoteDrop;
-    const finalNote = mergeNotes(src, normalizeNote({ ...dst, y: targetY, m: targetM, d: targetD }));
+    const finalNote = mergeNotes(
+      src,
+      normalizeNote({ ...dst, y: targetY, m: targetM, d: targetD })
+    );
 
     try {
       const saved = await upsertNote(finalNote);
-      setNotes(prev => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
+      setNotes((prev) => ({ ...prev, [cellKey(saved.y, saved.m, saved.d)]: saved }));
     } catch (e) {
       const errorMessage = e instanceof Error ? e.message : '합치기 중 오류가 발생했습니다.';
       setAlertMessage({ title: '합치기 실패', message: errorMessage });
@@ -632,15 +718,19 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       const saved = await upsertNote(finalNote);
 
       // 원본 삭제
-      const { error } = await supabase.from('notes').delete()
-        .eq('y', src.y).eq('m', src.m).eq('d', src.d);
+      const { error } = await supabase
+        .from('notes')
+        .delete()
+        .eq('y', src.y)
+        .eq('m', src.m)
+        .eq('d', src.d);
       if (error) throw new Error(error.message);
 
       // 상태 업데이트
       const sourceKey = cellKey(src.y, src.m, src.d);
       const targetKey = cellKey(saved.y, saved.m, saved.d);
 
-      setNotes(prev => {
+      setNotes((prev) => {
         const next = { ...prev };
         delete next[sourceKey]; // 원본 삭제
         next[targetKey] = saved; // 대상 설정
@@ -805,8 +895,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ymKey]);
 
-  function shallowEqualObj(a: Record<string,string>, b: Record<string,string>) {
-    const ak = Object.keys(a), bk = Object.keys(b);
+  function shallowEqualObj(a: Record<string, string>, b: Record<string, string>) {
+    const ak = Object.keys(a),
+      bk = Object.keys(b);
     if (ak.length !== bk.length) return false;
     for (const k of ak) if (a[k] !== b[k]) return false;
     return true;
@@ -819,69 +910,74 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   }
   const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
 
-// 배경 이미지가 필요한 노트의 키만 추출 (의존성 최적화)
-const bgImageKeys = useMemo(() => {
-  const keys: string[] = [];
-  for (const n of Object.values(notes)) {
-    if (n?.image_url && (n as any)?.use_image_as_bg) {
-      keys.push(`${n.y}-${n.m}-${n.d}`);
-    }
-  }
-  return keys.sort().join(','); // 정렬된 문자열로 변환하여 비교 최적화
-}, [notes]);
-
-// 배경 URL 생성 (의존성 세밀화 + 동적 import 제거)
-useEffect(() => {
-  if (!bgImageKeys) {
-    setBgUrls({});
-    return;
-  }
-
-  let cancelled = false;
-  (async () => {
-    const tasks: Array<Promise<[string, string]>> = [];
-    const keys = bgImageKeys.split(',');
-
-    for (const k of keys) {
-      if (!k) continue;
-      const n = notes[k];
-      if (!n?.image_url) continue;
-
-      const raw = n.image_url;
-
-      tasks.push((async () => {
-        // HTTP URL이면 그대로 사용 (외부 이미지)
-        if (/^https?:\/\//i.test(raw)) {
-          const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
-          if (m && m[1] && m[2]) {
-            const bucket = m[1], key = decodeURIComponent(m[2]);
-            const url = await getSignedUrl(key, bucket);
-            return [k, url || raw] as [string, string];
-          }
-          return [k, raw] as [string, string];
-        } else {
-          // 상대 경로는 note-images 버킷
-          const url = await getSignedUrl(raw, 'note-images');
-          return [k, url || ''] as [string, string];
-        }
-      })());
-    }
-
-    const settled = await Promise.allSettled(tasks);
-    if (cancelled) return;
-
-    const map: Record<string, string> = {};
-    for (const r of settled) {
-      if (r.status === 'fulfilled') {
-        const [k, u] = r.value;
-        if (u) map[k] = u;
+  // 배경 이미지가 필요한 노트의 키만 추출 (의존성 최적화)
+  const bgImageKeys = useMemo(() => {
+    const keys: string[] = [];
+    for (const n of Object.values(notes)) {
+      if (n?.image_url && (n as any)?.use_image_as_bg) {
+        keys.push(`${n.y}-${n.m}-${n.d}`);
       }
     }
+    return keys.sort().join(','); // 정렬된 문자열로 변환하여 비교 최적화
+  }, [notes]);
 
-    setBgUrls(prev => shallowEqualObj(prev, map) ? prev : map);
-  })();
-  return () => { cancelled = true; };
-}, [bgImageKeys, notes]);
+  // 배경 URL 생성 (의존성 세밀화 + 동적 import 제거)
+  useEffect(() => {
+    if (!bgImageKeys) {
+      setBgUrls({});
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      const tasks: Array<Promise<[string, string]>> = [];
+      const keys = bgImageKeys.split(',');
+
+      for (const k of keys) {
+        if (!k) continue;
+        const n = notes[k];
+        if (!n?.image_url) continue;
+
+        const raw = n.image_url;
+
+        tasks.push(
+          (async () => {
+            // HTTP URL이면 그대로 사용 (외부 이미지)
+            if (/^https?:\/\//i.test(raw)) {
+              const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
+              if (m && m[1] && m[2]) {
+                const bucket = m[1],
+                  key = decodeURIComponent(m[2]);
+                const url = await getSignedUrl(key, bucket);
+                return [k, url || raw] as [string, string];
+              }
+              return [k, raw] as [string, string];
+            } else {
+              // 상대 경로는 note-images 버킷
+              const url = await getSignedUrl(raw, 'note-images');
+              return [k, url || ''] as [string, string];
+            }
+          })()
+        );
+      }
+
+      const settled = await Promise.allSettled(tasks);
+      if (cancelled) return;
+
+      const map: Record<string, string> = {};
+      for (const r of settled) {
+        if (r.status === 'fulfilled') {
+          const [k, u] = r.value;
+          if (u) map[k] = u;
+        }
+      }
+
+      setBgUrls((prev) => (shallowEqualObj(prev, map) ? prev : map));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [bgImageKeys, notes]);
 
   async function prefetchMonth(y: number, m: number) {
     const k = `${y}-${m}`;
@@ -890,7 +986,8 @@ useEffect(() => {
     const { data, error } = await supabase
       .from('notes')
       .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
-      .eq('y', y).eq('m', m);
+      .eq('y', y)
+      .eq('m', m);
 
     if (!error) {
       setMonthCache((prev) => {
@@ -902,7 +999,10 @@ useEffect(() => {
 
       // 백그라운드로 이전/다음 달 미리 가져오기
       (async () => {
-        for (const [yy = 0, mm0 = 0] of [[ym.y, ym.m-1], [ym.y, ym.m+1]]) {
+        for (const [yy = 0, mm0 = 0] of [
+          [ym.y, ym.m - 1],
+          [ym.y, ym.m + 1],
+        ]) {
           const [ny, nm] = normMonth(yy, mm0);
           const k = `${ny}-${nm}`;
           if (monthCache.get(k) || loadMonthLS(ny, nm)) continue;
@@ -910,9 +1010,14 @@ useEffect(() => {
             const { data: nb } = await supabase
               .from('notes')
               .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
-              .eq('y', ny).eq('m', nm);
+              .eq('y', ny)
+              .eq('m', nm);
             if (nb) {
-              setMonthCache((prev) => { const next = new Map(prev); next.set(k, nb); return next; });
+              setMonthCache((prev) => {
+                const next = new Map(prev);
+                next.set(k, nb);
+                return next;
+              });
               saveMonthLS(ny, nm, nb);
             }
           } catch {}
@@ -945,7 +1050,8 @@ useEffect(() => {
       !('type' in payload) ||
       payload.type !== 'preset' ||
       !('preset' in payload)
-    ) return;
+    )
+      return;
     const preset = payload.preset as { emoji: string; label: string };
     // 저장하지 않고, 해당 날짜 모달을 열고 프리셋을 전달한다.
     setPresetToAdd(preset);
@@ -978,7 +1084,13 @@ useEffect(() => {
     const { sourceDate, chipIndex, item, sourceType } = payload as ChipPayload;
 
     // 동일 날짜로 드롭하면 무시 (unscheduled 제외)
-    if (sourceType !== 'unscheduled' && sourceDate && sourceDate.y === targetY && sourceDate.m === targetM && sourceDate.d === targetD) {
+    if (
+      sourceType !== 'unscheduled' &&
+      sourceDate &&
+      sourceDate.y === targetY &&
+      sourceDate.m === targetM &&
+      sourceDate.d === targetD
+    ) {
       return;
     }
 
@@ -1000,13 +1112,23 @@ useEffect(() => {
   // 칩 이동 (원본 삭제)
   async function moveChip() {
     if (!pendingChipDrop) return;
-    const { targetY, targetM, targetD, sourceY, sourceM, sourceD, chipIndex, item, sourceType } = pendingChipDrop;
+    const { targetY, targetM, targetD, sourceY, sourceM, sourceD, chipIndex, item, sourceType } =
+      pendingChipDrop;
 
     // 1) 대상 날짜에 칩 추가
     const targetKey = cellKey(targetY, targetM, targetD);
-    const targetNote = notes[targetKey] || normalizeNote({
-      y: targetY, m: targetM, d: targetD, content: '', items: [], color: null, link: null, image_url: null
-    });
+    const targetNote =
+      notes[targetKey] ||
+      normalizeNote({
+        y: targetY,
+        m: targetM,
+        d: targetD,
+        content: '',
+        items: [],
+        color: null,
+        link: null,
+        image_url: null,
+      });
     const targetItems = [...(targetNote.items || []), item];
 
     try {
@@ -1037,7 +1159,7 @@ useEffect(() => {
           if (updateError) throw updateError;
 
           // UnscheduledModal 갱신 트리거
-          setRefreshUnscheduledTrigger(prev => prev + 1);
+          setRefreshUnscheduledTrigger((prev) => prev + 1);
         }
       } else {
         // Calendar 셀 또는 DateInfoModal에서 온 경우: notes 테이블에서 삭제
@@ -1052,7 +1174,7 @@ useEffect(() => {
         await upsertNote({ ...sourceNote, items: sourceItems });
 
         // 상태 업데이트
-        setNotes(prev => ({
+        setNotes((prev) => ({
           ...prev,
           [targetKey]: { ...targetNote, items: targetItems },
           [sourceKey]: { ...sourceNote, items: sourceItems },
@@ -1061,7 +1183,7 @@ useEffect(() => {
 
       // sourceType이 'unscheduled'인 경우에도 대상 상태는 업데이트
       if (sourceType === 'unscheduled') {
-        setNotes(prev => ({
+        setNotes((prev) => ({
           ...prev,
           [targetKey]: { ...targetNote, items: targetItems },
         }));
@@ -1082,14 +1204,23 @@ useEffect(() => {
     const { targetY, targetM, targetD, item } = pendingChipDrop;
 
     const targetKey = cellKey(targetY, targetM, targetD);
-    const targetNote = notes[targetKey] || normalizeNote({
-      y: targetY, m: targetM, d: targetD, content: '', items: [], color: null, link: null, image_url: null
-    });
+    const targetNote =
+      notes[targetKey] ||
+      normalizeNote({
+        y: targetY,
+        m: targetM,
+        d: targetD,
+        content: '',
+        items: [],
+        color: null,
+        link: null,
+        image_url: null,
+      });
     const targetItems = [...(targetNote.items || []), item];
 
     try {
       await upsertNote({ ...targetNote, items: targetItems });
-      setNotes(prev => ({
+      setNotes((prev) => ({
         ...prev,
         [targetKey]: { ...targetNote, items: targetItems },
       }));
@@ -1104,7 +1235,12 @@ useEffect(() => {
   }
 
   // UnscheduledModal로 칩 이동 시 원본 삭제
-  async function handleChipMovedToUnscheduled(sourceY: number, sourceM: number, sourceD: number, chipIndex: number) {
+  async function handleChipMovedToUnscheduled(
+    sourceY: number,
+    sourceM: number,
+    sourceD: number,
+    chipIndex: number
+  ) {
     const sourceKey = cellKey(sourceY, sourceM, sourceD);
     const sourceNote = notes[sourceKey];
     if (!sourceNote) return;
@@ -1114,7 +1250,7 @@ useEffect(() => {
 
     try {
       await upsertNote({ ...sourceNote, items: sourceItems });
-      setNotes(prev => ({
+      setNotes((prev) => ({
         ...prev,
         [sourceKey]: { ...sourceNote, items: sourceItems },
       }));
@@ -1149,15 +1285,55 @@ useEffect(() => {
   const monthLabel = `${ym.y}.${pad(ym.m + 1)}`;
 
   const ribbonButtons = [
-    { id: 'b1', src: '/ribbon/btn_chzzk.png', alt: '치지직', href: 'https://chzzk.naver.com/eaf7b569c9992d0e57db0059eb5c0eeb' },
-    { id: 'b2', src: '/ribbon/btn_youtube.png', alt: '유튜브', href: 'https://www.youtube.com/channel/UC-711LHT7B6Lb1Xy5m_cjPw' },
-    { id: 'b3', src: '/ribbon/btn_replay.png', alt: '다시보기', href: 'https://www.youtube.com/@eaglekopFulltime' },
+    {
+      id: 'b1',
+      src: '/ribbon/btn_chzzk.png',
+      alt: '치지직',
+      href: 'https://chzzk.naver.com/eaf7b569c9992d0e57db0059eb5c0eeb',
+    },
+    {
+      id: 'b2',
+      src: '/ribbon/btn_youtube.png',
+      alt: '유튜브',
+      href: 'https://www.youtube.com/channel/UC-711LHT7B6Lb1Xy5m_cjPw',
+    },
+    {
+      id: 'b3',
+      src: '/ribbon/btn_replay.png',
+      alt: '다시보기',
+      href: 'https://www.youtube.com/@eaglekopFulltime',
+    },
     { id: 'b4', src: '/ribbon/btn_X.png', alt: 'X', href: 'https://x.com/eagle_kop' },
-    { id: 'b5', src: '/ribbon/btn_discord.png', alt: '디스코드', href: 'https://discord.gg/sBSwch78bP' },
-    { id: 'b6', src: '/ribbon/btn_fanCafe.png', alt: '팬카페', href: 'https://cafe.naver.com/eaglekoplockerroom' },
-    { id: 'b7', src: '/ribbon/btn_fancim.png', alt: '팬심', href: 'https://fancim.me/celeb/profile.aspx?cu_id=eaglekop' },
-    { id: 'b8', src: '/ribbon/btn_goods.png', alt: '굿즈', href: 'https://www.shopfanpick.com/eaglekop/products' },
-    { id: 'b9', src: '/ribbon/btn_insta.png', alt: '인스타', href: 'https://www.instagram.com/eaglekop/' },
+    {
+      id: 'b5',
+      src: '/ribbon/btn_discord.png',
+      alt: '디스코드',
+      href: 'https://discord.gg/sBSwch78bP',
+    },
+    {
+      id: 'b6',
+      src: '/ribbon/btn_fanCafe.png',
+      alt: '팬카페',
+      href: 'https://cafe.naver.com/eaglekoplockerroom',
+    },
+    {
+      id: 'b7',
+      src: '/ribbon/btn_fancim.png',
+      alt: '팬심',
+      href: 'https://fancim.me/celeb/profile.aspx?cu_id=eaglekop',
+    },
+    {
+      id: 'b8',
+      src: '/ribbon/btn_goods.png',
+      alt: '굿즈',
+      href: 'https://www.shopfanpick.com/eaglekop/products',
+    },
+    {
+      id: 'b9',
+      src: '/ribbon/btn_insta.png',
+      alt: '인스타',
+      href: 'https://www.instagram.com/eaglekop/',
+    },
   ];
 
   async function jumpGo() {
@@ -1181,7 +1357,8 @@ useEffect(() => {
         const { data, error } = await supabase
           .from('notes')
           .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
-          .eq('y', y).eq('m', m);
+          .eq('y', y)
+          .eq('m', m);
 
         if (!error && data) {
           cached = data;
@@ -1227,8 +1404,15 @@ useEffect(() => {
   // - 설정하지 않으면 '', 7칸 미만일 때는 요일만 노출
   // - 7칸 미만 + title 존재 → "요일:타이틀"
   // - 공휴일이면 공휴일명 추가
-  function cellTitleOf(note: Note | null | undefined, weekday: number, showWeekday: boolean, y: number, m: number, d: number) {
-    const rawTitle = sanitizeText(((note as any)?.title) ?? '');  // XSS 방지: title sanitize
+  function cellTitleOf(
+    note: Note | null | undefined,
+    weekday: number,
+    showWeekday: boolean,
+    y: number,
+    m: number,
+    d: number
+  ) {
+    const rawTitle = sanitizeText((note as any)?.title ?? ''); // XSS 방지: title sanitize
     const holiday = isHoliday(y, m, d, holidays);
 
     if (!showWeekday) {
@@ -1243,8 +1427,6 @@ useEffect(() => {
     }
     return rawTitle ? `${day}:${rawTitle}` : day;
   }
-
-
 
   return (
     <>
@@ -1267,8 +1449,9 @@ useEffect(() => {
             flexDirection: 'column',
             gap: 8,
             minWidth: 360,
-            flex: '1 1 60%'
-          }}>
+            flex: '1 1 60%',
+          }}
+        >
           {/* 좌측 상단: 아이콘 + 텍스트 (horizontal) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Image
@@ -1279,7 +1462,9 @@ useEffect(() => {
               style={{ borderRadius: 12, objectFit: 'cover', border: '1px solid var(--border)' }}
               priority
             />
-            <h2 style={{ margin: 0, fontSize: canShowSeven ? '1.5rem' : '1.2rem' }}>이글콥의 스케쥴표</h2>
+            <h2 style={{ margin: 0, fontSize: canShowSeven ? '1.5rem' : '1.2rem' }}>
+              이글콥의 스케쥴표
+            </h2>
           </div>
 
           {/* 좌측 중단: ◀ 월 텍스트 ▶ (horizontal) */}
@@ -1296,7 +1481,16 @@ useEffect(() => {
               ◀
             </button>
 
-            <strong style={{ fontSize: canShowSeven ? 18 : 16, minWidth: 120, maxWidth: 200, textAlign: 'center' }}>{monthLabel}</strong>
+            <strong
+              style={{
+                fontSize: canShowSeven ? 18 : 16,
+                minWidth: 120,
+                maxWidth: 200,
+                textAlign: 'center',
+              }}
+            >
+              {monthLabel}
+            </strong>
 
             <button
               onMouseEnter={() => {
@@ -1312,13 +1506,20 @@ useEffect(() => {
           </div>
 
           {/* 좌측 하단: 날짜 선택 + 이동 + 검색 + 미정 일정 (horizontal) */}
-          <div className="jump" style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          <div
+            className="jump"
+            style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}
+          >
             <input
               type="date"
               value={jump}
               onChange={(e) => setJump(e.target.value)}
               aria-label="날짜 선택"
-              style={{ flex: canShowSeven ? '0 0 auto' : '1 1 120px', minWidth: 120, maxWidth: 180 }}
+              style={{
+                flex: canShowSeven ? '0 0 auto' : '1 1 120px',
+                minWidth: 120,
+                maxWidth: 180,
+              }}
             />
             <button
               onMouseEnter={() => {
@@ -1352,7 +1553,15 @@ useEffect(() => {
         </div>
 
         {/* -------- 우측 컨테이너 (vertical) -------- */}
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 10, flex: '0 0 40%' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 10,
+            flex: '0 0 40%',
+          }}
+        >
           {/* 우측 상단: Spacer (wide 화면에서만 top ribbon 위치 조정용) */}
           {canShowSeven && (
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
@@ -1363,18 +1572,14 @@ useEffect(() => {
                   color: 'var(--accent)',
                 }}
               >
-                <span style={{visibility:'hidden'}}>{todayLabel}</span>
+                <span style={{ visibility: 'hidden' }}>{todayLabel}</span>
               </div>
             </div>
           )}
 
           {/* 우측 하단: Ribbon Buttons (horizontal) */}
           <div style={{ display: 'flex', justifyContent: 'flex-end' }} className="top-ribbon-reset">
-            <TopRibbon
-              buttons={ribbonButtons}
-              containerHeight={64}
-              gap={10}
-            />
+            <TopRibbon buttons={ribbonButtons} containerHeight={64} gap={10} />
           </div>
         </div>
       </div>
@@ -1383,9 +1588,12 @@ useEffect(() => {
       {/* 스켈레톤 UI (로딩 중) */}
       {loading && (
         <div className={`grid calendar-grid ${canShowSeven ? 'seven' : 'auto'} skeleton-grid`}>
-          {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
-            <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
-          ))}
+          {canShowSeven &&
+            ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
+              <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>
+                {n}
+              </div>
+            ))}
           {Array.from({ length: canShowSeven ? 35 : 31 }).map((_, idx) => (
             <div key={idx} className="cell skeleton-cell">
               <div className="skeleton-date"></div>
@@ -1406,37 +1614,45 @@ useEffect(() => {
           opacity: loading ? 0 : 1,
           transition: 'opacity 0.3s ease-in-out',
           position: loading ? 'absolute' : 'relative',
-          visibility: loading ? 'hidden' : 'visible'
+          visibility: loading ? 'hidden' : 'visible',
         }}
       >
-        {canShowSeven && ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
-          <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>{n}</div>
-        ))}
+        {canShowSeven &&
+          ['일', '월', '화', '수', '목', '금', '토'].map((n, i) => (
+            <div key={n} className={`day-name ${i === 0 ? 'sun' : ''} ${i === 6 ? 'sat' : ''}`}>
+              {n}
+            </div>
+          ))}
 
         {cells.map((c, idx) => {
           const k = cellKey(c.y, c.m, c.d ?? -1);
           const note = c.d ? notes[k] : null;
 
-          const isToday = !!c.d && c.y === todayParts.y && c.m === todayParts.m && c.d === todayParts.d;
+          const isToday =
+            !!c.d && c.y === todayParts.y && c.m === todayParts.m && c.d === todayParts.d;
 
           const bg = c.d ? bgUrls[k] : undefined; // 배경 URL
           const baseBgColor =
-            note?.color === 'red' ? 'var(--flagRed)' :
-            note?.color === 'blue' ? 'var(--flagBlue)' : 'var(--card)';
+            note?.color === 'red'
+              ? 'var(--flagRed)'
+              : note?.color === 'blue'
+                ? 'var(--flagBlue)'
+                : 'var(--card)';
           const flagClass = note?.color ? `flag-${note.color}` : '';
-          const cn = `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass} ${bg ? 'has-bgimg' : ''}`.trim();
+          const cn =
+            `cell ${isToday ? 'today' : ''} ${c.w === 0 ? 'sun' : ''} ${c.w === 6 ? 'sat' : ''} ${flagClass} ${bg ? 'has-bgimg' : ''}`.trim();
 
           // 휴: color=red 이고 content가 '휴방'이면 휴 모드
-          const isRest = !!note && note.color === 'red' && (note.content?.trim() === '휴방');
+          const isRest = !!note && note.color === 'red' && note.content?.trim() === '휴방';
 
           // 파란 셀에서 "칩 + 텍스트"를 함께 보여주기 위한 분기
           const hasItems = (note?.items?.length || 0) > 0;
-          const hasText  = !!note?.content?.trim()?.length;
-          const isBlue   = note?.color === 'blue';
+          const hasText = !!note?.content?.trim()?.length;
+          const isBlue = note?.color === 'blue';
           const showBundle = !!note && isBlue && hasItems && hasText && !isRest;
 
           // 기존 규칙은 유지하되, 번들일 땐 showMemo가 단독으로 칩을 가리지 않도록 제외
-          const showMemo  = !!note?.color && hasText && !isRest && !showBundle;
+          const showMemo = !!note?.color && hasText && !isRest && !showBundle;
           const showChips = hasItems && (!showMemo || showBundle);
           const isPicked = selectedKeys.has(k);
           const linkUrl = safeUrl(note?.link ?? null);
@@ -1447,23 +1663,27 @@ useEffect(() => {
               key={idx}
               className={`${cn} ${isPicked ? 'sel' : ''}`}
               data-cell-key={k}
-              draggable={canEdit && !!c.d }
-              style={ bg ? {
-                backgroundImage: `url(${bg})`,
-                backgroundSize: '80% 80%',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-                backgroundColor: baseBgColor,
-                opacity: isDragging ? 0.6 : 1,
-                transform: isDragging ? 'scale(0.95)' : 'scale(1)',
-                transition: 'opacity 0.15s, transform 0.15s',
-                boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
-              } : {
-                opacity: isDragging ? 0.6 : 1,
-                transform: isDragging ? 'scale(0.95)' : 'scale(1)',
-                transition: 'opacity 0.15s, transform 0.15s',
-                boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
-              } }
+              draggable={canEdit && !!c.d}
+              style={
+                bg
+                  ? {
+                      backgroundImage: `url(${bg})`,
+                      backgroundSize: '80% 80%',
+                      backgroundPosition: 'center',
+                      backgroundRepeat: 'no-repeat',
+                      backgroundColor: baseBgColor,
+                      opacity: isDragging ? 0.6 : 1,
+                      transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
+                    }
+                  : {
+                      opacity: isDragging ? 0.6 : 1,
+                      transform: isDragging ? 'scale(0.95)' : 'scale(1)',
+                      transition: 'opacity 0.15s, transform 0.15s',
+                      boxShadow: isDragging ? '0 0 0 2px var(--accent)' : 'none',
+                    }
+              }
               onClick={(e) => c.d && onCellClick(e, c.y, c.m, c.d, k)}
               onMouseDown={(e) => {
                 // 칩을 클릭한 경우 셀 드래그 무시
@@ -1549,16 +1769,18 @@ useEffect(() => {
                 className="cell-inner"
                 role="group"
                 aria-label="calendar cell"
-                style={{ position: 'relative' }}  // 오버레이 기준 컨테이너
+                style={{ position: 'relative' }} // 오버레이 기준 컨테이너
               >
                 {/* 롱프레스 성립 순간에만 0.2s 펄스(PC 전용) */}
-                {dragPulseKey === k && (
-                  <div aria-hidden className="calendar-cell-pulse" />
-                )}
+                {dragPulseKey === k && <div aria-hidden className="calendar-cell-pulse" />}
                 {/* ── 상단: 날짜 | {cell_title} | link ── */}
                 <div className="cell-top">
-                  <div className={`cell-date ${c.w==0?'sun': (c.w==6?'sat':'')}`}>{c.d ?? ''}</div>
-                  <div className={`cell-title ${(c.w===0 || (c.d && isHoliday(c.y, c.m, c.d, holidays)))?'sun': (c.w===6?'sat':'')}`}>
+                  <div className={`cell-date ${c.w == 0 ? 'sun' : c.w == 6 ? 'sat' : ''}`}>
+                    {c.d ?? ''}
+                  </div>
+                  <div
+                    className={`cell-title ${c.w === 0 || (c.d && isHoliday(c.y, c.m, c.d, holidays)) ? 'sun' : c.w === 6 ? 'sat' : ''}`}
+                  >
                     {c.d ? cellTitleOf(note || null, c.w, !canShowSeven, c.y, c.m, c.d) : ''}
                   </div>
                   <div className="cell-link">
@@ -1573,8 +1795,20 @@ useEffect(() => {
                         style={{ position: 'static' }}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden>
-                          <path d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                          <path d="M13.41 10.59a2 2 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path
+                            d="M10.59 13.41a2 2 0 0 1 0-2.82l3.18-3.18a2 2 0 1 1 2.83 2.83l-1.06 1.06"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M13.41 10.59a2 2 0 0 1 0 2.82l-3.18 3.18a2 2 0 1 1-2.83-2.83l1.06-1.06"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
                         </svg>
                       </a>
                     )}
@@ -1582,7 +1816,9 @@ useEffect(() => {
                 </div>
 
                 {/* ── 콘텐츠: 휴(중앙 '휴방') > 파란 셀 번들(칩+텍스트) > 플래그 메모 단독 > 칩 단독 ── */}
-                <div className={`cell-content ${(isRest || (showMemo && !showBundle)) ? 'has-text' : ''}`}>
+                <div
+                  className={`cell-content ${isRest || (showMemo && !showBundle) ? 'has-text' : ''}`}
+                >
                   {isRest ? (
                     <div className="cell-rest">휴방</div>
                   ) : showBundle && note ? (
@@ -1592,6 +1828,89 @@ useEffect(() => {
                         {note.items.map((it: Item, i: number) => {
                           const chipKey = `${k}-${i}`;
                           return (
+                            <span
+                              key={i}
+                              className="chip"
+                              draggable={canEdit}
+                              onMouseDown={(e) => {
+                                if (!canEdit || !c.d) return;
+                                e.stopPropagation();
+                                onPressStartChip(chipKey);
+                              }}
+                              onMouseUp={(e) => {
+                                e.stopPropagation();
+                                onPressEndChip();
+                              }}
+                              onMouseLeave={() => {
+                                onPressEndChip();
+                              }}
+                              onTouchStart={(e) => {
+                                if (!canEdit || !c.d) return;
+                                e.stopPropagation();
+                                onPressStartChip(chipKey);
+                              }}
+                              onTouchEnd={(e) => {
+                                e.stopPropagation();
+                                onPressEndChip();
+                              }}
+                              onDragStart={(e) => {
+                                if (!canEdit || !c.d) return;
+                                const isMobile = isMobileDevice();
+                                if (!isMobile && longReadyChip !== chipKey) {
+                                  e.preventDefault();
+                                  return;
+                                }
+                                e.stopPropagation();
+                                const payload = {
+                                  type: 'chip',
+                                  sourceType: 'cell',
+                                  sourceDate: { y: c.y, m: c.m, d: c.d },
+                                  chipIndex: i,
+                                  item: it,
+                                };
+                                const payloadStr = JSON.stringify(payload);
+                                e.dataTransfer.setData('application/json', payloadStr);
+                                e.dataTransfer.setData('text/plain', payloadStr);
+                                e.dataTransfer.effectAllowed = 'move';
+                                draggedChipDataRef.current = payload;
+                              }}
+                              onDragEnd={() => {
+                                onPressEndChip();
+                                draggedChipDataRef.current = null;
+                              }}
+                            >
+                              <span
+                                style={{
+                                  display: 'inline-flex',
+                                  flexDirection: 'column',
+                                  alignItems: 'center',
+                                  gap: 2,
+                                }}
+                              >
+                                <span className="chip-emoji">{it.emoji ?? ''}</span>
+                                {it.startTime && (
+                                  <span className="chip-time">
+                                    {it.startTime}
+                                    {it.nextDay ? '+1' : ''}
+                                  </span>
+                                )}
+                              </span>
+                              <span className="chip-text">
+                                {sanitizeText(it.text?.length ? it.text : it.label)}
+                              </span>
+                            </span>
+                          );
+                        })}
+                      </div>
+                      <div className="cell-content-text">{sanitizeText(note.content)}</div>
+                    </div>
+                  ) : showMemo ? (
+                    <div className="cell-content-text">{sanitizeText(note!.content)}</div>
+                  ) : showChips && note ? (
+                    <div className="chips">
+                      {note!.items.map((it: Item, i: number) => {
+                        const chipKey = `${k}-${i}`;
+                        return (
                           <span
                             key={i}
                             className="chip"
@@ -1630,7 +1949,7 @@ useEffect(() => {
                                 sourceType: 'cell',
                                 sourceDate: { y: c.y, m: c.m, d: c.d },
                                 chipIndex: i,
-                                item: it
+                                item: it,
                               };
                               const payloadStr = JSON.stringify(payload);
                               e.dataTransfer.setData('application/json', payloadStr);
@@ -1643,87 +1962,31 @@ useEffect(() => {
                               draggedChipDataRef.current = null;
                             }}
                           >
-                            <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 2,
+                              }}
+                            >
                               <span className="chip-emoji">{it.emoji ?? ''}</span>
-                              {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
+                              {it.startTime && (
+                                <span className="chip-time">
+                                  {it.startTime}
+                                  {it.nextDay ? '+1' : ''}
+                                </span>
+                              )}
                             </span>
-                            <span className="chip-text">{sanitizeText(it.text?.length ? it.text : it.label)}</span>
+                            <span className="chip-text">
+                              {sanitizeText(it.text?.length ? it.text : it.label)}
+                            </span>
                           </span>
-                          );
-                        })}
-                      </div>
-                      <div className="cell-content-text">{sanitizeText(note.content)}</div>
-                    </div>
-                  ) : showMemo ? (
-                    <div className="cell-content-text">{sanitizeText(note!.content)}</div>
-                  ) : (showChips && note) ? (
-                    <div className="chips">
-                      {note!.items.map((it: Item, i: number) => {
-                        const chipKey = `${k}-${i}`;
-                        return (
-                        <span
-                          key={i}
-                          className="chip"
-                          draggable={canEdit}
-                          onMouseDown={(e) => {
-                            if (!canEdit || !c.d) return;
-                            e.stopPropagation();
-                            onPressStartChip(chipKey);
-                          }}
-                          onMouseUp={(e) => {
-                            e.stopPropagation();
-                            onPressEndChip();
-                          }}
-                          onMouseLeave={() => {
-                            onPressEndChip();
-                          }}
-                          onTouchStart={(e) => {
-                            if (!canEdit || !c.d) return;
-                            e.stopPropagation();
-                            onPressStartChip(chipKey);
-                          }}
-                          onTouchEnd={(e) => {
-                            e.stopPropagation();
-                            onPressEndChip();
-                          }}
-                          onDragStart={(e) => {
-                            if (!canEdit || !c.d) return;
-                            const isMobile = isMobileDevice();
-                            if (!isMobile && longReadyChip !== chipKey) {
-                              e.preventDefault();
-                              return;
-                            }
-                            e.stopPropagation();
-                            const payload = {
-                              type: 'chip',
-                              sourceType: 'cell',
-                              sourceDate: { y: c.y, m: c.m, d: c.d },
-                              chipIndex: i,
-                              item: it
-                            };
-                            const payloadStr = JSON.stringify(payload);
-                            e.dataTransfer.setData('application/json', payloadStr);
-                            e.dataTransfer.setData('text/plain', payloadStr);
-                            e.dataTransfer.effectAllowed = 'move';
-                            draggedChipDataRef.current = payload;
-                          }}
-                          onDragEnd={() => {
-                            onPressEndChip();
-                            draggedChipDataRef.current = null;
-                          }}
-                        >
-                          <span style={{display:'inline-flex', flexDirection:'column', alignItems:'center', gap:2}}>
-                            <span className="chip-emoji">{it.emoji ?? ''}</span>
-                            {it.startTime && <span className="chip-time">{it.startTime}{it.nextDay ? '+1' : ''}</span>}
-                          </span>
-                          <span className="chip-text">{sanitizeText(it.text?.length ? it.text : it.label)}</span>
-                        </span>
                         );
                       })}
                     </div>
                   ) : null}
                 </div>
-
               </div>
             </div>
           );
@@ -1749,8 +2012,8 @@ useEffect(() => {
         mode="add"
         preset={{ emoji: '', label: '' }}
         initialText=""
-        onSave={(t,st,nd,p)=> applyBulkAddChip(t,st,nd,p)}
-        onClose={()=> setBulkOpen(false)}
+        onSave={(t, st, nd, p) => applyBulkAddChip(t, st, nd, p)}
+        onClose={() => setBulkOpen(false)}
         canEdit={canEdit}
         title={fmtBulkTitle(bulkTargets)}
         onRest={applyBulkRest}
@@ -1773,7 +2036,8 @@ useEffect(() => {
               const { data, error } = await supabase
                 .from('notes')
                 .select('y,m,d,content,items,color,link,image_url,title,use_image_as_bg')
-                .eq('y', y).eq('m', m);
+                .eq('y', y)
+                .eq('m', m);
 
               if (!error && data) {
                 cached = data;
@@ -1820,7 +2084,11 @@ useEffect(() => {
         }}
         onMove={moveChip}
         onCopy={copyChip}
-        chipLabel={pendingChipDrop?.item ? `${pendingChipDrop.item.emoji ?? ''} ${pendingChipDrop.item.text || pendingChipDrop.item.label}` : ''}
+        chipLabel={
+          pendingChipDrop?.item
+            ? `${pendingChipDrop.item.emoji ?? ''} ${pendingChipDrop.item.text || pendingChipDrop.item.label}`
+            : ''
+        }
       />
 
       {/* ── 노트 이동/덮어쓰기/합치기 선택 모달 ── */}
@@ -1833,8 +2101,16 @@ useEffect(() => {
         onMove={moveNote}
         onOverwrite={overwriteNote}
         onMerge={mergeNote}
-        sourceDate={pendingNoteDrop ? `${pendingNoteDrop.src.y}-${String(pendingNoteDrop.src.m + 1).padStart(2, '0')}-${String(pendingNoteDrop.src.d).padStart(2, '0')}` : ''}
-        targetDate={pendingNoteDrop ? `${pendingNoteDrop.targetY}-${String(pendingNoteDrop.targetM + 1).padStart(2, '0')}-${String(pendingNoteDrop.targetD).padStart(2, '0')}` : ''}
+        sourceDate={
+          pendingNoteDrop
+            ? `${pendingNoteDrop.src.y}-${String(pendingNoteDrop.src.m + 1).padStart(2, '0')}-${String(pendingNoteDrop.src.d).padStart(2, '0')}`
+            : ''
+        }
+        targetDate={
+          pendingNoteDrop
+            ? `${pendingNoteDrop.targetY}-${String(pendingNoteDrop.targetM + 1).padStart(2, '0')}-${String(pendingNoteDrop.targetD).padStart(2, '0')}`
+            : ''
+        }
       />
 
       {/* ── Alert Modal ── */}

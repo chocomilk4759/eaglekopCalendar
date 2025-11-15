@@ -43,11 +43,11 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
       return () => mq.removeEventListener('change', apply);
     }
     // 구 Safari 대응
-    // @ts-ignore
-    mq.addListener(apply);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (mq as any).addListener(apply);
     return () => {
-      // @ts-ignore
-      mq.removeListener(apply);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mq as any).removeListener(apply);
     };
   }, []);
 
@@ -55,7 +55,6 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
     <aside
       className={`presets-dock ${collapsed ? 'collapsed' : ''}`}
       data-collapsed={collapsed ? '1' : '0'}
-      role="complementary"
       aria-label="프리셋 도크"
     >
       <div className="dock-toggle-wrap">
@@ -65,12 +64,13 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
           aria-label={collapsed ? '프리셋 펼치기' : '프리셋 접기'}
           aria-expanded={!collapsed}
           title={collapsed ? '펼치기' : '접기'}
-          onClick={() => setCollapsed(v => !v)}
+          onClick={() => setCollapsed((v) => !v)}
         >
-          <span aria-hidden style={{justifyContent:'center'}}>{collapsed ? '<' : '>'}</span>
+          <span aria-hidden style={{ justifyContent: 'center' }}>
+            {collapsed ? '<' : '>'}
+          </span>
         </button>
       </div>
-
 
       {/* ▼ 스크롤 박스: 칩은 이 안에서만 스크롤 */}
       {/* 성능 최적화: 접힌 상태에서는 PresetsPanel을 DOM에서 제거 */}
@@ -79,7 +79,6 @@ export default function PresetsDock({ canEdit }: { canEdit: boolean }) {
           <PresetsPanel canEdit={canEdit} mode="vertical" />
         </div>
       )}
-
     </aside>
   );
 }

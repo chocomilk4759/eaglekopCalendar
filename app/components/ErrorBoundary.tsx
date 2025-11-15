@@ -56,9 +56,7 @@ export default class ErrorBoundary extends Component<Props, State> {
               backgroundColor: 'var(--bg-secondary, #f5f5f5)',
             }}
           >
-            <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-              ⚠️ 오류가 발생했습니다
-            </h1>
+            <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️ 오류가 발생했습니다</h1>
             <p style={{ marginBottom: '1.5rem', color: 'var(--text-secondary, #666666)' }}>
               죄송합니다. 예상치 못한 오류가 발생했습니다.
               <br />
@@ -110,6 +108,12 @@ export default class ErrorBoundary extends Component<Props, State> {
                 e.currentTarget.style.backgroundColor = '#0284c7';
               }}
               onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#0ea5e9';
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.backgroundColor = '#0284c7';
+              }}
+              onBlur={(e) => {
                 e.currentTarget.style.backgroundColor = '#0ea5e9';
               }}
             >
