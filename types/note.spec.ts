@@ -13,6 +13,7 @@ import {
   type Note,
   type Item,
 } from './note';
+import type { NoteColor } from './database';
 
 describe('note types', () => {
   describe('isValidStartTime', () => {
@@ -75,6 +76,7 @@ describe('note types', () => {
   describe('setItemTime', () => {
     const baseItem: Item = {
       emoji: null,
+      label: 'Test item',
       text: 'Test item',
     };
 
@@ -116,6 +118,7 @@ describe('note types', () => {
     it('ShouldPreserveOtherItemProperties', () => {
       const itemWithProps: Item = {
         emoji: '🎉',
+        label: 'Party',
         text: 'Party',
         emojiOnly: true,
       };
@@ -161,7 +164,7 @@ describe('note types', () => {
         m: 0,
         d: 15,
         content: 'Test content',
-        items: [{ emoji: '📅', text: 'Event' }],
+        items: [{ emoji: '📅', label: 'Event', text: 'Event' }],
         color: 'red',
         link: 'https://example.com',
         image_url: 'https://example.com/image.jpg',
@@ -176,7 +179,7 @@ describe('note types', () => {
       expect(result.m).toBe(0);
       expect(result.d).toBe(15);
       expect(result.content).toBe('Test content');
-      expect(result.items).toEqual([{ emoji: '📅', text: 'Event' }]);
+      expect(result.items).toEqual([{ emoji: '📅', label: 'Event', text: 'Event' }]);
       expect(result.color).toBe('red');
       expect(result.link).toBe('https://example.com');
       expect(result.image_url).toBe('https://example.com/image.jpg');
@@ -248,6 +251,7 @@ describe('note types', () => {
       const items: Item[] = [
         {
           emoji: '🎉',
+          label: 'Party',
           text: 'Party',
           emojiOnly: false,
           startTime: '20:00',
@@ -255,10 +259,12 @@ describe('note types', () => {
         },
         {
           emoji: null,
+          label: 'Text only item',
           text: 'Text only item',
         },
         {
           emoji: '⚽',
+          label: 'Soccer',
           text: '',
           emojiOnly: true,
         },
@@ -267,11 +273,11 @@ describe('note types', () => {
       const result = normalizeNote({ items });
 
       expect(result.items).toHaveLength(3);
-      expect(result.items[0].emoji).toBe('🎉');
-      expect(result.items[0].startTime).toBe('20:00');
-      expect(result.items[0].nextDay).toBe(true);
-      expect(result.items[1].emoji).toBe(null);
-      expect(result.items[2].emojiOnly).toBe(true);
+      expect(result.items[0]?.emoji).toBe('🎉');
+      expect(result.items[0]?.startTime).toBe('20:00');
+      expect(result.items[0]?.nextDay).toBe(true);
+      expect(result.items[1]?.emoji).toBe(null);
+      expect(result.items[2]?.emojiOnly).toBe(true);
     });
 
     it('ShouldHandleZeroValuesCorrectly', () => {
