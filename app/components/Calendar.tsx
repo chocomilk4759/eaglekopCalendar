@@ -731,7 +731,10 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
       const width = el.clientWidth;
       const cols = Math.floor((width + gap) / (cellMinWidth + gap));
-      setCanShowSeven(cols >= 7);
+      const newCanShowSeven = cols >= 7;
+
+      // 값이 변경된 경우에만 state 업데이트 (불필요한 리렌더 방지)
+      setCanShowSeven((prev) => (prev === newCanShowSeven ? prev : newCanShowSeven));
     };
 
     // 초기 실행
