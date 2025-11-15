@@ -108,3 +108,15 @@ export function isMobileDevice(): boolean {
 
   return isCoarse || isTouchDevice;
 }
+
+// 디바운스: 연속 호출을 지연시켜 마지막 호출만 실행
+export function debounce<T extends (...args: any[]) => any>(
+  fn: T,
+  ms: number
+): (...args: Parameters<T>) => void {
+  let timer: NodeJS.Timeout | null = null;
+  return (...args: Parameters<T>) => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => fn(...args), ms);
+  };
+}

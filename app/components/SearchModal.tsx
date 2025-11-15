@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type { Note } from '@/types/note';
 import { normalizeNote } from '@/types/note';
 import { supabase } from '@/lib/supabaseClient';
+import { debounce } from '@/lib/utils';
 
 interface SearchResult {
   date: { y: number; m: number; d: number };
@@ -89,9 +90,10 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     return () => { cancelled = true; };
   }, []);
 
-  const performSearch = useCallback(async (searchQuery: string) => {
+  const performSearchImmediate = useCallback(async (searchQuery: string) => {
     if (!searchQuery.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
 
@@ -224,6 +226,12 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
     }
   }, [replacements]);
 
+  // 디바운스된 검색 함수 (300ms)
+  const performSearch = useMemo(
+    () => debounce(performSearchImmediate, 300),
+    [performSearchImmediate]
+  );
+
   useEffect(() => {
     if (open) {
       previousFocusRef.current = document.activeElement as HTMLElement;
@@ -243,11 +251,7 @@ export default function SearchModal({ open, onClose, notes, onSelectDate }: Sear
   }, [open]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      performSearch(query);
-    }, 200);
-
-    return () => clearTimeout(timer);
+    performSearch(query);
   }, [query, performSearch]);
 
   const handleSelect = (result: SearchResult) => {
