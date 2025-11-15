@@ -5,15 +5,21 @@
  * Mobile 환경에서 dataTransfer가 제대로 동작하지 않는 문제 해결용
  */
 
-import type { NoteItem } from './database';
+import type { NoteItem, NoteRow } from './database';
 
 // Drag & Drop 페이로드 타입 정의
-interface DragPayload {
+export interface DragPayload {
   type: 'chip';
   sourceType: 'modal' | 'cell' | 'unscheduled';
   sourceDate?: { y: number; m: number; d: number };
   chipIndex: number;
   item: NoteItem;
+}
+
+// Note copy 페이로드 타입
+export interface NoteCopyPayload {
+  type: 'note-copy';
+  note: Omit<NoteRow, 'id' | 'updated_at' | 'updated_by'>;
 }
 
 declare global {

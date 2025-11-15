@@ -16,6 +16,7 @@ import { safeSetItem } from '@/lib/localStorageUtils';
 import { sanitizeText } from '@/lib/sanitize';
 import { isSupabaseRow } from '@/lib/typeGuards';
 import { computeCellMinWidth } from '@/lib/calendar-utils';
+import type { DragPayload, NoteCopyPayload } from '@/types/window';
 
 // 드래그&드롭 payload 타입 정의 (제거됨 - 실제로는 JSON string으로만 전달)
 
@@ -114,8 +115,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const [refreshUnscheduledTrigger, setRefreshUnscheduledTrigger] = useState(0);
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState({ title: '', message: '' });
-  // ---- SWR 캐시 & 로딩 상태
-  const [monthCache, setMonthCache] = useState<Map<string, any[]>>(new Map());
+  // ---- SWR 캐시 & 로딩 상태 (Supabase raw response 저장)
+  const [monthCache, setMonthCache] = useState<Map<string, unknown[]>>(new Map());
   // ---- 공휴일 데이터
   const [holidays, setHolidays] = useState<Map<string, HolidayInfo>>(new Map());
   // 앱/캐시 버전이 바뀌면 month LS 캐시 무해화
@@ -440,8 +441,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const chipPressKeyRef = useRef<string | null>(null);
 
   // ----- 드래그 중인 데이터 (모바일용 fallback) -----
-  const draggedChipDataRef = useRef<any>(null);
-  const draggedNoteDataRef = useRef<any>(null);
+  const draggedChipDataRef = useRef<DragPayload | null>(null);
+  const draggedNoteDataRef = useRef<NoteCopyPayload | null>(null);
 
   function clearPressTimer() {
     if (pressTimerRef.current) {
@@ -511,8 +512,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       return;
     }
     // 복제 페이로드(필요 필드만)
-    const payload = {
-      type: 'note-copy',
+    const payload: NoteCopyPayload = {
+      type: 'note-copy' as const,
       note: {
         y: note.y,
         m: note.m,
@@ -522,8 +523,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
         color: note.color ?? null,
         link: note.link ?? null,
         image_url: note.image_url ?? null,
-        title: (note as any)?.title ?? null,
-        use_image_as_bg: (note as any)?.use_image_as_bg ?? false,
+        title: note.title ?? null,
+        use_image_as_bg: note.use_image_as_bg ?? false,
       },
     };
     const payloadStr = JSON.stringify(payload);
@@ -548,7 +549,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     if (n.link) return true;
     if (n.image_url) return true;
     if (n.color) return true;
-    if ((n as any)?.title) return true;
+    if (n.title) return true;
     return false;
   }
 
@@ -561,9 +562,8 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       link: dst.link ?? src.link ?? null,
       image_url: dst.image_url ?? src.image_url ?? null,
       color: dst.color ?? src.color ?? null,
-      title: (dst as any)?.title ?? (src as any)?.title ?? null,
-      use_image_as_bg:
-        ((dst as any)?.use_image_as_bg ?? false) || ((src as any)?.use_image_as_bg ?? false),
+      title: dst.title ?? src.title ?? null,
+      use_image_as_bg: (dst.use_image_as_bg ?? false) || (src.use_image_as_bg ?? false),
     });
     return merged;
   }
@@ -576,7 +576,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       .select()
       .single();
     if (error) throw new Error(error.message);
-    return normalizeNote(data as any);
+    return normalizeNote(data);
   }
 
   // note 복제 드롭 처리
@@ -865,7 +865,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
   const bgImageKeys = useMemo(() => {
     const keys: string[] = [];
     for (const n of Object.values(notes)) {
-      if (n?.image_url && (n as any)?.use_image_as_bg) {
+      if (n?.image_url && n.use_image_as_bg) {
         keys.push(`${n.y}-${n.m}-${n.d}`);
       }
     }
@@ -1097,15 +1097,16 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
         if (error) throw error;
 
-        if (data) {
+        if (data && typeof data === 'object' && 'id' in data && 'items' in data) {
           const currentItems = Array.isArray(data.items) ? data.items : [];
           const newItems = [...currentItems];
           newItems.splice(chipIndex, 1);
 
+          const id = typeof data.id === 'number' ? data.id : Number(data.id);
           const { error: updateError } = await supabase
             .from('undated_items')
             .update({ items: newItems })
-            .eq('id', (data as any).id);
+            .eq('id', id);
 
           if (updateError) throw updateError;
 
@@ -1356,7 +1357,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
     m: number,
     d: number
   ) {
-    const rawTitle = sanitizeText((note as any)?.title ?? ''); // XSS 방지: title sanitize
+    const rawTitle = sanitizeText(note?.title ?? ''); // XSS 방지: title sanitize
     const holiday = isHoliday(y, m, d, holidays);
 
     if (!showWeekday) {
@@ -1803,9 +1804,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                                   return;
                                 }
                                 e.stopPropagation();
-                                const payload = {
-                                  type: 'chip',
-                                  sourceType: 'cell',
+                                const payload: DragPayload = {
+                                  type: 'chip' as const,
+                                  sourceType: 'cell' as const,
                                   sourceDate: { y: c.y, m: c.m, d: c.d },
                                   chipIndex: i,
                                   item: it,
@@ -1886,9 +1887,9 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
                                 return;
                               }
                               e.stopPropagation();
-                              const payload = {
-                                type: 'chip',
-                                sourceType: 'cell',
+                              const payload: DragPayload = {
+                                type: 'chip' as const,
+                                sourceType: 'cell' as const,
                                 sourceDate: { y: c.y, m: c.m, d: c.d },
                                 chipIndex: i,
                                 item: it,
@@ -1995,9 +1996,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
             // notes 상태 업데이트
             if (cached) {
               const map: Record<string, Note> = {};
-              (cached as any[]).forEach((row: any) => {
-                const n = normalizeNote(row);
-                map[cellKey(n.y, n.m, n.d)] = n;
+              cached.forEach((row: unknown) => {
+                if (isSupabaseRow(row)) {
+                  const n = normalizeNote(row);
+                  map[cellKey(n.y, n.m, n.d)] = n;
+                }
               });
               setNotes(map);
             }
