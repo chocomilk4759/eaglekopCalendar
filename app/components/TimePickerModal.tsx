@@ -81,6 +81,9 @@ export default function TimePickerModal({ open, initialTime = '00:00', initialNe
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
+      // Safe: focusableElements.length > 0 checked above
+      if (!firstElement || !lastElement) return;
+
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
           e.preventDefault();

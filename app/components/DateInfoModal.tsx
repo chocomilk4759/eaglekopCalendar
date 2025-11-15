@@ -245,7 +245,7 @@ export default function DateInfoModal({
 
   function extractPathFromPublicUrl(url: string): string | null {
     const m = url.match(/\/object\/public\/([^/]+)\/(.+)$/);
-    if (!m) return null;
+    if (!m || !m[1] || !m[2]) return null;
     const bucket = m[1];
     const path = m[2];
     if (bucket !== BUCKET) return null;
@@ -424,6 +424,9 @@ export default function DateInfoModal({
       const firstElement = focusableElements[0];
       const lastElement = focusableElements[focusableElements.length - 1];
 
+      // Safe: focusableElements.length > 0 checked above
+      if (!firstElement || !lastElement) return;
+
       if (e.shiftKey) {
         // Shift+Tab: 첫 번째 요소에서 마지막 요소로
         if (document.activeElement === firstElement) {
@@ -585,6 +588,9 @@ export default function DateInfoModal({
 
     const items = [...(note.items || [])];
     const [draggedItem] = items.splice(draggedChipIndex, 1);
+
+    // Safe: splice returns array with at least 1 element (draggedChipIndex is valid)
+    if (!draggedItem) return;
 
     // 드래그한 칩을 제거한 후의 인덱스 조정
     let insertIdx = targetIdx;

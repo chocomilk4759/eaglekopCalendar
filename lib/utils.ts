@@ -20,7 +20,8 @@ export function seoulDateParts(date = new Date()): { y: number; m: number; d: nu
     month: '2-digit',
     day: '2-digit',
   });
-  const [y, m, day] = formatter.format(date).split('-').map(Number);
+  const parts = formatter.format(date).split('-').map(Number);
+  const [y = 0, m = 1, day = 1] = parts; // 기본값 설정 (실제로는 항상 존재)
   return { y, m: m - 1, d: day }; // m은 0-indexed (0=1월)
 }
 

@@ -49,7 +49,7 @@ function seoulParts(d = new Date())
   const f = new Intl.DateTimeFormat('en-CA', {
     timeZone: SEOUL_TZ, year: 'numeric', month: '2-digit', day: '2-digit'
   });
-  const [y, m, day] = f.format(d).split('-').map(Number);
+  const [y = 0, m = 1, day = 1] = f.format(d).split('-').map(Number);
   return { y, m: m - 1, d: day }; // m: 0~11
 }
 
@@ -203,7 +203,11 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
       if (e.key === 'Control' && ctrlSelecting){
         const picked = Array.from(selectedKeysRef.current);
         if (picked.length){
-          const targets = picked.map(k => { const [y,m,d]=k.split('-').map(Number); return {y,m,d}; });
+          // Safe: cellKey format is guaranteed to be "y-m-d" with valid numbers
+          const targets = picked.map(k => {
+            const [y = 0, m = 0, d = 0] = k.split('-').map(Number);
+            return {y, m, d};
+          });
           setBulkTargets(targets);
           setBulkOpen(true);
         }
@@ -773,7 +777,7 @@ export default function Calendar({ canEdit }: { canEdit: boolean }) {
 
   function extractStoragePath(url: string): { bucket: string; key: string } | null {
     const m = url.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
-    if (!m) return null;
+    if (!m || !m[1] || !m[2]) return null;
     return { bucket: m[1], key: decodeURIComponent(m[2]) };
   }
   const isHttp = (u?: string | null) => !!u && /^https?:\/\//i.test(u);
@@ -812,7 +816,7 @@ useEffect(() => {
         // HTTP URL이면 그대로 사용 (외부 이미지)
         if (/^https?:\/\//i.test(raw)) {
           const m = raw.match(/\/object\/(?:public|sign)\/([^/]+)\/([^?]+)(?:\?|$)/);
-          if (m) {
+          if (m && m[1] && m[2]) {
             const bucket = m[1], key = decodeURIComponent(m[2]);
             const url = await getSignedUrl(key, bucket);
             return [k, url || raw] as [string, string];
@@ -861,7 +865,7 @@ useEffect(() => {
 
       // 백그라운드로 이전/다음 달 미리 가져오기
       (async () => {
-        for (const [yy, mm0] of [[ym.y, ym.m-1], [ym.y, ym.m+1]]) {
+        for (const [yy = 0, mm0 = 0] of [[ym.y, ym.m-1], [ym.y, ym.m+1]]) {
           const [ny, nm] = normMonth(yy, mm0);
           const k = `${ny}-${nm}`;
           if (monthCache.get(k) || loadMonthLS(ny, nm)) continue;

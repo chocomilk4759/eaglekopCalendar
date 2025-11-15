@@ -228,9 +228,9 @@ describe('sanitizeNote', () => {
     expect(cleaned.content).toBe('Safe content');
     expect(cleaned.title).toBe('Title');
     expect(cleaned.link).toBe('https://example.com');
-    expect(cleaned.items![0].text).toBe('Good');
-    expect(cleaned.items![0].emoji).toBe('🔥');
-    expect(cleaned.items![1].text).toBe('Clean text');
+    expect(cleaned.items?.[0]?.text).toBe('Good');
+    expect(cleaned.items?.[0]?.emoji).toBe('🔥');
+    expect(cleaned.items?.[1]?.text).toBe('Clean text');
   });
 
   test('should block malicious URLs in link field', () => {
@@ -262,8 +262,8 @@ describe('sanitizeNote', () => {
     };
 
     const cleaned = sanitizeNote(note);
-    expect(cleaned.items![0].emoji).toBe('🔥');
-    expect(cleaned.items![0].emoji).not.toContain('<script');
+    expect(cleaned.items?.[0]?.emoji).toBe('🔥');
+    expect(cleaned.items?.[0]?.emoji).not.toContain('<script');
   });
 });
 
