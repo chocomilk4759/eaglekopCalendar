@@ -97,6 +97,18 @@ export default function SearchModal({
     };
   }, []);
 
+  // 모달 열릴 때 검색 입력창에 포커스
+  useEffect(() => {
+    if (open) {
+      // 짧은 지연을 두어 모달이 렌더링된 후 포커스
+      const timer = setTimeout(() => {
+        const input = document.querySelector('.search-input') as HTMLInputElement;
+        input?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
+
   const performSearchImmediate = useCallback(
     async (searchQuery: string) => {
       if (!searchQuery.trim()) {
@@ -346,7 +358,6 @@ export default function SearchModal({
             placeholder="날짜, 제목, 내용, 태그로 검색... (ESC로 닫기)"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            autoFocus
           />
           <button className="search-close" onClick={onClose} aria-label="닫기">
             ✕
@@ -372,6 +383,7 @@ export default function SearchModal({
                 key={`${result.date.y}-${result.date.m}-${result.date.d}-${idx}`}
                 className="search-result-item"
                 onClick={() => handleSelect(result)}
+                role="button"
                 tabIndex={0}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
